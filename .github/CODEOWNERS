@@ -1,0 +1,22 @@
+# Global owners
+* @finatic-team
+
+# Core SDK files
+/src/ @finatic-team
+/tests/ @finatic-team
+/examples/ @finatic-team
+
+# Configuration files
+package.json @finatic-team
+tsconfig.json @finatic-team
+jest.config.js @finatic-team
+.eslintrc.js @finatic-team
+.prettierrc @finatic-team
+
+# Documentation
+README.md @finatic-team
+CHANGELOG.md @finatic-team
+docs/ @finatic-team
+
+# GitHub workflows
+.github/ @finatic-team
