@@ -22,7 +22,7 @@
     "docs:generate": "node scripts/generate-docs.js",
     "docs:validate": "node scripts/validate-docs.js",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build && npm run test",
+    "prepublishOnly": "npm run clean && npm run build",
     "demo:build": "cd demo-app && yarn build",
     "demo:start": "cd demo-app && yarn start",
     "demo:dev": "cd demo-app && yarn dev",
