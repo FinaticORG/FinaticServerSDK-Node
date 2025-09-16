@@ -63,6 +63,9 @@ pids/
 # Yarn Integrity file
 .yarn-integrity
 
+# Yarn lock file
+yarn.lock
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -87,3 +90,5 @@ pids/
 
 # TernJS port file
 .tern-port
+*/install-state.gz
+demo-app/.yarn/install-state.gz
