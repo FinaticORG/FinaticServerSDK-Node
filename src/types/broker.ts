@@ -11,6 +11,35 @@ export interface BrokerDataOptions {
   symbol?: string;
 }
 
+export interface Balance {
+  /** Balance ID */
+  id: string;
+  /** Account ID */
+  account_id: string;
+  /** Available to withdraw */
+  available_to_withdraw?: number;
+  /** Balance created at */
+  balance_created_at?: string;
+  /** Balance updated at */
+  balance_updated_at?: string;
+  /** Initial margin */
+  initial_margin?: number;
+  /** Is end of day snapshot */
+  is_end_of_day_snapshot?: boolean;
+  /** Maintenance margin */
+  maintenance_margin?: number;
+  /** Net liquidation value */
+  net_liquidation_value?: number;
+  /** Total cash value */
+  total_cash_value?: number;
+  /** Total realized PnL */
+  total_realized_pnl?: number;
+  /** Created at */
+  created_at?: string;
+  /** Updated at */
+  updated_at?: string;
+}
+
 export interface BrokerInfo {
   /** Broker ID */
   id: string;

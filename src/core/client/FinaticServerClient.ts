@@ -18,6 +18,7 @@ import {
   BrokerOrder,
   BrokerPosition,
   BrokerConnection,
+  Balance,
   BrokerDataOptions,
   OrdersFilter,
   PositionsFilter,
@@ -45,6 +46,11 @@ export class FinaticServerClient {
 
   // Trading context
   private tradingContext: TradingContext = {};
+
+  // Portal configuration
+  private portalTheme?: any;
+  private portalBrokers?: string[];
+  private portalEmail?: string;
 
   constructor(
     apiKey: string,
@@ -116,6 +122,19 @@ export class FinaticServerClient {
     }
 
     return response;
+  }
+
+  async set_user_id(userId: string): Promise<void> {
+    /** Set the user ID for the current session. */
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Please start a session first.');
+    }
+
+    this.userId = userId;
+    // Update the API client with the new user ID if needed
+    if (this.apiClient && typeof this.apiClient.setUserId === 'function') {
+      await this.apiClient.setUserId(userId);
+    }
   }
 
   async request_otp(email: string): Promise<OtpRequestResponse> {
@@ -200,8 +219,8 @@ export class FinaticServerClient {
     return response;
   }
 
-  async get_portal_url(): Promise<string> {
-    /** Get the portal URL for user authentication. */
+  async get_portal_url(theme?: any, brokers?: string[], email?: string): Promise<string> {
+    /** Get the portal URL for user authentication with optional theming and configuration. */
     if (!this.sessionId) {
       throw new AuthenticationError('Session not initialized. Call start_session() first.');
     }
@@ -210,9 +229,79 @@ export class FinaticServerClient {
       const response = await this.apiClient.request<{data: {portal_url: string}}>('GET', '/auth/session/portal', undefined, undefined, undefined, {
         'Session-ID': this.sessionId,
       });
-      return response.data.portal_url;
+      
+      let portal_url = response.data.portal_url;
+      
+      // Use stored configuration as defaults if not provided
+      const finalTheme = theme || this.portalTheme;
+      const finalBrokers = brokers || this.portalBrokers;
+      const finalEmail = email || this.portalEmail;
+      
+      // Apply theming and configuration to the URL
+      portal_url = this.applyPortalConfig(portal_url, finalTheme, finalBrokers, finalEmail);
+      
+      return portal_url;
     } catch (error) {
       throw new AuthenticationError(`Failed to get portal URL: ${error}`);
+    }
+  }
+
+  private applyPortalConfig(baseUrl: string, theme?: any, brokers?: string[], email?: string): string {
+    /** Apply theming and configuration to a portal URL. */
+    try {
+      const url = new URL(baseUrl);
+      
+      // Apply theme configuration
+      if (theme) {
+        if (theme.preset) {
+          url.searchParams.set('theme', theme.preset);
+        } else if (theme.custom) {
+          // Encode custom theme as base64 JSON
+          const themeJson = JSON.stringify(theme.custom);
+          const themeB64 = Buffer.from(themeJson).toString('base64');
+          url.searchParams.set('theme', 'custom');
+          url.searchParams.set('themeObject', themeB64);
+        }
+      }
+      
+      // Apply broker filtering
+      if (brokers && brokers.length > 0) {
+        // Convert broker names to IDs and encode
+        const supportedBrokers: Record<string, string> = {
+          'alpaca': 'alpaca',
+          'robinhood': 'robinhood',
+          'tasty_trade': 'tasty_trade',
+          'ninja_trader': 'ninja_trader',
+          'tradovate': 'ninja_trader', // Alias
+          'interactive_brokers': 'interactive_brokers',
+        };
+        
+        const brokerIds: string[] = [];
+        for (const broker of brokers) {
+          const brokerId = supportedBrokers[broker.toLowerCase()];
+          if (brokerId) {
+            brokerIds.push(brokerId);
+          }
+        }
+        
+        if (brokerIds.length > 0) {
+          const brokersJson = JSON.stringify(brokerIds);
+          const brokersB64 = Buffer.from(brokersJson).toString('base64');
+          url.searchParams.set('brokers', brokersB64);
+        }
+      }
+      
+      // Apply email parameter
+      if (email) {
+        url.searchParams.set('email', email);
+      }
+      
+      return url.toString();
+      
+    } catch (error) {
+      // If URL manipulation fails, return original URL
+      console.warn(`Warning: Failed to apply portal configuration: ${error}`);
+      return baseUrl;
     }
   }
 
@@ -222,9 +311,13 @@ export class FinaticServerClient {
       throw new AuthenticationError('Session not initialized. Call start_session() first.');
     }
 
+    if (!this.companyId) {
+      throw new AuthenticationError('Company ID not available. Session may not be properly initialized.');
+    }
+
     try {
       // Call the endpoint with session ID in the path and as Bearer token
-      const response = await this.apiClient.request<SessionUserResponse>('GET', `/auth/session/${this.sessionId}/user`, undefined, undefined, this.sessionId);
+      const response = await this.apiClient.getSessionUser(this.sessionId, this.companyId);
 
       // Store tokens internally for future API calls
       this.storeTokens(response);
@@ -255,13 +348,15 @@ export class FinaticServerClient {
       scope: response.get_scope(),
     };
 
-    // Set tokens in API client
-    const expiresAt = new Date(Date.now() + response.get_expires_in() * 1000).toISOString();
+    // Also store tokens in ApiClient for API calls
+    const expiresAt = response.get_expires_in() ? new Date(Date.now() + response.get_expires_in() * 1000).toISOString() : undefined;
     this.apiClient.setTokenInfo({
       access_token: response.get_access_token(),
       refresh_token: response.get_refresh_token(),
       expires_at: expiresAt,
       user_id: response.get_user_id(),
+      token_type: response.get_token_type(),
+      scope: response.get_scope(),
     });
   }
 
@@ -281,14 +376,14 @@ export class FinaticServerClient {
     const offset = (page - 1) * perPage;
     const limit = perPage;
     
-    const response = await this.apiClient.request<{ data: BrokerAccount[]; pagination: ApiPaginationInfo }>(
+    const response = await this.apiClient.request<{ response_data: BrokerAccount[]; pagination: ApiPaginationInfo }>(
       'GET',
-      '/brokers/accounts',
+      '/brokers/data/accounts',
       undefined,
       { ...options, ...filters, offset, limit }
     );
     
-    return response.data;
+    return response.response_data || [];
   }
 
   async get_broker_orders(filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
@@ -333,6 +428,54 @@ export class FinaticServerClient {
     }
 
     return allAccounts;
+  }
+
+  async get_all_broker_orders(
+    options?: BrokerDataOptions,
+    filters?: OrdersFilter
+  ): Promise<BrokerOrder[]> {
+    /** Get all broker orders across all pages. */
+    const allOrders: BrokerOrder[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const result = await this.get_broker_orders(filters);
+      if (!result || !result.data || result.data.length === 0) {
+        break;
+      }
+      allOrders.push(...result.data);
+      if (result.data.length < perPage) {
+        break;
+      }
+      page++;
+    }
+
+    return allOrders;
+  }
+
+  async get_all_broker_positions(
+    options?: BrokerDataOptions,
+    filters?: PositionsFilter
+  ): Promise<BrokerPosition[]> {
+    /** Get all broker positions across all pages. */
+    const allPositions: BrokerPosition[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const result = await this.get_broker_positions(filters);
+      if (!result || !result.data || result.data.length === 0) {
+        break;
+      }
+      allPositions.push(...result.data);
+      if (result.data.length < perPage) {
+        break;
+      }
+      page++;
+    }
+
+    return allPositions;
   }
 
   // Trading methods
@@ -420,14 +563,6 @@ export class FinaticServerClient {
     return await this.apiClient.cancelOrder(orderId);
   }
 
-  async get_order(orderId: string): Promise<BrokerOrder> {
-    /** Get order details. */
-    if (!this.is_authenticated()) {
-      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
-    }
-
-    return await this.apiClient.getOrder(orderId);
-  }
 
   async get_orders(filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
     /** Get orders. */
@@ -488,20 +623,285 @@ export class FinaticServerClient {
     return await this.apiClient.placeStockStopOrder(symbol, quantity, side, stopPrice, timeInForce, broker, accountNumber);
   }
 
-  // Portfolio methods
-  async get_portfolio(): Promise<Portfolio> {
-    /** Get portfolio information. */
-    return await this.apiClient.getPortfolio();
+  async place_crypto_market_order(
+    symbol: string,
+    quantity: number,
+    side: 'buy' | 'sell',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    /** Place a crypto market order. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.placeCryptoMarketOrder(symbol, quantity, side, broker, accountNumber);
   }
 
-  async get_holdings(): Promise<Holding[]> {
-    /** Get portfolio holdings. */
-    return await this.apiClient.getHoldings();
+  async place_crypto_limit_order(
+    symbol: string,
+    quantity: number,
+    side: 'buy' | 'sell',
+    price: number,
+    timeInForce: 'day' | 'gtc' = 'gtc',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    /** Place a crypto limit order. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.placeCryptoLimitOrder(symbol, quantity, side, price, timeInForce, broker, accountNumber);
+  }
+
+  async place_options_market_order(
+    symbol: string,
+    quantity: number,
+    side: 'buy' | 'sell',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    /** Place an options market order. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.placeOptionsMarketOrder(symbol, quantity, side, broker, accountNumber);
+  }
+
+  async place_options_limit_order(
+    symbol: string,
+    quantity: number,
+    side: 'buy' | 'sell',
+    price: number,
+    timeInForce: 'day' | 'gtc' = 'gtc',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    /** Place an options limit order. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.placeOptionsLimitOrder(symbol, quantity, side, price, timeInForce, broker, accountNumber);
+  }
+
+  async place_futures_market_order(
+    symbol: string,
+    quantity: number,
+    side: 'buy' | 'sell',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    /** Place a futures market order. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.placeFuturesMarketOrder(symbol, quantity, side, broker, accountNumber);
+  }
+
+  async place_futures_limit_order(
+    symbol: string,
+    quantity: number,
+    side: 'buy' | 'sell',
+    price: number,
+    timeInForce: 'day' | 'gtc' = 'gtc',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    /** Place a futures limit order. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.placeFuturesLimitOrder(symbol, quantity, side, price, timeInForce, broker, accountNumber);
   }
 
   async get_positions(filter?: PositionsFilter): Promise<PaginatedResult<BrokerPosition[]>> {
     /** Get portfolio positions. */
     return await this.apiClient.getPositions(filter);
+  }
+
+  async get_balances(filter?: BrokerDataOptions): Promise<Balance[]> {
+    /** Get account balances. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.getBrokerBalances(filter);
+  }
+
+  async disconnect_company(connectionId: string): Promise<any> {
+    /** Disconnect a company from a broker connection. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.apiClient.disconnectCompany(connectionId);
+  }
+
+  // Convenience filtering methods
+  async getOpenPositions(filter?: PositionsFilter): Promise<BrokerPosition[]> {
+    /** Get only open positions. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const openFilter = { ...filter, position_status: 'open' };
+    const result = await this.get_broker_positions(openFilter);
+    return result.data || [];
+  }
+
+  async getFilledOrders(filter?: OrdersFilter): Promise<BrokerOrder[]> {
+    /** Get only filled orders. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const filledFilter = { ...filter, status: 'filled' };
+    const result = await this.get_broker_orders(filledFilter);
+    return result.data || [];
+  }
+
+  async getPendingOrders(filter?: OrdersFilter): Promise<BrokerOrder[]> {
+    /** Get only pending orders. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const pendingFilter = { ...filter, status: 'pending' };
+    const result = await this.get_broker_orders(pendingFilter);
+    return result.data || [];
+  }
+
+  async getActiveAccounts(filter?: any): Promise<BrokerAccount[]> {
+    /** Get only active accounts. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const activeFilter = { ...filter, status: 'active' };
+    return await this.get_broker_accounts(1, 100, undefined, activeFilter);
+  }
+
+  async getOrdersBySymbol(symbol: string, filter?: OrdersFilter): Promise<BrokerOrder[]> {
+    /** Get orders filtered by symbol. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const symbolFilter = { ...filter, symbol };
+    const result = await this.get_broker_orders(symbolFilter);
+    return result.data || [];
+  }
+
+  async getPositionsBySymbol(symbol: string, filter?: PositionsFilter): Promise<BrokerPosition[]> {
+    /** Get positions filtered by symbol. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const symbolFilter = { ...filter, symbol };
+    const result = await this.get_broker_positions(symbolFilter);
+    return result.data || [];
+  }
+
+  async getOrdersByBroker(brokerId: string, filter?: OrdersFilter): Promise<BrokerOrder[]> {
+    /** Get orders filtered by broker. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const brokerFilter = { ...filter, broker_id: brokerId };
+    const result = await this.get_broker_orders(brokerFilter);
+    return result.data || [];
+  }
+
+  async getPositionsByBroker(brokerId: string, filter?: PositionsFilter): Promise<BrokerPosition[]> {
+    /** Get positions filtered by broker. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const brokerFilter = { ...filter, broker_id: brokerId };
+    const result = await this.get_broker_positions(brokerFilter);
+    return result.data || [];
+  }
+
+  // Pagination helper methods
+  async getOrdersPage(page: number, perPage: number, filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
+    /** Get a specific page of orders. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.get_broker_orders(filter);
+  }
+
+  async getPositionsPage(page: number, perPage: number, filter?: PositionsFilter): Promise<PaginatedResult<BrokerPosition[]>> {
+    /** Get a specific page of positions. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.get_broker_positions(filter);
+  }
+
+  async getAccountsPage(page: number, perPage: number, filter?: any): Promise<BrokerAccount[]> {
+    /** Get a specific page of accounts. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    return await this.get_broker_accounts(page, perPage, undefined, filter);
+  }
+
+  async getNextOrdersPage(currentResult: PaginatedResult<BrokerOrder[]>): Promise<PaginatedResult<BrokerOrder[]> | null> {
+    /** Get the next page of orders. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    if (!currentResult.hasNext) {
+      return null;
+    }
+
+    // For now, return null as the API doesn't support cursor-based pagination
+    // This would need to be implemented based on the actual API pagination structure
+    return null;
+  }
+
+  async getNextPositionsPage(currentResult: PaginatedResult<BrokerPosition[]>): Promise<PaginatedResult<BrokerPosition[]> | null> {
+    /** Get the next page of positions. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    if (!currentResult.hasNext) {
+      return null;
+    }
+
+    // For now, return null as the API doesn't support cursor-based pagination
+    // This would need to be implemented based on the actual API pagination structure
+    return null;
+  }
+
+  async getNextAccountsPage(currentPage: number, perPage: number, filter?: any): Promise<BrokerAccount[] | null> {
+    /** Get the next page of accounts. */
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    const nextPage = currentPage + 1;
+    const accounts = await this.get_broker_accounts(nextPage, perPage, undefined, filter);
+    
+    if (accounts.length === 0) {
+      return null;
+    }
+
+    return accounts;
   }
 
   // Trading context methods
@@ -591,6 +991,83 @@ export class FinaticServerClient {
     }
 
     return true;
+  }
+
+  /**
+   * Get all orders across all pages (convenience method)
+   */
+  async get_all_orders(options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    try {
+      return await this.get_all_broker_orders(options, filters);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get all positions across all pages (convenience method)
+   */
+  async get_all_positions(options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    try {
+      return await this.get_all_broker_positions(options, filters);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get all accounts across all pages (convenience method)
+   */
+  async get_all_accounts(options?: BrokerDataOptions, filters?: any): Promise<BrokerAccount[]> {
+    if (!this.is_authenticated()) {
+      throw new AuthenticationError('Not authenticated. Please complete authentication first.');
+    }
+
+    try {
+      return await this.get_all_broker_accounts(options, filters);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Portal configuration convenience methods
+  setPortalTheme(theme: any): void {
+    /** Set the default portal theme configuration. */
+    this.portalTheme = theme;
+  }
+
+  setPortalBrokers(brokers: string[]): void {
+    /** Set the default broker filter for the portal. */
+    this.portalBrokers = brokers;
+  }
+
+  setPortalEmail(email: string): void {
+    /** Set the default email for the portal. */
+    this.portalEmail = email;
+  }
+
+  getPortalConfig(): { theme?: any; brokers?: string[]; email?: string } {
+    /** Get the current portal configuration. */
+    return {
+      theme: this.portalTheme,
+      brokers: this.portalBrokers,
+      email: this.portalEmail,
+    };
+  }
+
+  clearPortalConfig(): void {
+    /** Clear all portal configuration settings. */
+    this.portalTheme = undefined;
+    this.portalBrokers = undefined;
+    this.portalEmail = undefined;
   }
 
 }
