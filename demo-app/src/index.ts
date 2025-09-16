@@ -156,27 +156,29 @@ class FinaticDemo {
       // Test 3: Get orders
       console.log('\n3. Getting orders...');
       const orders = await this.client.get_orders();
-      console.log(chalk.green(`✅ Found ${orders.data.length} orders`));
+      console.log(chalk.green(`✅ Found ${orders?.data?.length || 0} orders`));
 
       // Test 4: Get positions
       console.log('\n4. Getting positions...');
       const positions = await this.client.get_positions();
-      console.log(chalk.green(`✅ Found ${positions.data.length} positions`));
+      console.log(chalk.green(`✅ Found ${positions?.data?.length || 0} positions`));
 
-      // Test 5: Get portfolio
-      console.log('\n5. Getting portfolio...');
-      const portfolio = await this.client.get_portfolio();
-      console.log(chalk.green('✅ Portfolio retrieved'));
-      console.log(chalk.gray(`Total Value: $${portfolio.equity?.toLocaleString() || 'N/A'}`));
-      console.log(chalk.gray(`Cash Balance: $${portfolio.cash?.toLocaleString() || 'N/A'}`));
+      // Test 5: Get balances
+      console.log('\n5. Getting balances...');
+      const balances = await this.client.get_balances();
+      console.log(chalk.green(`✅ Found ${balances.length} balances`));
+      
+      if (balances.length > 0) {
+        console.log(chalk.gray('Balance details:'));
+        balances.slice(0, 3).forEach((balance, index) => {
+          console.log(chalk.gray(`  ${index + 1}. Account ${balance.account_id}`));
+          console.log(chalk.gray(`     Net Liquidation: $${balance.net_liquidation_value?.toLocaleString() || 'N/A'}`));
+          console.log(chalk.gray(`     Total Cash: $${balance.total_cash_value?.toLocaleString() || 'N/A'}`));
+        });
+      }
 
-      // Test 6: Get holdings
-      console.log('\n6. Getting holdings...');
-      const holdings = await this.client.get_holdings();
-      console.log(chalk.green(`✅ Found ${holdings.length} holdings`));
-
-      // Test 7: Get broker connections
-      console.log('\n7. Getting broker connections...');
+      // Test 6: Get broker connections
+      console.log('\n6. Getting broker connections...');
       const connections = await this.client.get_broker_connections();
       console.log(chalk.green(`✅ Found ${connections.length} connections`));
 

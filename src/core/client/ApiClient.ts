@@ -11,6 +11,7 @@ import {
   SessionAuthenticateResponse,
   PortalUrlResponse,
   SessionValidationResponse,
+  SessionUserResponse,
   Holding,
   Portfolio,
   BrokerInfo,
@@ -18,6 +19,7 @@ import {
   BrokerOrder,
   BrokerPosition,
   BrokerConnection,
+  Balance,
   BrokerDataOptions,
   OrdersFilter,
   PositionsFilter,
@@ -296,34 +298,53 @@ export class ApiClient {
     return response;
   }
 
-  async getSessionUser(): Promise<any> {
-    const response = await this.request('GET', '/session/user');
-    return response;
+  async getSessionUser(sessionId: string, companyId: string): Promise<SessionUserResponse> {
+    const response = await this.request('GET', `/auth/session/${sessionId}/user`, undefined, undefined, sessionId, {
+      'Company-Id': companyId,
+    });
+    return new SessionUserResponse(response.success, response.message, response.data);
   }
 
   // Broker methods
   async getBrokers(): Promise<BrokerInfo[]> {
-    const response = await this.request<BrokerInfo[]>('GET', '/brokers');
-    return response;
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: BrokerInfo[] }>('GET', '/brokers', undefined, undefined, accessToken);
+    return response.response_data || [];
   }
 
   async getBrokerAccounts(filter?: BrokerDataOptions): Promise<BrokerAccount[]> {
-    const response = await this.request<BrokerAccount[]>('GET', '/brokers/accounts', undefined, filter);
-    return response;
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: BrokerAccount[] }>('GET', '/brokers/data/accounts', undefined, filter, accessToken);
+    return response.response_data || [];
   }
 
   async getBrokerOrders(filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
-    const response = await this.request<{ data: BrokerOrder[]; pagination: ApiPaginationInfo }>('GET', '/brokers/orders', undefined, filter);
-    return new PaginatedResult(response.data, response.pagination);
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: BrokerOrder[]; pagination: ApiPaginationInfo }>('GET', '/brokers/data/orders', undefined, filter, accessToken);
+    return new PaginatedResult(response.response_data || [], response.pagination || {});
   }
 
   async getBrokerPositions(filter?: PositionsFilter): Promise<PaginatedResult<BrokerPosition[]>> {
-    const response = await this.request<{ data: BrokerPosition[]; pagination: ApiPaginationInfo }>('GET', '/brokers/positions', undefined, filter);
-    return new PaginatedResult(response.data, response.pagination);
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: BrokerPosition[]; pagination: ApiPaginationInfo }>('GET', '/brokers/data/positions', undefined, filter, accessToken);
+    return new PaginatedResult(response.response_data || [], response.pagination || {});
   }
 
   async getBrokerConnections(): Promise<BrokerConnection[]> {
-    const response = await this.request<BrokerConnection[]>('GET', '/brokers/connections');
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: BrokerConnection[] }>('GET', '/brokers/connections', undefined, undefined, accessToken);
+    return response.response_data || [];
+  }
+
+  async getBrokerBalances(filter?: BrokerDataOptions): Promise<Balance[]> {
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: Balance[] }>('GET', '/brokers/data/balances', undefined, filter, accessToken);
+    return response.response_data || [];
+  }
+
+  async disconnectCompany(connectionId: string): Promise<any> {
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request('DELETE', `/brokers/connections/${connectionId}`, undefined, undefined, accessToken);
     return response;
   }
 
@@ -380,18 +401,12 @@ export class ApiClient {
     return response;
   }
 
-  async getOrder(orderId: string): Promise<BrokerOrder> {
-    const accessToken = await this.getValidAccessToken();
-    
-    const response = await this.request<BrokerOrder>('GET', `/brokers/orders/${orderId}`, undefined, undefined, accessToken);
-    return response;
-  }
 
   async getOrders(filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
     const accessToken = await this.getValidAccessToken();
     
-    const response = await this.request<{ data: BrokerOrder[]; pagination: ApiPaginationInfo }>('GET', '/brokers/orders', undefined, filter, accessToken);
-    return new PaginatedResult(response.data, response.pagination);
+    const response = await this.request<{ response_data: BrokerOrder[]; pagination: ApiPaginationInfo }>('GET', '/brokers/data/orders', undefined, filter, accessToken);
+    return new PaginatedResult(response.response_data || [], response.pagination || {});
   }
 
   // Convenience trading methods
@@ -464,6 +479,141 @@ export class ApiClient {
     return await this.placeOrder(orderParams);
   }
 
+  async placeCryptoMarketOrder(
+    symbol: string,
+    quantity: number,
+    side: string,
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    const orderParams: BrokerOrderParams = {
+      broker: broker || this.tradingContext.broker || 'robinhood',
+      order_type: 'Market',
+      asset_type: 'Crypto',
+      action: side.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      time_in_force: 'Day',
+      account_number: accountNumber || this.tradingContext.account_number || '',
+      symbol: symbol,
+      order_qty: quantity,
+    };
+
+    return await this.placeOrder(orderParams);
+  }
+
+  async placeCryptoLimitOrder(
+    symbol: string,
+    quantity: number,
+    side: string,
+    price: number,
+    timeInForce: string = 'day',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    const orderParams: BrokerOrderParams = {
+      broker: broker || this.tradingContext.broker || 'robinhood',
+      order_type: 'Limit',
+      asset_type: 'Crypto',
+      action: side.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      time_in_force: timeInForce as any,
+      account_number: accountNumber || this.tradingContext.account_number || '',
+      symbol: symbol,
+      order_qty: quantity,
+      price: price,
+    };
+
+    return await this.placeOrder(orderParams);
+  }
+
+  async placeOptionsMarketOrder(
+    symbol: string,
+    quantity: number,
+    side: string,
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    const orderParams: BrokerOrderParams = {
+      broker: broker || this.tradingContext.broker || 'robinhood',
+      order_type: 'Market',
+      asset_type: 'Options',
+      action: side.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      time_in_force: 'Day',
+      account_number: accountNumber || this.tradingContext.account_number || '',
+      symbol: symbol,
+      order_qty: quantity,
+    };
+
+    return await this.placeOrder(orderParams);
+  }
+
+  async placeOptionsLimitOrder(
+    symbol: string,
+    quantity: number,
+    side: string,
+    price: number,
+    timeInForce: string = 'day',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    const orderParams: BrokerOrderParams = {
+      broker: broker || this.tradingContext.broker || 'robinhood',
+      order_type: 'Limit',
+      asset_type: 'Options',
+      action: side.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      time_in_force: timeInForce as any,
+      account_number: accountNumber || this.tradingContext.account_number || '',
+      symbol: symbol,
+      order_qty: quantity,
+      price: price,
+    };
+
+    return await this.placeOrder(orderParams);
+  }
+
+  async placeFuturesMarketOrder(
+    symbol: string,
+    quantity: number,
+    side: string,
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    const orderParams: BrokerOrderParams = {
+      broker: broker || this.tradingContext.broker || 'robinhood',
+      order_type: 'Market',
+      asset_type: 'Futures',
+      action: side.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      time_in_force: 'Day',
+      account_number: accountNumber || this.tradingContext.account_number || '',
+      symbol: symbol,
+      order_qty: quantity,
+    };
+
+    return await this.placeOrder(orderParams);
+  }
+
+  async placeFuturesLimitOrder(
+    symbol: string,
+    quantity: number,
+    side: string,
+    price: number,
+    timeInForce: string = 'day',
+    broker?: string,
+    accountNumber?: string | number
+  ): Promise<OrderResponse> {
+    const orderParams: BrokerOrderParams = {
+      broker: broker || this.tradingContext.broker || 'robinhood',
+      order_type: 'Limit',
+      asset_type: 'Futures',
+      action: side.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      time_in_force: timeInForce as any,
+      account_number: accountNumber || this.tradingContext.account_number || '',
+      symbol: symbol,
+      order_qty: quantity,
+      price: price,
+    };
+
+    return await this.placeOrder(orderParams);
+  }
+
   // Helper method to build order request body
   private buildOrderRequestBody(orderParams: BrokerOrderParams, extras?: BrokerExtras): Record<string, any> {
     const requestBody: Record<string, any> = {
@@ -489,38 +639,14 @@ export class ApiClient {
     return requestBody;
   }
 
-  // Portfolio methods
-  async getPortfolio(): Promise<Portfolio> {
-    const response = await this.request<{ data: Portfolio }>('GET', '/portfolio');
-    return response.data;
-  }
-
-  async getHoldings(): Promise<Holding[]> {
-    const response = await this.request<{ data: Holding[] }>('GET', '/portfolio/holdings');
-    return response.data || [];
-  }
 
   async getPositions(filter?: PositionsFilter): Promise<PaginatedResult<BrokerPosition[]>> {
-    const response = await this.request<{ data: BrokerPosition[]; pagination: ApiPaginationInfo }>('GET', '/portfolio/positions', undefined, filter);
-    return new PaginatedResult(response.data, response.pagination);
+    const accessToken = await this.getValidAccessToken();
+    const response = await this.request<{ response_data: BrokerPosition[]; pagination: ApiPaginationInfo }>('GET', '/brokers/data/positions', undefined, filter, accessToken);
+    return new PaginatedResult(response.response_data || [], response.pagination || {});
   }
 
   // Auto methods using stored tokens
-  async getHoldingsAuto(): Promise<Holding[]> {
-    const tokenInfo = this.getTokenInfo();
-    if (!tokenInfo?.['access_token']) {
-      throw new AuthenticationError('No valid access token available');
-    }
-    return await this.getHoldings();
-  }
-
-  async getPortfolioAuto(): Promise<Portfolio> {
-    const tokenInfo = this.getTokenInfo();
-    if (!tokenInfo?.['access_token']) {
-      throw new AuthenticationError('No valid access token available');
-    }
-    return await this.getPortfolio();
-  }
 
   async getBrokerListAuto(): Promise<BrokerInfo[]> {
     const tokenInfo = this.getTokenInfo();
