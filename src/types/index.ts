@@ -16,3 +16,6 @@ export * from './orders';
 
 // Portfolio types
 export * from './portfolio';
+
+// Webhook types
+export * from './webhook';
