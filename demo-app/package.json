@@ -12,7 +12,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "dotenv": "^16.0.0",
-    "inquirer": "^9.0.0"
+    "inquirer": "^12.9.6"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.0",
