@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "chalk": "^4.1.2",
-    "dotenv": "^16.0.0",
+    "dotenv": "^17.2.2",
     "inquirer": "^9.0.0"
   },
   "devDependencies": {
