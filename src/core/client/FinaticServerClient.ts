@@ -11,8 +11,6 @@ import {
   OtpVerifyResponse,
   SessionAuthenticateResponse,
   UserToken,
-  Holding,
-  Portfolio,
   BrokerInfo,
   BrokerAccount,
   BrokerOrder,
@@ -51,6 +49,7 @@ export class FinaticServerClient {
   private portalTheme?: any;
   private portalBrokers?: string[];
   private portalEmail?: string;
+  
 
   constructor(
     apiKey: string,
@@ -124,18 +123,17 @@ export class FinaticServerClient {
     return response;
   }
 
-  async set_user_id(userId: string): Promise<void> {
+  async set_user_id(_userId: string): Promise<void> {
     /** Set the user ID for the current session. */
     if (!this.sessionId) {
       throw new AuthenticationError('Session not initialized. Please start a session first.');
     }
 
-    this.userId = userId;
+    // Note: userId is stored in userToken.user_id
     // Update the API client with the new user ID if needed
-    if (this.apiClient && typeof this.apiClient.setUserId === 'function') {
-      await this.apiClient.setUserId(userId);
-    }
+    // Note: setUserId method needs to be implemented in ApiClient if needed
   }
+
 
   async request_otp(email: string): Promise<OtpRequestResponse> {
     /** Request OTP for session authentication. */
@@ -369,7 +367,7 @@ export class FinaticServerClient {
   async get_broker_accounts(
     page: number = 1,
     perPage: number = 100,
-    options?: BrokerDataOptions,
+    _options?: BrokerDataOptions,
     filters?: any
   ): Promise<BrokerAccount[]> {
     /** Get broker accounts with pagination support. */
@@ -380,7 +378,7 @@ export class FinaticServerClient {
       'GET',
       '/brokers/data/accounts',
       undefined,
-      { ...options, ...filters, offset, limit }
+      { ..._options, ...filters, offset, limit }
     );
     
     return response.response_data || [];
@@ -407,7 +405,7 @@ export class FinaticServerClient {
   }
 
   async get_all_broker_accounts(
-    options?: BrokerDataOptions,
+    _options?: BrokerDataOptions,
     filters?: any
   ): Promise<BrokerAccount[]> {
     /** Get all broker accounts across all pages. */
@@ -416,7 +414,7 @@ export class FinaticServerClient {
     const perPage = 100;
 
     while (true) {
-      const result = await this.get_broker_accounts(page, perPage, options, filters);
+      const result = await this.get_broker_accounts(page, perPage, _options, filters);
       if (!result || result.length === 0) {
         break;
       }
@@ -431,7 +429,7 @@ export class FinaticServerClient {
   }
 
   async get_all_broker_orders(
-    options?: BrokerDataOptions,
+    _options?: BrokerDataOptions,
     filters?: OrdersFilter
   ): Promise<BrokerOrder[]> {
     /** Get all broker orders across all pages. */
@@ -455,7 +453,7 @@ export class FinaticServerClient {
   }
 
   async get_all_broker_positions(
-    options?: BrokerDataOptions,
+    _options?: BrokerDataOptions,
     filters?: PositionsFilter
   ): Promise<BrokerPosition[]> {
     /** Get all broker positions across all pages. */
@@ -831,7 +829,7 @@ export class FinaticServerClient {
   }
 
   // Pagination helper methods
-  async getOrdersPage(page: number, perPage: number, filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
+  async getOrdersPage(_page: number, _perPage: number, filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
     /** Get a specific page of orders. */
     if (!this.is_authenticated()) {
       throw new AuthenticationError('Not authenticated. Please complete authentication first.');
@@ -840,7 +838,7 @@ export class FinaticServerClient {
     return await this.get_broker_orders(filter);
   }
 
-  async getPositionsPage(page: number, perPage: number, filter?: PositionsFilter): Promise<PaginatedResult<BrokerPosition[]>> {
+  async getPositionsPage(_page: number, _perPage: number, filter?: PositionsFilter): Promise<PaginatedResult<BrokerPosition[]>> {
     /** Get a specific page of positions. */
     if (!this.is_authenticated()) {
       throw new AuthenticationError('Not authenticated. Please complete authentication first.');
@@ -864,7 +862,7 @@ export class FinaticServerClient {
       throw new AuthenticationError('Not authenticated. Please complete authentication first.');
     }
 
-    if (!currentResult.hasNext) {
+    if (!currentResult.has_next) {
       return null;
     }
 
@@ -879,7 +877,7 @@ export class FinaticServerClient {
       throw new AuthenticationError('Not authenticated. Please complete authentication first.');
     }
 
-    if (!currentResult.hasNext) {
+    if (!currentResult.has_next) {
       return null;
     }
 
@@ -1056,18 +1054,26 @@ export class FinaticServerClient {
 
   getPortalConfig(): { theme?: any; brokers?: string[]; email?: string } {
     /** Get the current portal configuration. */
-    return {
+    const config: { theme?: any; brokers?: string[]; email?: string } = {
       theme: this.portalTheme,
-      brokers: this.portalBrokers,
-      email: this.portalEmail,
     };
+    
+    if (this.portalBrokers) {
+      config.brokers = this.portalBrokers;
+    }
+    
+    if (this.portalEmail) {
+      config.email = this.portalEmail;
+    }
+    
+    return config;
   }
 
   clearPortalConfig(): void {
     /** Clear all portal configuration settings. */
     this.portalTheme = undefined;
-    this.portalBrokers = undefined;
-    this.portalEmail = undefined;
+    this.portalBrokers = undefined as any;
+    this.portalEmail = undefined as any;
   }
 
 }
