@@ -76,16 +76,23 @@ export class FinaticServerClient {
 
   private async initializeSession(): Promise<string> {
     /** Initialize a session by getting a one-time token. */
-    if (this.oneTimeToken) {
-      return this.oneTimeToken;
+    // Always get a fresh token for each session start attempt (matching Python SDK behavior)
+    // This ensures we don't reuse expired tokens
+    this.oneTimeToken = undefined;
+
+    console.log(`🔑 Initializing session with API key: ${this.apiKey.substring(0, 10)}...`);
+    console.log(`🔗 Base URL: ${this.apiClient.getBaseUrl()}`);
+
+    if (!this.apiKey || this.apiKey.trim().length === 0) {
+      throw new AuthenticationError('API key is empty or not set');
     }
 
     // Call the session init endpoint with API key
-    const response = await this.apiClient.request<SessionInitResponse>('POST', '/auth/session/init', undefined, undefined, undefined, {
+    console.log(`🚀 About to make session init request...`);
+    const response = await this.apiClient.request<SessionInitResponse>('POST', '/session/init', undefined, undefined, undefined, {
       'X-API-Key': this.apiKey,
     });
-
-    console.log('Session init response:', JSON.stringify(response, null, 2));
+    console.log(`✅ Session init response received:`, response);
 
     this.oneTimeToken = response.data?.['one_time_token'] as string;
     console.log('Extracted oneTimeToken:', this.oneTimeToken);
@@ -94,15 +101,29 @@ export class FinaticServerClient {
 
   async start_session(userId?: string): Promise<SessionResponse> {
     /** Start a session with the one-time token. */
+    // Clear any previous session state (matching Python SDK behavior)
+    this.sessionId = undefined;
+    this.companyId = undefined;
+    this.userToken = undefined;
+    this.oneTimeToken = undefined;
+
+    // Also clear API client state (matching Python SDK behavior)
+    this.apiClient.clearSessionState();
+
+    console.log(`🚀 Starting new session for user_id: ${userId || 'None'}`);
+
     // Get one-time token if not already available
     const token = await this.initializeSession();
+    console.log(`🔑 Got one-time token: ${token ? token.substring(0, 20) + '...' : 'None'}`);
 
     // Start session
-    const response = await this.apiClient.request<SessionResponse>('POST', '/auth/session/start', {
+    console.log(`📡 Making session start request to /session/start`);
+    const response = await this.apiClient.request<SessionResponse>('POST', '/session/start', {
       user_id: userId,
     }, undefined, undefined, {
       'One-Time-Token': token,
     });
+    console.log(`✅ Session start response received:`, response);
 
     // Debug: Log the response to see the structure
     console.log('Session response:', JSON.stringify(response, null, 2));
@@ -226,7 +247,7 @@ export class FinaticServerClient {
     }
 
     try {
-      const response = await this.apiClient.request<{data: {portal_url: string}}>('GET', '/auth/session/portal', undefined, undefined, undefined, {
+      const response = await this.apiClient.request<{data: {portal_url: string}}>('GET', '/session/portal', undefined, undefined, undefined, {
         'Session-ID': this.sessionId,
       });
       
@@ -369,21 +390,95 @@ export class FinaticServerClient {
   async get_broker_accounts(
     page: number = 1,
     perPage: number = 100,
-    _options?: BrokerDataOptions,
+    options?: BrokerDataOptions,
     filters?: any
-  ): Promise<BrokerAccount[]> {
-    /** Get broker accounts with pagination support. */
+  ): Promise<PaginatedResult<BrokerAccount[]>> {
+    /** Get broker accounts with pagination support (matching Python SDK). */
     const offset = (page - 1) * perPage;
     const limit = perPage;
-    
-    const response = await this.apiClient.request<{ response_data: BrokerAccount[]; pagination: ApiPaginationInfo }>(
+
+    // Build query parameters (matching Python SDK)
+    const params: Record<string, any> = {
+      limit: limit.toString(),
+      offset: offset.toString(),
+      ...filters,
+    };
+
+    if (options) {
+      if (options.broker_name) {
+        params.broker_name = options.broker_name;
+      }
+      if (options.account_id) {
+        params.account_id = options.account_id;
+      }
+    }
+
+    const accessToken = await this.apiClient.getValidAccessToken();
+    const response = await this.apiClient.request<{ 
+      response_data: BrokerAccount[]; 
+      pagination: ApiPaginationInfo 
+    }>(
       'GET',
       '/brokers/data/accounts',
       undefined,
-      { ..._options, ...filters, offset, limit }
+      params,
+      accessToken
     );
-    
-    return response.response_data || [];
+
+    // Create navigation callback for pagination (matching Python SDK)
+    const navigationCallback = async (newOffset: number, newLimit: number): Promise<PaginatedResult<BrokerAccount[]>> => {
+      const newParams: Record<string, any> = {
+        limit: newLimit.toString(),
+        offset: newOffset.toString(),
+        ...filters,
+      };
+
+      if (options) {
+        if (options.broker_name) {
+          newParams.broker_name = options.broker_name;
+        }
+        if (options.account_id) {
+          newParams.account_id = options.account_id;
+        }
+      }
+
+      const newResponse = await this.apiClient.request<{ 
+        response_data: BrokerAccount[]; 
+        pagination: ApiPaginationInfo 
+      }>(
+        'GET',
+        '/brokers/data/accounts',
+        undefined,
+        newParams,
+        accessToken
+      );
+
+      const paginationInfo: ApiPaginationInfo = {
+        has_more: newResponse.pagination?.has_more ?? false,
+        next_offset: newResponse.pagination?.next_offset ?? newOffset,
+        current_offset: newResponse.pagination?.current_offset ?? newOffset,
+        limit: newResponse.pagination?.limit ?? newLimit,
+      };
+
+      return new PaginatedResult(
+        newResponse.response_data || [],
+        paginationInfo,
+        navigationCallback
+      );
+    };
+
+    const paginationInfo: ApiPaginationInfo = {
+      has_more: response.pagination?.has_more ?? false,
+      next_offset: response.pagination?.next_offset ?? offset,
+      current_offset: response.pagination?.current_offset ?? offset,
+      limit: response.pagination?.limit ?? perPage,
+    };
+
+    return new PaginatedResult(
+      response.response_data || [],
+      paginationInfo,
+      navigationCallback
+    );
   }
 
   async get_broker_orders(filter?: OrdersFilter): Promise<PaginatedResult<BrokerOrder[]>> {
@@ -412,19 +507,26 @@ export class FinaticServerClient {
   ): Promise<BrokerAccount[]> {
     /** Get all broker accounts across all pages. */
     const allAccounts: BrokerAccount[] = [];
+    let currentResult: PaginatedResult<BrokerAccount[]> | null = null;
     let page = 1;
     const perPage = 100;
 
-    while (true) {
-      const result = await this.get_broker_accounts(page, perPage, _options, filters);
-      if (!result || result.length === 0) {
+    // Get first page
+    currentResult = await this.get_broker_accounts(page, perPage, _options, filters);
+
+    while (currentResult) {
+      if (!currentResult.data || currentResult.data.length === 0) {
         break;
       }
-      allAccounts.push(...result);
-      if (result.length < perPage) {
+      allAccounts.push(...currentResult.data);
+
+      // Check if there's a next page
+      if (currentResult.has_next) {
+        currentResult = await currentResult.next_page();
+        page++;
+      } else {
         break;
       }
-      page++;
     }
 
     return allAccounts;
@@ -485,16 +587,25 @@ export class FinaticServerClient {
       throw new AuthenticationError('Not authenticated. Please complete authentication first.');
     }
 
-    // Convert order format to match broker API
+    // Convert order format to match broker API - handle multiple parameter name formats
+    const accountNumber = order['account_number'] || order['accountNumber'] || this.tradingContext.account_number;
+    const orderQty = order['order_qty'] || order['quantity'] || order['orderQty'];
+    const action = order['action'] || order['side'];
+    const orderType = order['order_type'] || order['orderType'];
+    
+    if (!accountNumber) {
+      throw new AuthenticationError('Account not set. Call setAccount() or pass account_number parameter.');
+    }
+
     const brokerOrder: BrokerOrderParams = {
       broker: order['broker'] || this.tradingContext.broker || 'robinhood',
-      account_number: order['account_number'] || this.tradingContext.account_number || '',
+      account_number: accountNumber,
       symbol: order['symbol'],
-      order_qty: order['quantity'],
-      action: order['side']?.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
-      order_type: order['order_type']?.charAt(0).toUpperCase() + order['order_type']?.slice(1) || 'Market',
+      order_qty: orderQty,
+      action: action?.toLowerCase() === 'buy' ? 'Buy' : 'Sell',
+      order_type: orderType?.charAt(0).toUpperCase() + orderType?.slice(1) || 'Market',
       asset_type: order['asset_type'] || 'Stock',
-      time_in_force: order['time_in_force'] || 'day',
+      time_in_force: order['time_in_force'] || order['timeInForce'] || 'day',
       price: order['price'],
       stop_price: order['stop_price'],
       order_id: order['order_id'],
@@ -783,7 +894,8 @@ export class FinaticServerClient {
     }
 
     const activeFilter = { ...filter, status: 'active' };
-    return await this.get_broker_accounts(1, 100, undefined, activeFilter);
+    const result = await this.get_broker_accounts(1, 100, undefined, activeFilter);
+    return result.data || [];
   }
 
   async getOrdersBySymbol(symbol: string, filter?: OrdersFilter): Promise<BrokerOrder[]> {
@@ -855,7 +967,8 @@ export class FinaticServerClient {
       throw new AuthenticationError('Not authenticated. Please complete authentication first.');
     }
 
-    return await this.get_broker_accounts(page, perPage, undefined, filter);
+    const result = await this.get_broker_accounts(page, perPage, undefined, filter);
+    return result.data || [];
   }
 
   async getNextOrdersPage(currentResult: PaginatedResult<BrokerOrder[]>): Promise<PaginatedResult<BrokerOrder[]> | null> {
@@ -895,13 +1008,13 @@ export class FinaticServerClient {
     }
 
     const nextPage = currentPage + 1;
-    const accounts = await this.get_broker_accounts(nextPage, perPage, undefined, filter);
+    const result = await this.get_broker_accounts(nextPage, perPage, undefined, filter);
     
-    if (accounts.length === 0) {
+    if (!result.data || result.data.length === 0) {
       return null;
     }
 
-    return accounts;
+    return result.data;
   }
 
   // Trading context methods
@@ -1122,10 +1235,10 @@ export class FinaticServerClient {
     }
 
     try {
-      const response = await this.apiClient.post('/auth/webhook/test', {
+      const response = await this.apiClient.request('POST', '/auth/webhook/test', {
         event_type: eventType,
         sample_data: sampleData
-      }, {
+      }, undefined, undefined, {
         'Session-ID': this.sessionId
       });
 
