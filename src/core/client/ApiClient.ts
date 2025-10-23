@@ -124,8 +124,8 @@ export class ApiClient {
 
   // Token management
   private tokenInfo?: Record<string, any>;
-  // private refreshPromise?: Promise<void>;
-  // private refreshBufferMinutes = 5;
+  private refreshPromise?: Promise<void>;
+  private refreshBufferMinutes = 5;
 
   // Trading context
   private tradingContext: TradingContext = {};
@@ -153,7 +153,7 @@ export class ApiClient {
 
     // Add request interceptor for headers
     this.axiosInstance.interceptors.request.use((config) => {
-      this.buildHeaders(config);
+      this.buildHeaders(config, config.url);
       return config;
     });
 
@@ -164,7 +164,7 @@ export class ApiClient {
     );
   }
 
-  private buildHeaders(config: AxiosRequestConfig): void {
+  private buildHeaders(config: AxiosRequestConfig, path?: string): void {
     if (!config.headers) {
       config.headers = {};
     }
@@ -178,25 +178,72 @@ export class ApiClient {
       });
     }
 
-    // Add session headers if available
-    if (this.currentSessionId) {
-      config.headers['X-Session-ID'] = this.currentSessionId;
-      config.headers['Session-ID'] = this.currentSessionId;
+    // Determine if we should include session headers (matching Python SDK logic)
+    let shouldIncludeSessionHeaders = true;
+    
+    if (path) {
+      // These are session initialization requests, don't include session headers
+      if (path.includes('/session/init') || path.includes('/session/start')) {
+        shouldIncludeSessionHeaders = false;
+      }
+    }
+    
+    // Check additional headers for session init/start indicators
+    if (config.headers['X-API-Key'] || config.headers['One-Time-Token']) {
+      shouldIncludeSessionHeaders = false;
     }
 
-    if (this.companyId) {
-      config.headers['X-Company-ID'] = this.companyId;
-    }
+    // Add session headers only if we should include them
+    if (shouldIncludeSessionHeaders) {
+      if (this.currentSessionId) {
+        config.headers['X-Session-ID'] = this.currentSessionId;
+        config.headers['Session-ID'] = this.currentSessionId;
+        console.log(`🔧 Adding session headers for ${path}: X-Session-ID=${this.currentSessionId}`);
+      }
 
-    if (this.csrfToken) {
-      config.headers['X-CSRF-Token'] = this.csrfToken;
+      if (this.companyId) {
+        config.headers['X-Company-ID'] = this.companyId;
+        console.log(`🔧 Adding company header for ${path}: X-Company-ID=${this.companyId}`);
+      }
+
+      if (this.csrfToken) {
+        config.headers['X-CSRF-Token'] = this.csrfToken;
+      }
+    } else {
+      console.log(`🔧 Skipping session headers for ${path} (session init/start request)`);
     }
   }
 
   private handleError(error: any): Promise<never> {
     if (error.response) {
       const { status, data } = error.response;
-      const message = data?.message || error.message || 'API request failed';
+      let message = data?.message || data?.detail || error.message || 'API request failed';
+
+      // Enhanced debugging for 422 errors (matching Python SDK)
+      if (status === 422) {
+        console.error('🔍 422 Validation Error Details:');
+        console.error('   Full error data:', data);
+        console.error('   Response status:', status);
+      }
+
+      // Enhanced error logging (matching Python SDK)
+      console.error('🔍 API Error Response:');
+      console.error('   Status:', status);
+      console.error('   Message:', message);
+      console.error('   Data:', JSON.stringify(data, null, 2));
+
+      // Provide more user-friendly error messages (matching Python SDK)
+      if (status === 500) {
+        message = `Server error: ${message}. Please try again later or contact support.`;
+      } else if (status === 401) {
+        message = `Authentication failed: ${message}. Please check your API key.`;
+      } else if (status === 403) {
+        message = `Access denied: ${message}. Please check your permissions.`;
+      } else if (status === 404) {
+        message = `Resource not found: ${message}. Please check the endpoint URL.`;
+      } else if (status === 429) {
+        message = `Too many requests: ${message}. Please try again later.`;
+      }
 
       switch (status) {
         case 400:
@@ -205,6 +252,8 @@ export class ApiClient {
           throw new AuthenticationError(message);
         case 403:
           throw new AuthorizationError(message);
+        case 422:
+          throw new ValidationError(message);
         case 429:
           throw new RateLimitError(message);
         case 500:
@@ -215,10 +264,10 @@ export class ApiClient {
         default:
           throw new ApiError(message, status, data);
       }
-    } else if (error.code === 'ECONNABORTED') {
-      throw new TimeoutError('Request timeout');
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new TimeoutError('Request timed out');
     } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      throw new NetworkError('Network error');
+      throw new NetworkError(`Network error: ${error.message}`);
     } else {
       throw new ApiError(error.message || 'Unknown error');
     }
@@ -253,9 +302,50 @@ export class ApiClient {
       };
     }
 
+    // Debug logging for session requests (matching Python SDK)
+    if (path.includes('/session/init') || path.includes('/session/start') || path.includes('/session/portal')) {
+      console.log(`🔄 Making ${path} request:`);
+      console.log(`   URL: ${this.baseUrl}${path}`);
+      console.log(`   Headers:`, config.headers);
+      console.log(`   Method: ${method}`);
+      if (data) {
+        console.log(`   Body:`, data);
+      }
+    }
+
     const response: AxiosResponse<T> = await this.axiosInstance.request(config);
+
+    // Debug logging for session responses (matching Python SDK)
+    if (path.includes('/session/init') || path.includes('/session/start') || path.includes('/session/portal')) {
+      console.log(`📥 ${path} response:`);
+      console.log(`   Status: ${response.status}`);
+      console.log(`   Response:`, JSON.stringify(response.data).substring(0, 200) + '...');
+    }
+
+    // Validate response (matching Python SDK behavior)
+    const responseData = response.data as any;
+    if (typeof responseData === 'object' && responseData !== null) {
+      // Check for API-level errors (matching Python SDK)
+      if (responseData.success === false) {
+        throw new ApiError(
+          responseData.message || 'API request failed',
+          responseData.status_code || response.status,
+          responseData
+        );
+      }
+
+      if (responseData.status_code && responseData.status_code >= 400) {
+        throw new ApiError(
+          responseData.message || 'API request failed',
+          responseData.status_code,
+          responseData
+        );
+      }
+    }
+
     return response.data;
   }
+
 
   // Session management methods
   async startSession(apiKey: string): Promise<SessionResponse> {
@@ -297,16 +387,25 @@ export class ApiClient {
   }
 
   async getSessionUser(sessionId: string, companyId: string): Promise<SessionUserResponse> {
-    const response = await this.request('GET', `/auth/session/${sessionId}/user`, undefined, undefined, sessionId, {
-      'Company-Id': companyId,
+    const response = await this.request('GET', `/session/${sessionId}/user`, undefined, undefined, sessionId, {
+      'company-id': companyId,
     });
-    return new SessionUserResponse(response.success, response.message, response.data);
+    
+    // Handle response structure - the API might return data directly or wrapped
+    // Match Python SDK behavior which expects the response data directly
+    if (response && typeof response === 'object' && 'data' in response) {
+      // Response is wrapped with success, message, data
+      return new SessionUserResponse(response.success || true, response.message || '', response.data);
+    } else {
+      // Response is the data directly (matching Python SDK behavior)
+      return new SessionUserResponse(true, '', response);
+    }
   }
 
   // Broker methods
   async getBrokers(): Promise<BrokerInfo[]> {
-    const accessToken = await this.getValidAccessToken();
-    const response = await this.request<{ response_data: BrokerInfo[] }>('GET', '/brokers', undefined, undefined, accessToken);
+    // Broker list endpoint doesn't require authentication
+    const response = await this.request<{ response_data: BrokerInfo[] }>('GET', '/brokers');
     return response.response_data || [];
   }
 
@@ -622,9 +721,9 @@ export class ApiClient {
         asset_type: orderParams.asset_type,
         action: orderParams.action,
         time_in_force: orderParams.time_in_force,
-        account_number: orderParams.account_number,
+        account_number: String(orderParams.account_number), // Ensure it's a string (matching Python SDK)
         symbol: orderParams.symbol,
-        order_qty: orderParams.order_qty,
+        order_qty: Number(orderParams.order_qty), // Convert to number like Python SDK does
         price: orderParams.price,
         stop_price: orderParams.stop_price,
       },
@@ -647,10 +746,7 @@ export class ApiClient {
   // Auto methods using stored tokens
 
   async getBrokerListAuto(): Promise<BrokerInfo[]> {
-    const tokenInfo = this.getTokenInfo();
-    if (!tokenInfo?.['access_token']) {
-      throw new AuthenticationError('No valid access token available');
-    }
+    // Broker list endpoint doesn't require authentication
     return await this.getBrokers();
   }
 
@@ -676,65 +772,103 @@ export class ApiClient {
     this.tradingContext = {};
   }
 
-  // Token validation
+  // Token validation (matching Python SDK logic with buffer time)
   async getValidAccessToken(): Promise<string> {
     const tokenInfo = this.getTokenInfo();
-    if (!tokenInfo?.['access_token']) {
+    if (!tokenInfo) {
+      throw new AuthenticationError('No tokens available. Please authenticate first.');
+    }
+
+    // Check if token is expired or about to expire
+    if (this.isTokenExpired()) {
+      await this.refreshTokens();
+    }
+
+    const refreshedTokenInfo = this.getTokenInfo();
+    if (!refreshedTokenInfo?.['access_token']) {
       throw new AuthenticationError('No access token available');
     }
 
-    // Check if token is expired
-    if (tokenInfo['expires_at']) {
-      const expiresAt = new Date(tokenInfo['expires_at']);
-      const now = new Date();
-      if (expiresAt <= now) {
-        // Token is expired, try to refresh
-        await this.refreshToken();
-        const refreshedTokenInfo = this.getTokenInfo();
-        if (!refreshedTokenInfo?.['access_token']) {
-          throw new AuthenticationError('Failed to refresh expired token');
-        }
-        return refreshedTokenInfo['access_token'];
-      }
-    }
-
-    return tokenInfo['access_token'];
+    return refreshedTokenInfo['access_token'];
   }
 
-  // Token refresh
-  private async refreshToken(): Promise<void> {
+  private isTokenExpired(): boolean {
+    const tokenInfo = this.getTokenInfo();
+    if (!tokenInfo || !tokenInfo['expires_at']) {
+      return true;
+    }
+
+    const expiresAt = new Date(tokenInfo['expires_at']);
+    const now = new Date();
+    const bufferTime = new Date(now.getTime() + this.refreshBufferMinutes * 60 * 1000);
+
+    return expiresAt <= bufferTime;
+  }
+
+  // Token refresh with promise deduplication (matching Python SDK behavior)
+  private async refreshTokens(): Promise<void> {
+    const tokenInfo = this.getTokenInfo();
+    if (!tokenInfo?.['refresh_token']) {
+      throw new AuthenticationError('No refresh token available.');
+    }
+
+    // If a refresh is already in progress, wait for it
+    if (this.refreshPromise) {
+      await this.refreshPromise;
+      return;
+    }
+
+    // Start a new refresh
+    this.refreshPromise = this.performTokenRefresh();
+
+    try {
+      await this.refreshPromise;
+    } finally {
+      this.refreshPromise = undefined;
+    }
+  }
+
+  // Token refresh (matching Python SDK endpoint and response format)
+  private async performTokenRefresh(): Promise<void> {
     const tokenInfo = this.getTokenInfo();
     if (!tokenInfo?.['refresh_token']) {
       throw new AuthenticationError('No refresh token available');
     }
 
     try {
+      // Use the same endpoint as Python SDK
       const response = await this.request<{
-        access_token: string;
-        refresh_token: string;
-        expires_in: number;
-      }>('POST', '/auth/refresh', {
+        response_data: {
+          access_token: string;
+          refresh_token: string;
+          expires_at: string;
+        };
+      }>('POST', '/company/auth/refresh', {
         refresh_token: tokenInfo['refresh_token'],
       });
 
-      const expiresAt = new Date(Date.now() + response.expires_in * 1000).toISOString();
+      // Update stored tokens (matching Python SDK response handling)
       this.setTokenInfo({
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        expires_at: expiresAt,
+        access_token: response.response_data.access_token,
+        refresh_token: response.response_data.refresh_token,
+        expires_at: response.response_data.expires_at,
         user_id: tokenInfo['user_id'],
       });
     } catch (error) {
-      throw new AuthenticationError(`Token refresh failed: ${error}`);
+      // Clear tokens on refresh failure (matching Python SDK behavior)
+      this.clearSessionState();
+      throw new AuthenticationError(`Token refresh failed. Please re-authenticate: ${error}`);
     }
   }
 
   // Utility methods
   setSessionId(sessionId: string): void {
+    console.log(`🔧 ApiClient: Setting session ID to: ${sessionId}`);
     this.currentSessionId = sessionId;
   }
 
   setCompanyId(companyId: string): void {
+    console.log(`🔧 ApiClient: Setting company ID to: ${companyId}`);
     this.companyId = companyId;
   }
 
@@ -746,12 +880,24 @@ export class ApiClient {
     return this.tokenInfo;
   }
 
+  clearSessionState(): void {
+    this.currentSessionId = undefined;
+    this.companyId = undefined;
+    this.csrfToken = undefined;
+    this.tokenInfo = undefined;
+    this.refreshPromise = undefined;
+  }
+
   setTradingContext(context: TradingContext): void {
     this.tradingContext = { ...this.tradingContext, ...context };
   }
 
   getTradingContext(): TradingContext {
     return this.tradingContext;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
   }
 
   // Cleanup method
