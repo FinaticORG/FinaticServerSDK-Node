@@ -1,6 +1,6 @@
 # Finatic Server SDK Node.js Demo
 
-This demo showcases the Finatic Server SDK Node.js following the exact same flow as the Python SDK.
+This demo showcases the Finatic Server SDK Node.js with both CLI and API server capabilities.
 
 ## Setup
 
@@ -22,14 +22,82 @@ DEMO_PASSWORD=demo_password_123
 ```
 
 2. **Install dependencies**:
+
 ```bash
 npm install
 ```
 
-3. **Run the demo**:
+3. **Run the CLI demo**:
+
 ```bash
 npm run dev
 ```
+
+## API Server
+
+The API server runs on port **3002** and provides endpoints that match the Client SDK interface.
+
+### Development Mode
+
+```bash
+npm run api:dev
+```
+
+### Production Mode
+
+```bash
+npm run api:build
+npm run api:start
+```
+
+The server will be available at `http://localhost:3002` and includes:
+
+- CORS support for `http://localhost:3000` (Client SDK demo app)
+- Health check endpoint at `/api/health`
+- All Client SDK method endpoints under `/api/`
+
+## API Endpoints
+
+### Session Management
+
+- `POST /api/session/start` - Start new session
+- `POST /api/session/authenticate` - Authenticate with user ID
+- `GET /api/session/user` - Get session user info
+- `GET /api/session/user-id` - Get current user ID
+- `GET /api/session/is-authed` - Check authentication status
+
+### Broker Data
+
+- `GET /api/broker/list` - Get available brokers
+- `GET /api/broker/connections` - Get broker connections
+- `GET /api/broker/accounts` - Get accounts (paginated)
+- `GET /api/broker/accounts/all` - Get all accounts
+- `POST /api/broker/disconnect` - Disconnect company
+
+### Trading Data
+
+- `GET /api/trading/orders` - Get orders (paginated)
+- `GET /api/trading/orders/all` - Get all orders
+- `GET /api/trading/positions` - Get positions (paginated)
+- `GET /api/trading/positions/all` - Get all positions
+- `GET /api/trading/balances` - Get balances (paginated)
+- `GET /api/trading/balances/all` - Get all balances
+
+### Trading Context
+
+- `POST /api/trading/context/broker` - Set trading broker
+- `POST /api/trading/context/account` - Set trading account
+- `GET /api/trading/context` - Get trading context
+
+### Order Management
+
+- `POST /api/trading/order` - Place new order
+- `POST /api/trading/order/cancel` - Cancel order
+- `POST /api/trading/order/modify` - Modify order
+
+## Integration with Client SDK Demo
+
+This API server is designed to work with the Client SDK demo app's SDK switcher. When you select "Node Server SDK" in the demo app settings, it will connect to this server on port 3002.
 
 ## Demo Flow
 
@@ -56,13 +124,13 @@ Once authenticated, you can use:
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FINATIC_API_URL` | API base URL | `https://api.finatic.dev` |
-| `FINATIC_API_KEY` | Your API key | Required |
-| `DEMO_COMPANY_ID` | Demo company ID | `demo_company_123` |
-| `DEMO_EMAIL` | Demo email | `demo@finatic.com` |
-| `DEMO_PASSWORD` | Demo password | `demo_password_123` |
+| Variable          | Description     | Default                   |
+| ----------------- | --------------- | ------------------------- |
+| `FINATIC_API_URL` | API base URL    | `https://api.finatic.dev` |
+| `FINATIC_API_KEY` | Your API key    | Required                  |
+| `DEMO_COMPANY_ID` | Demo company ID | `demo_company_123`        |
+| `DEMO_EMAIL`      | Demo email      | `demo@finatic.com`        |
+| `DEMO_PASSWORD`   | Demo password   | `demo_password_123`       |
 
 ## Error Handling
 
