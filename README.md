@@ -7,9 +7,11 @@ A comprehensive Node.js SDK for interacting with the Finatic API. This SDK provi
 - **Authentication**: API key-based authentication with session management
 - **Portfolio Management**: Access to holdings, positions, and portfolio data
 - **Trading Operations**: Place, modify, and cancel orders across multiple brokers
-- **Broker Integration**: Support for Robinhood, TastyTrade, and NinjaTrader
+- **Broker Integration**: Support for Robinhood, TastyTrade, Coinbase, and NinjaTrader
 - **TypeScript Support**: Full TypeScript definitions included
 - **Memory Storage**: All tokens and sessions stored in memory (no persistent storage)
+- **Convenience Methods**: Helper methods for common data filtering
+- **Asset-Specific Orders**: Simplified order placement for different asset types
 
 ## Installation
 
@@ -34,26 +36,16 @@ const portalUrl = await client.get_portal_url();
 console.log('Portal URL:', portalUrl);
 
 // After user completes authentication, get user info
-const userInfo = await client.get_session_user();
-console.log('User authenticated:', userInfo.user_id);
+// User is now authenticated
+console.log('User authenticated:', client.get_user_id());
 
 // Get portfolio data
-const portfolio = await client.get_portfolio();
-console.log('Portfolio value:', portfolio.equity);
+const brokers = await client.get_broker_list();
+console.log('Available brokers:', brokers.length);
 
-// Place an order
-const orderResponse = await client.place_order({
-  broker: 'robinhood',
-  order_type: 'Market',
-  asset_type: 'Stock',
-  action: 'Buy',
-  time_in_force: 'day',
-  account_number: '123456789',
-  symbol: 'AAPL',
-  order_qty: 10,
-});
-
-console.log('Order placed:', orderResponse);
+// Get all orders across all pages
+const allOrders = await client.get_all_orders();
+console.log('Total orders:', allOrders.length);
 
 // Clean up
 await client.close();
@@ -64,6 +56,7 @@ await client.close();
 The SDK supports multiple authentication methods:
 
 ### 1. Portal Authentication (Recommended)
+
 ```typescript
 const client = new FinaticServerClient('your-api-key');
 await client.initialize();
@@ -75,242 +68,331 @@ const session = await client.start_session();
 const portalUrl = await client.get_portal_url();
 
 // After user completes authentication in portal
-const userInfo = await client.get_session_user();
+// User is now authenticated
 ```
 
 ### 2. Direct Authentication
+
 ```typescript
 const client = new FinaticServerClient('your-api-key');
 await client.initialize();
 
-// Start session with user ID
+// Start session with user ID (automatically authenticates)
 const session = await client.start_session('user-id');
 
-// Authenticate directly
-const authResponse = await client.authenticate_directly('user-id');
+// Now you can make authenticated requests immediately
+const brokers = await client.get_broker_list();
 ```
 
-### 3. OTP Authentication
+## Core Features
+
+### Initialization
+
 ```typescript
-const client = new FinaticServerClient('your-api-key');
+const client = new FinaticServerClient('your-api-key', {
+  baseUrl: 'https://api.finatic.dev', // Optional
+  timeout: 30000, // Optional
+  deviceInfo: {
+    // Optional
+    ipAddress: '192.168.1.100',
+    userAgent: 'MyApp/1.0.0',
+  },
+});
+
 await client.initialize();
-
-// Start session
-const session = await client.start_session();
-
-// Request OTP
-await client.request_otp('user@example.com');
-
-// Verify OTP
-const otpResponse = await client.verify_otp('123456');
 ```
 
-## Trading Operations
+### Authentication
 
-### Place Orders
 ```typescript
-// Market order
-const marketOrder = await client.place_order({
+// Start session
+await client.start_session();
+
+// Start session with user ID (direct auth)
+await client.start_session('user123');
+
+// Check authentication status
+const isAuthenticated = client.is_authenticated();
+
+// Get user information
+const userId = client.get_user_id();
+const sessionId = client.get_session_id();
+const companyId = client.get_company_id();
+```
+
+### Portal Management
+
+```typescript
+// Get basic portal URL
+const portalUrl = await client.get_portal_url();
+
+// Get portal URL with theming
+const portalUrl = await client.get_portal_url({
+  theme: { primaryColor: '#007bff', logoUrl: 'https://example.com/logo.png' },
+  brokers: ['robinhood', 'tasty_trade'],
+  email: 'user@example.com',
+});
+```
+
+### Broker Data Access
+
+```typescript
+// Get broker information
+const brokers = await client.get_broker_list();
+const connections = await client.get_broker_connections();
+
+// Get accounts with pagination
+const accounts = await client.get_accounts(1, 100);
+const allAccounts = await client.get_all_accounts();
+
+// Get orders with pagination
+const orders = await client.get_orders(1, 100);
+const allOrders = await client.get_all_orders();
+
+// Get positions with pagination
+const positions = await client.get_positions(1, 100);
+const allPositions = await client.get_all_positions();
+
+// Get balances with pagination
+const balances = await client.get_balances(1, 100);
+const allBalances = await client.get_all_balances();
+```
+
+### Convenience Filter Methods
+
+```typescript
+// Get filtered data
+const openPositions = await client.get_open_positions();
+const filledOrders = await client.get_filled_orders();
+const pendingOrders = await client.get_pending_orders();
+const activeAccounts = await client.get_active_accounts();
+
+// Get data by symbol
+const aaplOrders = await client.get_orders_by_symbol('AAPL');
+const aaplPositions = await client.get_positions_by_symbol('AAPL');
+
+// Get data by broker
+const robinhoodOrders = await client.get_orders_by_broker('robinhood');
+const robinhoodPositions = await client.get_positions_by_broker('robinhood');
+```
+
+### Trading Operations
+
+#### General Order Placement
+
+```typescript
+import { BrokerOrderParams } from '@finatic/server-node';
+
+// Place a market order
+const orderParams: BrokerOrderParams = {
   broker: 'robinhood',
   order_type: 'Market',
-  asset_type: 'Stock',
+  asset_type: 'equity',
   action: 'Buy',
   time_in_force: 'day',
   account_number: '123456789',
   symbol: 'AAPL',
   order_qty: 10,
-});
+};
 
-// Limit order
-const limitOrder = await client.place_order({
-  broker: 'robinhood',
-  order_type: 'Limit',
-  asset_type: 'Stock',
-  action: 'Buy',
-  time_in_force: 'day',
-  account_number: '123456789',
-  symbol: 'AAPL',
-  order_qty: 10,
-  price: 150.00,
-});
+const response = await client.place_order(orderParams);
 ```
 
-### Modify Orders
+#### Asset-Specific Order Methods
+
+##### Stock Orders
+
 ```typescript
-const modifiedOrder = await client.modify_order('order-id', {
-  broker: 'robinhood',
-  order_type: 'Limit',
-  asset_type: 'Stock',
-  action: 'Buy',
-  time_in_force: 'day',
-  account_number: '123456789',
-  symbol: 'AAPL',
-  order_qty: 15, // Changed quantity
-  price: 155.00, // Changed price
-});
+// Stock market order
+const response = await client.place_stock_market_order('AAPL', 10, 'buy', 'robinhood', '123456789');
+
+// Stock limit order
+const response = await client.place_stock_limit_order(
+  'AAPL',
+  10,
+  'buy',
+  150.0,
+  'gtc',
+  'robinhood',
+  '123456789'
+);
+
+// Stock stop order
+const response = await client.place_stock_stop_order(
+  'AAPL',
+  10,
+  'sell',
+  140.0,
+  'gtc',
+  'robinhood',
+  '123456789'
+);
 ```
 
-### Cancel Orders
+##### Crypto Orders
+
 ```typescript
-const cancelResponse = await client.cancel_order('order-id');
+// Crypto market order
+const response = await client.place_crypto_market_order(
+  'BTC-USD',
+  0.1,
+  'buy',
+  'coinbase',
+  '123456789'
+);
+
+// Crypto limit order
+const response = await client.place_crypto_limit_order(
+  'BTC-USD',
+  0.1,
+  'buy',
+  50000.0,
+  'gtc',
+  'coinbase',
+  '123456789'
+);
 ```
 
-## Portfolio Management
+##### Options Orders
 
-### Get Portfolio
 ```typescript
-const portfolio = await client.get_portfolio();
-console.log('Total equity:', portfolio.equity);
-console.log('Cash available:', portfolio.cash);
-console.log('Buying power:', portfolio.buying_power);
+// Options market order
+const response = await client.place_options_market_order(
+  'AAPL240315C00150000',
+  1,
+  'buy',
+  'tasty_trade',
+  '123456789'
+);
+
+// Options limit order
+const response = await client.place_options_limit_order(
+  'AAPL240315C00150000',
+  1,
+  'buy',
+  5.0,
+  'gtc',
+  'tasty_trade',
+  '123456789'
+);
 ```
 
-### Get Holdings
+##### Futures Orders
+
 ```typescript
-const holdings = await client.get_holdings();
-holdings.forEach(holding => {
-  console.log(`${holding.symbol}: ${holding.quantity} shares @ $${holding.average_price}`);
-});
+// Futures market order
+const response = await client.place_futures_market_order(
+  'ES',
+  1,
+  'buy',
+  'ninja_trader',
+  '123456789'
+);
+
+// Futures limit order
+const response = await client.place_futures_limit_order(
+  'ES',
+  1,
+  'buy',
+  4500.0,
+  'gtc',
+  'ninja_trader',
+  '123456789'
+);
 ```
 
-### Get Positions
+#### Order Management
+
 ```typescript
-const positions = await client.get_positions();
-console.log('Total positions:', positions.data.length);
+// Cancel an order
+const response = await client.cancel_order('order-123');
+
+// Modify an order
+const response = await client.modify_order('order-123', { price: 155.0, quantity: 5 });
 ```
 
-## Broker Management
+### Broker Management
 
-### Get Available Brokers
 ```typescript
-const brokers = await client.get_brokers();
-brokers.forEach(broker => {
-  console.log(`${broker.name}: ${broker.description}`);
-});
+// Disconnect a company from broker
+const response = await client.disconnect_company('connection-123');
 ```
 
-### Get Broker Accounts
-```typescript
-const accounts = await client.get_broker_accounts();
-accounts.forEach(account => {
-  console.log(`${account.account_name}: $${account.cash_balance}`);
-});
-```
-
-### Get Broker Orders
-```typescript
-const orders = await client.get_broker_orders({
-  broker_id: 'robinhood',
-  limit: 50,
-  offset: 0,
-});
-```
-
-## Error Handling
-
-The SDK provides specific error types for different scenarios:
+### Error Handling
 
 ```typescript
-import { 
-  AuthenticationError, 
-  ValidationError, 
-  OrderError,
-  ApiError 
-} from '@finatic/server-node';
+import { AuthenticationError, ApiError, ValidationError } from '@finatic/server-node';
 
 try {
-  await client.place_order(orderParams);
+  const orders = await client.get_orders();
 } catch (error) {
   if (error instanceof AuthenticationError) {
-    console.log('Authentication failed:', error.message);
+    console.error('Authentication failed:', error.message);
   } else if (error instanceof ValidationError) {
-    console.log('Invalid order parameters:', error.message);
-  } else if (error instanceof OrderError) {
-    console.log('Order failed:', error.message);
-  } else {
-    console.log('Unexpected error:', error.message);
+    console.error('Invalid request:', error.message);
+  } else if (error instanceof ApiError) {
+    console.error('API error:', error.message);
   }
 }
 ```
 
-## TypeScript Support
+### Advanced Usage
 
-The SDK is written in TypeScript and provides full type definitions:
+#### Custom Filters
 
 ```typescript
-import { 
-  FinaticServerClient, 
-  BrokerOrderParams, 
-  OrderResponse,
-  Portfolio,
-  Holding 
-} from '@finatic/server-node';
+import { BrokerDataOptions, OrdersFilter } from '@finatic/server-node';
 
-const client: FinaticServerClient = new FinaticServerClient('api-key');
-const orderParams: BrokerOrderParams = {
-  broker: 'robinhood',
-  order_type: 'Market',
-  asset_type: 'Stock',
-  action: 'Buy',
-  time_in_force: 'day',
-  account_number: '123456789',
-  symbol: 'AAPL',
-  order_qty: 10,
-};
+// Get orders with custom filters
+const orders = await client.get_orders(
+  1,
+  50,
+  { broker_name: 'robinhood', account_id: '123456789' },
+  { status: 'filled', symbol: 'AAPL' }
+);
 ```
 
-## Configuration
-
-### Device Information
-```typescript
-import { DeviceInfo } from '@finatic/server-node';
-
-const deviceInfo: DeviceInfo = {
-  ip_address: '192.168.1.100',
-  user_agent: 'MyApp/1.0.0',
-  fingerprint: 'unique-device-fingerprint',
-};
-
-const client = new FinaticServerClient('api-key', 'https://api.finatic.dev', deviceInfo);
-```
-
-### Trading Context
-```typescript
-// Set default trading context
-client.set_trading_context({
-  broker: 'robinhood',
-  account_number: '123456789',
-  account_id: 'account-id',
-});
-
-// Get current context
-const context = client.get_trading_context();
-```
-
-## Pagination
-
-Many endpoints support pagination:
+#### Pagination Navigation
 
 ```typescript
-const orders = await client.get_orders({ limit: 20, offset: 0 });
+// Get paginated results with navigation
+const ordersPage = await client.get_orders(1, 100);
 
-// Navigate pages
-if (orders.has_next) {
-  const nextPage = await orders.next_page();
+// Navigate through pages
+if (ordersPage.has_next) {
+  const nextPage = await ordersPage.next_page();
 }
 
-if (orders.has_previous) {
-  const prevPage = await orders.previous_page();
+if (ordersPage.has_previous) {
+  const prevPage = await ordersPage.previous_page();
 }
-
-// Go to specific page
-const page3 = await orders.go_to_page(3);
 ```
+
+## Type Definitions
+
+The SDK includes comprehensive TypeScript definitions for all data structures:
+
+- `BrokerOrder`: Order information
+- `BrokerPosition`: Position information
+- `BrokerAccount`: Account information
+- `BrokerBalance`: Balance information
+- `BrokerInfo`: Broker information
+- `BrokerConnection`: Connection information
+- `OrderResponse`: Order operation responses
+- `PaginatedResult`: Paginated data responses
+
+## Error Types
+
+- `AuthenticationError`: Authentication failures
+- `ApiError`: API request failures
+- `ValidationError`: Invalid request parameters
+- `ConnectionError`: Network connectivity issues
+
+## Requirements
+
+- Node.js 16+
+- TypeScript 4.5+ (optional but recommended)
 
 ## License
 
-MIT
-
-## Support
-
-For support and questions, please visit our [documentation](https://docs.finatic.dev) or contact support.
+MIT License

@@ -79,9 +79,8 @@ describe('Authentication Flow Integration Tests', () => {
       const portalResponse = await client.get_portal_url();
       expect(portalResponse).toContain('portal.finatic.com');
 
-      // Get session user
-      const userResponse = await client.get_session_user();
-      expect(userResponse['user_id']).toBe('user-123');
+      // User is now authenticated
+      expect(client.is_authenticated()).toBe(true);
 
       // Verify client state
       expect(client.is_authenticated()).toBe(true);

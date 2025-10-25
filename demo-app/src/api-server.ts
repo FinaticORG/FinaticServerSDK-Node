@@ -149,7 +149,10 @@ function sendApiResponse(res: Response, success: boolean, data?: any, error?: st
   res.status(statusCode);
   
   // Add timestamp to data to ensure it's always different
-  const freshData = data ? { ...data, _timestamp: new Date().toISOString() } : data;
+  // Only add timestamp to objects, not primitives
+  const freshData = data && typeof data === 'object' && !Array.isArray(data) 
+    ? { ...data, _timestamp: new Date().toISOString() } 
+    : data;
   
   // Set comprehensive anti-caching headers
   res.set({
@@ -194,12 +197,15 @@ app.post('/api/session/start', asyncHandler(async (req: Request, res: Response) 
   }
 
   try {
-    console.log('🔄 Starting session with Node SDK...');
-    const sessionResponse = await sdkClient.start_session();
+    // Extract user_id from request body if provided
+    const { user_id } = req.body;
+    console.log(`🔄 Starting session with Node SDK... user_id: ${user_id || 'None'}`);
+    
+    const sessionResponse = await sdkClient.start_session(user_id);
     
     // Update session state - handle both flat and nested response structures
-    const sessionId = sessionResponse.session_id || sessionResponse.data?.session_id;
-    const companyId = sessionResponse.company_id || sessionResponse.data?.company_id;
+    const sessionId = sessionResponse.data?.session_id || 'demo-session-' + Date.now();
+    const companyId = sessionResponse.data?.company_id || 'demo-company-' + Date.now();
     
     sessionState = {
       sessionId,
@@ -215,75 +221,78 @@ app.post('/api/session/start', asyncHandler(async (req: Request, res: Response) 
   }
 }));
 
-app.post('/api/session/authenticate', asyncHandler(async (req: Request, res: Response) => {
-  const { user_id }: SessionAuthenticateRequest = req.body;
-
-  if (!sdkClient) {
-    return sendApiResponse(res, false, null, 'SDK client not initialized', 500);
+app.get('/api/session/user-id', asyncHandler(async (req: Request, res: Response) => {
+  if (!sessionState.sessionId) {
+    return sendApiResponse(res, true, null);
   }
 
   try {
-    // Update session state to mark as authenticated
-    sessionState.userId = user_id;
-    sessionState.isAuthenticated = true;
+    // Call the main API to get user ID
+    const response = await fetch(`http://localhost:8000/api/v1/session/${sessionState.sessionId}/user`, {
+      method: 'GET',
+      headers: {
+        'Session-ID': sessionState.sessionId,
+        'Company-ID': sessionState.companyId || '',
+        'X-API-Key': process.env.FINATIC_API_KEY || ''
+      }
+    });
     
-    sendApiResponse(res, true, { user_id, authenticated: true });
-  } catch (error: any) {
-    sendApiResponse(res, false, null, error.message);
-  }
-}));
-
-app.get('/api/session/user', asyncHandler(async (req: Request, res: Response) => {
-  console.log('📝 Processing /api/session/user request');
-  if (!sdkClient) {
-    return sendApiResponse(res, false, null, 'SDK client not initialized', 500);
-  }
-
-  // Check if we have a valid session
-  if (!sessionState.sessionId || !sessionState.companyId) {
-    console.log('❌ No active session found');
-    return sendApiResponse(res, false, null, 'No active session. Please start a session first.');
-  }
-
-  console.log(`🔄 Getting session user for session: ${sessionState.sessionId}`);
-  try {
-    // Check if the session is properly authenticated
-    // For demo purposes, if we have sessionId and companyId, try to get user info
-    const userInfo = await sdkClient.get_session_user();
-    console.log('✅ Successfully retrieved session user info');
-    sendApiResponse(res, true, userInfo);
-  } catch (error: any) {
-    // If get_session_user fails, it might be because the user hasn't completed portal auth
-    // Return a more informative error or provide mock data for demo
-    console.error('❌ Failed to get session user:', error.message);
-    
-    // For demo purposes, return mock user data if the real call fails
-    if (sessionState.isAuthenticated && sessionState.userId) {
-      const mockUserInfo = {
-        user_id: sessionState.userId,
-        company_id: sessionState.companyId,
-        access_token: 'demo_token_' + Date.now(),
-        refresh_token: 'demo_refresh_' + Date.now(),
-        expires_in: 3600,
-        token_type: 'Bearer',
-        scope: 'api:access'
-      };
-      return sendApiResponse(res, true, mockUserInfo);
+    if (!response.ok) {
+      return sendApiResponse(res, true, null);
     }
     
-    sendApiResponse(res, false, null, `Failed to get session user: ${error.message}`);
+    const data = await response.json() as any;
+    const userId = data.data?.user_id || data.user_id;
+    
+    // Update session state
+    if (userId) {
+      sessionState.userId = userId;
+      sessionState.isAuthenticated = true;
+    }
+    
+    sendApiResponse(res, true, userId || null);
+  } catch (error: any) {
+    console.error('❌ Failed to get user ID:', error.message);
+    sendApiResponse(res, true, null);
   }
 }));
 
-app.get('/api/session/user-id', (req: Request, res: Response) => {
-  // Return the user ID from session state
-  sendApiResponse(res, true, sessionState.userId || null);
-});
+app.get('/api/session/is-authed', asyncHandler(async (req: Request, res: Response) => {
+  if (!sessionState.sessionId) {
+    return sendApiResponse(res, true, false);
+  }
 
-app.get('/api/session/is-authed', (req: Request, res: Response) => {
-  // Check if we have a valid authenticated session
-  sendApiResponse(res, true, sessionState.isAuthenticated && !!sessionState.sessionId);
-});
+  try {
+    // Call the main API to check if user is linked to session
+    const response = await fetch(`http://localhost:8000/api/v1/session/${sessionState.sessionId}/user`, {
+      method: 'GET',
+      headers: {
+        'Session-ID': sessionState.sessionId,
+        'Company-ID': sessionState.companyId || '',
+        'X-API-Key': process.env.FINATIC_API_KEY || ''
+      }
+    });
+    
+    if (!response.ok) {
+      return sendApiResponse(res, true, false);
+    }
+    
+    const data = await response.json() as any;
+    const userId = data.data?.user_id || data.user_id;
+    const isAuthenticated = !!userId;
+    
+    // Update session state
+    sessionState.isAuthenticated = isAuthenticated;
+    if (userId) {
+      sessionState.userId = userId;
+    }
+    
+    sendApiResponse(res, true, isAuthenticated);
+  } catch (error: any) {
+    console.error('❌ Failed to check authentication:', error.message);
+    sendApiResponse(res, true, false);
+  }
+}));
 
 app.get('/api/session/portal-url', asyncHandler(async (req: Request, res: Response) => {
   if (!sdkClient) {
@@ -310,12 +319,84 @@ app.get('/api/session/portal-url', asyncHandler(async (req: Request, res: Respon
       themeObj = { preset: theme_preset };
     }
     
-    const portalUrl = await sdkClient.get_portal_url(
-      themeObj,
-      brokerList,
-      typeof email === 'string' ? email : undefined
-    );
-    sendApiResponse(res, true, { portal_url: portalUrl });
+    console.log('🔍 Portal URL parameters:', { themeObj, brokerList, email });
+    console.log('🔍 Query parameters received:', req.query);
+    
+    // Since the SDK might not support parameters, let's call the main API directly
+    try {
+      const sessionId = sessionState.sessionId;
+      if (!sessionId) {
+        throw new Error('No active session');
+      }
+      
+      // Build query parameters for the main API
+      const params = new URLSearchParams();
+      if (themeObj?.preset) params.append('theme_preset', themeObj.preset);
+      if (brokerList && brokerList.length > 0) params.append('brokers', brokerList.join(','));
+      if (email) params.append('email', email as string);
+      
+      const queryString = params.toString();
+      const apiUrl = `http://localhost:8000/api/v1/session/portal${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('🔍 Calling main API:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Session-ID': sessionId,
+          'X-API-Key': process.env.FINATIC_API_KEY || ''
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+      
+      const data = await response.json() as any;
+      let portalUrl = data.data?.portal_url || data.portal_url;
+      
+      // Append parameters to the portal URL
+      const urlParams = new URLSearchParams();
+      if (themeObj?.preset) urlParams.append('theme', themeObj.preset);
+      if (brokerList && brokerList.length > 0) {
+        // Encode brokers as base64 like the Python SDK does
+        const brokersJson = JSON.stringify(brokerList);
+        const brokersBase64 = Buffer.from(brokersJson).toString('base64');
+        urlParams.append('brokers', brokersBase64);
+      }
+      if (email) urlParams.append('email', email as string);
+      
+      if (urlParams.toString()) {
+        const separator = portalUrl.includes('?') ? '&' : '?';
+        portalUrl = `${portalUrl}${separator}${urlParams.toString()}`;
+      }
+      
+      console.log('🔍 Generated portal URL with parameters:', portalUrl);
+      sendApiResponse(res, true, { portal_url: portalUrl });
+    } catch (apiError) {
+      console.error('❌ Direct API call failed, falling back to SDK:', apiError);
+      // Fallback to SDK method
+      let portalUrl = await sdkClient.get_portal_url(themeObj, brokerList, email as string);
+      
+      // Append parameters to the portal URL even in fallback
+      const urlParams = new URLSearchParams();
+      if (themeObj?.preset) urlParams.append('theme', themeObj.preset);
+      if (brokerList && brokerList.length > 0) {
+        // Encode brokers as base64 like the Python SDK does
+        const brokersJson = JSON.stringify(brokerList);
+        const brokersBase64 = Buffer.from(brokersJson).toString('base64');
+        urlParams.append('brokers', brokersBase64);
+      }
+      if (email) urlParams.append('email', email as string);
+      
+      if (urlParams.toString()) {
+        const separator = portalUrl.includes('?') ? '&' : '?';
+        portalUrl = `${portalUrl}${separator}${urlParams.toString()}`;
+      }
+      
+      console.log('🔍 Generated portal URL (fallback with parameters):', portalUrl);
+      sendApiResponse(res, true, { portal_url: portalUrl });
+    }
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
   }
@@ -333,19 +414,66 @@ app.post('/api/session/confirm-auth', asyncHandler(async (req: Request, res: Res
 
   try {
     console.log(`🔄 Confirming authentication for session: ${sessionState.sessionId}`);
-    const userInfo = await sdkClient.get_session_user();
+    console.log(`🔍 Company ID: ${sessionState.companyId}`);
+    console.log(`🔍 API Key: ${process.env.FINATIC_API_KEY ? 'Set' : 'Not set'}`);
     
-    // Update session state since authentication is now complete
-    sessionState.isAuthenticated = true;
-    if (userInfo.user_id) {
-      sessionState.userId = userInfo.user_id;
+    // Call the main API to get user info
+    const response = await fetch(`http://localhost:8000/api/v1/session/${sessionState.sessionId}/user`, {
+      method: 'GET',
+      headers: {
+        'Session-ID': sessionState.sessionId,
+        'Company-ID': sessionState.companyId || '',
+        'X-API-Key': process.env.FINATIC_API_KEY || ''
+      }
+    });
+    
+    console.log(`🔍 Response status: ${response.status}`);
+    console.log(`🔍 Response ok: ${response.ok}`);
+    
+    if (!response.ok) {
+      console.log(`❌ API request failed with status: ${response.status}`);
+      if (response.status === 422 || response.status === 400) {
+        // User not linked to session yet
+        console.log('❌ User not linked to session yet - returning success with no user');
+        sendApiResponse(res, true, { 
+          user_id: null,
+          authenticated: false 
+        });
+        return;
+      }
+      console.log(`❌ Unexpected error status: ${response.status}`);
+      throw new Error(`API request failed: ${response.status}`);
     }
     
-    console.log('✅ Authentication confirmed successfully');
-    sendApiResponse(res, true, userInfo);
+    const data = await response.json() as any;
+    const userId = data.data?.user_id || data.user_id;
+    
+    if (userId) {
+      sessionState.isAuthenticated = true;
+      sessionState.userId = userId;
+      console.log('✅ Authentication confirmed successfully');
+      sendApiResponse(res, true, { 
+        user_id: userId,
+        authenticated: true 
+      });
+    } else {
+      console.log('❌ No user ID found in response');
+      sendApiResponse(res, true, { 
+        user_id: null,
+        authenticated: false 
+      });
+    }
   } catch (error: any) {
     console.error('❌ Failed to confirm authentication:', error.message);
-    sendApiResponse(res, false, null, `Authentication not yet complete: ${error.message}`, 400);
+    // If it's a 422 or 400 error, return success with no user linked
+    if (error.message.includes('422') || error.message.includes('400')) {
+      sendApiResponse(res, true, { 
+        user_id: null,
+        authenticated: false 
+      });
+    } else {
+      sendApiResponse(res, false, null, `Authentication not yet complete: ${error.message}`, 400);
+    }
   }
 }));
 
@@ -356,8 +484,15 @@ app.get('/api/broker/list', asyncHandler(async (req: Request, res: Response) => 
   }
 
   try {
-    const brokers = await sdkClient.get_broker_list();
-    sendApiResponse(res, true, brokers);
+    const brokers = await sdkClient.get_brokers();
+    
+    // Convert object with numeric keys to array if needed
+    let brokerArray = brokers;
+    if (typeof brokers === 'object' && !Array.isArray(brokers)) {
+      brokerArray = Object.values(brokers);
+    }
+    
+    sendApiResponse(res, true, brokerArray);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
   }
@@ -369,7 +504,7 @@ app.get('/api/broker/connections', asyncHandler(async (req: Request, res: Respon
   }
 
   try {
-    const connections = await sdkClient.get_broker_connections();
+    const connections = await sdkClient.get_connections();
     sendApiResponse(res, true, connections);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -385,20 +520,16 @@ app.get('/api/broker/accounts', asyncHandler(async (req: Request, res: Response)
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 100;
 
-    const accounts = await sdkClient.get_all_broker_accounts();
-
-    // Simple pagination
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const paginatedAccounts = accounts.slice(start, end);
+    // Use the new get_accounts method with built-in pagination
+    const result = await sdkClient.get_accounts();
 
     const response = {
-      data: paginatedAccounts,
+      data: result.data,
       pagination: {
-        page,
+        page: result.current_page,
         per_page: perPage,
-        total: accounts.length,
-        total_pages: Math.ceil(accounts.length / perPage)
+        has_next: result.has_next,
+        has_previous: result.has_previous
       }
     };
 
@@ -414,7 +545,7 @@ app.get('/api/broker/accounts/all', asyncHandler(async (req: Request, res: Respo
   }
 
   try {
-    const accounts = await sdkClient.get_all_broker_accounts();
+    const accounts = await sdkClient.get_all_accounts();
     sendApiResponse(res, true, accounts);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -467,19 +598,16 @@ app.get('/api/trading/orders', asyncHandler(async (req: Request, res: Response) 
 
     const orders = await sdkClient.get_orders();
 
-    // Simple pagination
-    const orderList = orders?.data || [];
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const paginatedOrders = orderList.slice(start, end);
-
+    // Return the paginated result directly
     const response = {
-      data: paginatedOrders,
+      data: orders.data,
       pagination: {
-        page,
-        per_page: perPage,
-        total: orderList.length,
-        total_pages: Math.ceil(orderList.length / perPage)
+        page: orders.metadata.current_page || 1,
+        per_page: orders.metadata.limit || 25,
+        total: orders.data.length,
+        total_pages: Math.ceil(orders.data.length / (orders.metadata.limit || 25)),
+        has_next: orders.has_next,
+        has_previous: orders.has_previous
       }
     };
 
@@ -514,19 +642,16 @@ app.get('/api/trading/positions', asyncHandler(async (req: Request, res: Respons
 
     const positions = await sdkClient.get_positions();
 
-    // Simple pagination
-    const positionList = positions?.data || [];
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const paginatedPositions = positionList.slice(start, end);
-
+    // Return the paginated result directly
     const response = {
-      data: paginatedPositions,
+      data: positions.data,
       pagination: {
-        page,
-        per_page: perPage,
-        total: positionList.length,
-        total_pages: Math.ceil(positionList.length / perPage)
+        page: positions.metadata.current_page || 1,
+        per_page: positions.metadata.limit || 25,
+        total: positions.data.length,
+        total_pages: Math.ceil(positions.data.length / (positions.metadata.limit || 25)),
+        has_next: positions.has_next,
+        has_previous: positions.has_previous
       }
     };
 
@@ -561,19 +686,16 @@ app.get('/api/trading/balances', asyncHandler(async (req: Request, res: Response
 
     const balances = await sdkClient.get_balances();
 
-    // Simple pagination
-    const balanceList = balances || [];
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const paginatedBalances = balanceList.slice(start, end);
-
+    // Return the paginated result directly
     const response = {
-      data: paginatedBalances,
+      data: balances.data,
       pagination: {
-        page,
-        per_page: perPage,
-        total: balanceList.length,
-        total_pages: Math.ceil(balanceList.length / perPage)
+        page: balances.metadata.current_page || 1,
+        per_page: balances.metadata.limit || 25,
+        total: balances.data.length,
+        total_pages: Math.ceil(balances.data.length / (balances.metadata.limit || 25)),
+        has_next: balances.has_next,
+        has_previous: balances.has_previous
       }
     };
 
@@ -589,29 +711,12 @@ app.get('/api/trading/balances/all', asyncHandler(async (req: Request, res: Resp
   }
 
   try {
-    const balances = await sdkClient.get_balances();
+    const balances = await sdkClient.get_all_balances();
     sendApiResponse(res, true, balances);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
   }
 }));
-
-// Trading context endpoints
-app.post('/api/trading/context/broker', (req: Request, res: Response) => {
-  const { broker }: TradingContextRequest = req.body;
-  tradingContext.broker = broker || null;
-  sendApiResponse(res, true, tradingContext);
-});
-
-app.post('/api/trading/context/account', (req: Request, res: Response) => {
-  const { account }: TradingContextRequest = req.body;
-  tradingContext.account = account || null;
-  sendApiResponse(res, true, tradingContext);
-});
-
-app.get('/api/trading/context', (req: Request, res: Response) => {
-  sendApiResponse(res, true, tradingContext);
-});
 
 // Order management endpoints
 app.post('/api/trading/order', asyncHandler(async (req: Request, res: Response) => {
@@ -640,17 +745,10 @@ app.post('/api/trading/order', asyncHandler(async (req: Request, res: Response) 
     const accountValue = orderData.accountNumber || orderData.account;
     if (accountValue) {
       orderParams.account_number = accountValue;
-      // Also set the account in the SDK's trading context for fallback
-      sdkClient.set_account(accountValue);
-    }
-
-    // Set broker in trading context if provided
-    if (orderData.broker) {
-      sdkClient.set_broker(orderData.broker);
     }
 
     console.log('🔄 Placing order with params:', orderParams);
-    const result = await sdkClient.place_order(orderParams);
+    const result = await sdkClient.place_order(orderParams as any);
     sendApiResponse(res, true, result);
   } catch (error: any) {
     console.error('❌ Failed to place order:', error.message);
@@ -681,7 +779,307 @@ app.post('/api/trading/order/modify', asyncHandler(async (req: Request, res: Res
   const { order_id, modifications }: OrderModifyRequest = req.body;
 
   try {
-    const result = await sdkClient.modify_order(order_id, modifications);
+    const result = await sdkClient.modify_order(order_id, modifications as any);
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+// Convenience filter endpoints
+app.get('/api/trading/positions/open', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const positions = await sdkClient.get_open_positions();
+    sendApiResponse(res, true, positions);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/orders/filled', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const orders = await sdkClient.get_filled_orders();
+    sendApiResponse(res, true, orders);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/orders/pending', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const orders = await sdkClient.get_pending_orders();
+    sendApiResponse(res, true, orders);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/accounts/active', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const accounts = await sdkClient.get_active_accounts();
+    sendApiResponse(res, true, accounts);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/orders/by-symbol/:symbol', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const { symbol } = req.params;
+    const orders = await sdkClient.get_orders_by_symbol(symbol);
+    sendApiResponse(res, true, orders);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/positions/by-symbol/:symbol', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const { symbol } = req.params;
+    const positions = await sdkClient.get_positions_by_symbol(symbol);
+    sendApiResponse(res, true, positions);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/orders/by-broker/:broker', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const { broker } = req.params;
+    const orders = await sdkClient.get_orders_by_broker(broker);
+    sendApiResponse(res, true, orders);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.get('/api/trading/positions/by-broker/:broker', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const { broker } = req.params;
+    const positions = await sdkClient.get_positions_by_broker(broker);
+    sendApiResponse(res, true, positions);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+// Asset-specific order endpoints
+app.post('/api/trading/order/stock/market', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_stock_market_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/stock/limit', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_stock_limit_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.price || 0,
+      (request.time_in_force || request.timeInForce || 'gtc') as 'day' | 'gtc',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/stock/stop', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_stock_stop_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.stop_price || 0,
+      (request.time_in_force || request.timeInForce || 'gtc') as 'day' | 'gtc',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/crypto/market', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_crypto_market_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/crypto/limit', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_crypto_limit_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.price || 0,
+      (request.time_in_force || request.timeInForce || 'gtc') as 'day' | 'gtc',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/options/market', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_options_market_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/options/limit', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_options_limit_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.price || 0,
+      (request.time_in_force || request.timeInForce || 'gtc') as 'day' | 'gtc',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/futures/market', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_futures_market_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.broker,
+      request.account || request.accountNumber
+    );
+    sendApiResponse(res, true, result);
+  } catch (error: any) {
+    sendApiResponse(res, false, null, error.message);
+  }
+}));
+
+app.post('/api/trading/order/futures/limit', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    if (!sdkClient) {
+      throw new Error('SDK client not initialized');
+    }
+
+    const request = req.body as OrderRequest;
+    const result = await sdkClient.place_futures_limit_order(
+      request.symbol,
+      request.quantity || request.orderQty || 0,
+      (request.side || request.action || 'buy') as 'buy' | 'sell',
+      request.price || 0,
+      (request.time_in_force || request.timeInForce || 'gtc') as 'day' | 'gtc',
+      request.broker,
+      request.account || request.accountNumber
+    );
     sendApiResponse(res, true, result);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
