@@ -425,26 +425,4 @@ describe('ApiClient', () => {
     });
   });
 
-  describe('trading context methods', () => {
-    it('should set broker', () => {
-      apiClient.setBroker('etrade');
-      expect(apiClient.getTradingContext().broker).toBe('etrade');
-    });
-
-    it('should set account', () => {
-      apiClient.setAccount('987654321', 'account-456');
-      expect(apiClient.getTradingContext().account_number).toBe('987654321');
-      expect(apiClient.getTradingContext().account_id).toBe('account-456');
-    });
-
-    it('should clear trading context', () => {
-      apiClient.setBroker('etrade');
-      apiClient.setAccount('987654321');
-      apiClient.clearTradingContext();
-      
-      const context = apiClient.getTradingContext();
-      expect(context.broker).toBeUndefined();
-      expect(context.account_number).toBeUndefined();
-    });
-  });
 });

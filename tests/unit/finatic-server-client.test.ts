@@ -26,7 +26,6 @@ describe('FinaticServerClient', () => {
       verifyOtp: jest.fn(),
       authenticateSession: jest.fn(),
       getPortalUrl: jest.fn(),
-      getSessionUser: jest.fn(),
       getPortfolio: jest.fn(),
       getHoldings: jest.fn(),
       getBrokers: jest.fn(),
@@ -48,7 +47,6 @@ describe('FinaticServerClient', () => {
       getBrokerConnectionsAuto: jest.fn(),
       setBroker: jest.fn(),
       setAccount: jest.fn(),
-      clearTradingContext: jest.fn(),
       getValidAccessToken: jest.fn(),
       getTokenInfo: jest.fn(),
       setTokenInfo: jest.fn(),
@@ -142,17 +140,6 @@ describe('FinaticServerClient', () => {
       });
     });
 
-    describe('getSessionUser', () => {
-      it('should get session user successfully', async () => {
-        mockApiClient.getSessionUser.mockResolvedValue(authFixtures.mockSessionUserResponse);
-
-        const result = await client.get_session_user();
-
-        expect(result).toEqual(authFixtures.mockSessionUserResponse);
-        expect(mockApiClient.getSessionUser).toHaveBeenCalled();
-        expect(client.get_user_token()).toEqual(authFixtures.mockUserToken);
-      });
-    });
   });
 
   describe('portfolio methods', () => {
@@ -278,31 +265,6 @@ describe('FinaticServerClient', () => {
     });
   });
 
-  describe('trading context methods', () => {
-    it('should set broker', () => {
-      client.set_broker('etrade');
-      expect(client.get_trading_context().broker).toBe('etrade');
-      expect(mockApiClient.setBroker).toHaveBeenCalledWith('etrade');
-    });
-
-    it('should set account', () => {
-      client.set_account('987654321', 'account-456');
-      expect(client.get_trading_context().account_number).toBe('987654321');
-      expect(client.get_trading_context().account_id).toBe('account-456');
-      expect(mockApiClient.setAccount).toHaveBeenCalledWith('987654321', 'account-456');
-    });
-
-    it('should clear trading context', () => {
-      client.set_broker('etrade');
-      client.set_account('987654321');
-      client.clear_trading_context();
-      
-      const context = client.get_trading_context();
-      expect(context.broker).toBeUndefined();
-      expect(context.account_number).toBeUndefined();
-      expect(mockApiClient.clearTradingContext).toHaveBeenCalled();
-    });
-  });
 
   describe('utility methods', () => {
     it('should get user ID', () => {

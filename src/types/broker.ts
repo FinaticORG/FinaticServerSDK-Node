@@ -9,6 +9,10 @@ export interface BrokerDataOptions {
   account_id?: string;
   /** Filter by symbol */
   symbol?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
 }
 
 export interface Balance {
@@ -247,6 +251,23 @@ export interface AccountsFilter {
   account_type?: string;
   /** Filter by status */
   status?: string;
+  /** Filter by currency */
+  currency?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
+  /** Include metadata */
+  with_metadata?: boolean;
+}
+
+export interface BalancesFilter {
+  /** Filter by broker ID */
+  broker_id?: string;
+  /** Filter by connection ID */
+  connection_id?: string;
+  /** Filter by account ID */
+  account_id?: string;
   /** Filter by currency */
   currency?: string;
   /** Result limit */

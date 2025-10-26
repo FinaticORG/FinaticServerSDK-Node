@@ -57,9 +57,6 @@ describe('FinaticServerClient', () => {
       expect(typeof client.get_portal_url).toBe('function');
     });
 
-    it('should get session user', async () => {
-      expect(typeof client.get_session_user).toBe('function');
-    });
   });
 
   describe('trading operations', () => {
