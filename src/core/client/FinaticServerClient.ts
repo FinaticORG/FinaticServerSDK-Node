@@ -173,7 +173,7 @@ export class FinaticServerClient {
     return await this.apiClient.modifyOrder(orderId, orderParams, extras);
   }
 
-  async cancel_order(orderId: string, broker?: string, connectionId?: string): Promise<OrderResponse> {
+  async cancel_order(orderId: string, _broker?: string, _connectionId?: string): Promise<OrderResponse> {
     /** Cancel an existing order. */
     return await this.apiClient.cancelOrder(orderId);
   }
@@ -409,56 +409,56 @@ export class FinaticServerClient {
   }
 
   // Convenience filter methods
-  async get_open_positions(options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+  async get_open_positions(_options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
     /** Get only open positions. */
     const openFilters = { ...(filters || {}), position_status: 'open' };
     const result = await this.get_all_positions(openFilters);
     return result;
   }
 
-  async get_filled_orders(options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_filled_orders(_options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get only filled orders. */
     const filledFilters = { ...(filters || {}), status: 'filled' };
     const result = await this.get_all_orders(filledFilters);
     return result;
   }
 
-  async get_pending_orders(options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_pending_orders(_options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get only pending orders. */
     const pendingFilters = { ...(filters || {}), status: 'pending' };
     const result = await this.get_all_orders(pendingFilters);
     return result;
   }
 
-  async get_active_accounts(options?: BrokerDataOptions, filters?: AccountsFilter): Promise<BrokerAccount[]> {
+  async get_active_accounts(_options?: BrokerDataOptions, filters?: AccountsFilter): Promise<BrokerAccount[]> {
     /** Get only active accounts. */
     const activeFilters = { ...(filters || {}), status: 'active' };
     const result = await this.get_all_accounts(activeFilters);
     return result;
   }
 
-  async get_orders_by_symbol(symbol: string, options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_orders_by_symbol(symbol: string, _options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get orders filtered by symbol. */
     const symbolFilters = { ...(filters || {}), symbol };
     const result = await this.get_all_orders(symbolFilters);
     return result;
   }
 
-  async get_positions_by_symbol(symbol: string, options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+  async get_positions_by_symbol(symbol: string, _options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
     /** Get positions filtered by symbol. */
     const symbolFilters = { ...(filters || {}), symbol };
     const result = await this.get_all_positions(symbolFilters);
     return result;
   }
 
-  async get_orders_by_broker(brokerId: string, options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_orders_by_broker(brokerId: string, _options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get orders filtered by broker. */
     const brokerFilters = { ...(filters || {}), broker_id: brokerId };
     const result = await this.get_all_orders(brokerFilters);
     return result;
   }
 
-  async get_positions_by_broker(brokerId: string, options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+  async get_positions_by_broker(brokerId: string, _options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
     /** Get positions filtered by broker. */
     const brokerFilters = { ...(filters || {}), broker_id: brokerId };
     const result = await this.get_all_positions(brokerFilters);
