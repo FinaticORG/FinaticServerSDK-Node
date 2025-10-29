@@ -36,7 +36,7 @@ export class FinaticServerClient {
 
   constructor(apiKey: string, baseUrl?: string) {
     this.apiKey = apiKey;
-    this.apiClient = new ApiClient(baseUrl || 'https://api.finatic.com');
+    this.apiClient = new ApiClient(baseUrl || 'https://api.finatic.dev', apiKey);
   }
 
   async initialize(): Promise<void> {
@@ -44,7 +44,8 @@ export class FinaticServerClient {
   }
 
   async close(): Promise<void> {
-    // Cleanup any resources if needed
+    /** Close the API client and cleanup connections. */
+    await this.apiClient.close();
   }
 
   async start_session(userId?: string): Promise<any> {
@@ -52,12 +53,15 @@ export class FinaticServerClient {
     try {
       const response = await this.apiClient.startSession(this.apiKey, userId);
       
-      // Store session info
-      if (response.data?.session_id) {
-        this.sessionId = response.data.session_id;
+      // Store session info - check both top-level and nested data
+      const sessionId = response.session_id || response.data?.session_id;
+      const companyId = response.company_id || response.data?.company_id;
+      
+      if (sessionId) {
+        this.sessionId = sessionId;
       }
-      if (response.data?.company_id) {
-        this.companyId = response.data.company_id;
+      if (companyId) {
+        this.companyId = companyId;
       }
 
       return response;
@@ -99,6 +103,41 @@ export class FinaticServerClient {
 
   get_company_id(): string | undefined {
     return this.companyId;
+  }
+
+  async get_session_user(): Promise<{ user_id: string; company_id: string; token_type: string }> {
+    /** Get user information from the current session after portal authentication. */
+    try {
+      if (!this.sessionId) {
+        throw new AuthenticationError('Session not initialized. Call start_session() first.');
+      }
+      
+      const response = await this.apiClient.getSessionUser(this.sessionId, this.companyId);
+      
+      // Update internal state with token info if available
+      if (response.data?.access_token) {
+        this.userToken = {
+          access_token: response.data.access_token,
+          refresh_token: response.data.refresh_token || '',
+          expires_in: response.data.expires_in || 3600,
+          user_id: response.data.user_id || '',
+          token_type: response.data.token_type || 'Bearer',
+          scope: response.data.scope || 'api:access',
+        };
+      }
+      
+      if (response.data?.company_id) {
+        this.companyId = response.data.company_id;
+      }
+      
+      return {
+        user_id: response.data?.user_id || this.userToken?.user_id || '',
+        company_id: response.data?.company_id || this.companyId || '',
+        token_type: response.data?.token_type || this.userToken?.token_type || 'Bearer',
+      };
+    } catch (error) {
+      throw new AuthenticationError(`Failed to get session user: ${error}`);
+    }
   }
 
   // Broker methods - make real API calls

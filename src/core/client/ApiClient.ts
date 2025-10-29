@@ -2,6 +2,9 @@
  * API client for making requests to the Finatic API.
  */
 
+// undici is built into Node.js 18+
+// @ts-ignore - undici types may not be available, but it exists at runtime
+import { Client } from 'undici';
 import {
   SessionResponse,
   BrokerAccount,
@@ -97,41 +100,178 @@ export class TradingNotEnabledError extends Error {
 
 export class ApiClient {
   private baseUrl: string;
-  private apiKey: string;
+  public apiKey: string;
+  private deviceHeaders: Record<string, string>;
+  private httpClient: Client | null = null;
 
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || 'http://localhost:8000';
-    this.apiKey = '';
+  constructor(baseUrl?: string, apiKey?: string) {
+    this.baseUrl = baseUrl || 'https://api.finatic.dev';
+    this.apiKey = apiKey || '';
+    
+    // Create persistent HTTP client with connection pooling
+    // This ensures requests maintain connections to the same backend,
+    // preventing device fingerprint mismatches from load balancer routing
+    const urlObj = new URL(this.baseUrl);
+    this.httpClient = new Client(urlObj.origin);
+    console.log(`🔧 Created undici Client for ${urlObj.origin}`);
+    
+    // Generate consistent device headers for all requests
+    // These will help the server generate a consistent device fingerprint
+    this.deviceHeaders = this._generateDeviceHeaders();
+  }
+
+  async close(): Promise<void> {
+    /** Close the HTTP client and cleanup connections. */
+    if (this.httpClient) {
+      await this.httpClient.close();
+      this.httpClient = null;
+    }
+  }
+
+  private _generateDeviceHeaders(): Record<string, string> {
+    // Generate consistent device headers that will produce the same fingerprint
+    // across all requests from this client instance
+    // Note: Don't request gzip encoding - undici may not handle it automatically
+    const headers: Record<string, string> = {
+      'User-Agent': 'Finatic-NodeSDK/1.0.0',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Sec-CH-UA': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+    };
+    
+    // Try to get platform info if available
+    if (typeof process !== 'undefined' && process.platform) {
+      headers['Sec-CH-UA-Platform'] = `"${process.platform}"`;
+    }
+    
+    return headers;
   }
 
   private async makeRequest(method: string, path: string, headers: Record<string, string> = {}, data?: any): Promise<any> {
     const url = `${this.baseUrl}${path}`;
     
-    const requestOptions: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      }
+    // Build headers with device headers first
+    const finalHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...this.deviceHeaders,
+      ...headers
     };
 
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      requestOptions.body = JSON.stringify(data);
+    // Build request body
+    const body = data && (method === 'POST' || method === 'PUT' || method === 'PATCH') 
+      ? JSON.stringify(data) 
+      : undefined;
+
+    // Debug logging for session requests
+    if (path.includes('/session/')) {
+      console.log(`🔄 Making ${path} request:`);
+      console.log(`   URL: ${url}`);
+      console.log(`   Method: ${method}`);
+      console.log(`   Headers:`, JSON.stringify(finalHeaders, null, 2));
+      if (data) {
+        console.log(`   Body:`, data);
+      }
     }
 
     try {
-      const response = await fetch(url, requestOptions);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!this.httpClient) {
+        console.log('⚠️  Warning: httpClient not initialized, using fetch fallback');
+        // Fallback to fetch if client not initialized
+        const fetchOptions: RequestInit = {
+          method,
+          headers: finalHeaders,
+        };
+        if (body) {
+          fetchOptions.body = body;
+        }
+        const response = await fetch(url, fetchOptions);
+        
+        if (!response.ok) {
+          const errorMessage = await this._extractErrorMessage(response);
+          throw new Error(errorMessage);
+        }
+        return await response.json();
       }
 
-      const result = await response.json();
-      return result;
+      // Use persistent client for connection pooling
+      const requestOptions: any = {
+        method,
+        path,
+        headers: finalHeaders,
+      };
+      if (body) {
+        requestOptions.body = body;
+      }
+      const response = await this.httpClient.request(requestOptions);
+
+      // Debug logging for session responses
+      if (path.includes('/session/')) {
+        console.log(`📥 ${path} response: ${response.statusCode}`);
+      }
+
+      if (response.statusCode !== 200) {
+        const errorMessage = await this._extractErrorMessage(response);
+        throw new Error(errorMessage);
+      }
+
+      // Handle gzipped responses
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const bodyText = await response.body.text();
+        try {
+          return JSON.parse(bodyText);
+        } catch {
+          throw new Error(`Failed to parse JSON response: ${bodyText.substring(0, 100)}`);
+        }
+      }
+      
+      // For non-JSON responses, return as text
+      const bodyText = await response.body.text();
+      return bodyText;
     } catch (error) {
       console.error(`API request failed: ${method} ${url}`, error);
       throw error;
     }
+  }
+
+  private async _extractErrorMessage(response: any): Promise<string> {
+    /** Extract error message from response. */
+    const status = response.status || response.statusCode || 500;
+    const statusText = response.statusText || '';
+    let errorMessage = `HTTP ${status}: ${statusText}`;
+    
+    try {
+      // Handle both fetch Response and undici response
+      let errorBody: any;
+      if (response.json) {
+        errorBody = await response.json();
+      } else if (response.body) {
+        // For undici, read the body as text first
+        const bodyText = await response.body.text();
+        try {
+          errorBody = JSON.parse(bodyText);
+        } catch {
+          // If not JSON, use the text as the error message
+          if (bodyText && bodyText.trim()) {
+            errorMessage = bodyText.trim();
+            console.log(`   Error details: ${bodyText}`);
+          }
+        }
+      }
+      
+      if (errorBody && typeof errorBody === 'object') {
+        if (errorBody.message) {
+          errorMessage = errorBody.message;
+        } else if (errorBody.error) {
+          errorMessage = errorBody.error;
+        } else if (errorBody.detail) {
+          errorMessage = typeof errorBody.detail === 'string' ? errorBody.detail : JSON.stringify(errorBody.detail);
+        }
+      }
+    } catch (e) {
+      // If JSON parsing fails, use the default message
+      console.log(`   Error extracting message: ${e}`);
+    }
+    return errorMessage;
   }
 
   async startSession(apiKey: string, userId?: string): Promise<SessionResponse> {
@@ -209,6 +349,25 @@ export class ApiClient {
       return response;
     } catch (error) {
       console.error('Failed to get portal URL:', error);
+      throw error;
+    }
+  }
+
+  async getSessionUser(sessionId: string, companyId?: string): Promise<any> {
+    /** Get user information from the session after portal authentication. */
+    try {
+      const headers: Record<string, string> = {
+        'Session-ID': sessionId,
+        'X-API-Key': this.apiKey
+      };
+      if (companyId) {
+        headers['Company-ID'] = companyId;
+      }
+      
+      const response = await this.makeRequest('GET', `/api/v1/session/${sessionId}/user`, headers);
+      return response;
+    } catch (error) {
+      console.error('Failed to get session user:', error);
       throw error;
     }
   }

@@ -63,7 +63,8 @@ class FinaticDemo {
       console.log(chalk.yellow('\nStep 2: Starting session...'));
       try {
         const sessionResponse = await this.client.start_session();
-        console.log(chalk.green(`✅ Session started: ${sessionResponse.session_id}`));
+        const sessionId = sessionResponse.session_id || sessionResponse.data?.session_id || this.client.get_session_id();
+        console.log(chalk.green(`✅ Session started: ${sessionId}`));
         
         // Step 3: Get portal URL
         console.log(chalk.yellow('\nStep 3: Getting portal URL...'));
@@ -130,24 +131,24 @@ class FinaticDemo {
     try {
       // Test 1: Get broker list
       console.log('1. Getting available brokers...');
-      const brokers = await this.client.get_broker_list();
+      const brokers = await this.client.get_brokers();
       console.log(chalk.green(`✅ Found ${brokers.length} brokers`));
       
       if (brokers.length > 0) {
         console.log(chalk.gray('Available brokers:'));
-        brokers.slice(0, 3).forEach((broker, index) => {
+        brokers.slice(0, 3).forEach((broker: any, index: number) => {
           console.log(chalk.gray(`  ${index + 1}. ${broker.display_name} (${broker.id})`));
         });
       }
 
       // Test 2: Get broker accounts
       console.log('\n2. Getting broker accounts...');
-      const accounts = await this.client.get_all_broker_accounts();
+      const accounts = await this.client.get_all_accounts();
       console.log(chalk.green(`✅ Found ${accounts.length} accounts`));
       
       if (accounts.length > 0) {
         console.log(chalk.gray('Account details:'));
-        accounts.slice(0, 2).forEach((account, index) => {
+        accounts.slice(0, 2).forEach((account: any, index: number) => {
           console.log(chalk.gray(`  ${index + 1}. ${account.account_name} - ${account.broker_provided_account_id}`));
           console.log(chalk.gray(`     Type: ${account.account_type}, Status: ${account.status}`));
         });
@@ -165,12 +166,13 @@ class FinaticDemo {
 
       // Test 5: Get balances
       console.log('\n5. Getting balances...');
-      const balances = await this.client.get_balances();
+      const balancesResult = await this.client.get_balances();
+      const balances = balancesResult.data || [];
       console.log(chalk.green(`✅ Found ${balances.length} balances`));
       
       if (balances.length > 0) {
         console.log(chalk.gray('Balance details:'));
-        balances.slice(0, 3).forEach((balance, index) => {
+        balances.slice(0, 3).forEach((balance: any, index: number) => {
           console.log(chalk.gray(`  ${index + 1}. Account ${balance.account_id}`));
           console.log(chalk.gray(`     Net Liquidation: $${balance.net_liquidation_value?.toLocaleString() || 'N/A'}`));
           console.log(chalk.gray(`     Total Cash: $${balance.total_cash_value?.toLocaleString() || 'N/A'}`));
@@ -179,7 +181,7 @@ class FinaticDemo {
 
       // Test 6: Get broker connections
       console.log('\n6. Getting broker connections...');
-      const connections = await this.client.get_broker_connections();
+      const connections = await this.client.get_connections();
       console.log(chalk.green(`✅ Found ${connections.length} connections`));
 
       console.log(chalk.green('\n✅ All data methods tested successfully!'));
