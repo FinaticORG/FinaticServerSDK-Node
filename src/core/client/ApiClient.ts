@@ -131,7 +131,8 @@ export class ApiClient {
   private _generateDeviceHeaders(): Record<string, string> {
     // Generate consistent device headers that will produce the same fingerprint
     // across all requests from this client instance
-    // Note: Don't request gzip encoding - undici may not handle it automatically
+    // Note: We don't set Accept-Encoding - let the underlying client handle it
+    // to avoid fingerprint mismatches from proxies/load balancers modifying it
     const headers: Record<string, string> = {
       'User-Agent': 'Finatic-NodeSDK/1.0.0',
       'Accept-Language': 'en-US,en;q=0.9',
