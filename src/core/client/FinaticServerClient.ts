@@ -28,6 +28,7 @@ import {
 export class FinaticServerClient {
   private apiClient: ApiClient;
   private apiKey: string;
+  private initialized: boolean = false;
 
   // Session state
   private sessionId?: string;
@@ -41,6 +42,7 @@ export class FinaticServerClient {
 
   async initialize(): Promise<void> {
     // Initialize the API client if needed
+    this.initialized = true;
   }
 
   async close(): Promise<void> {
@@ -68,6 +70,14 @@ export class FinaticServerClient {
     } catch (error) {
       throw new AuthenticationError(`Failed to start session: ${error}`);
     }
+  }
+
+  async getToken(apiKey?: string): Promise<string> {
+    if (!this.initialized) {
+      throw new AuthenticationError('Client not initialized. Call initialize() first.');
+    }
+    // This does not mutate current session/company state; it only returns a fresh one-time token
+    return await this.apiClient.getToken(apiKey || this.apiKey);
   }
 
 

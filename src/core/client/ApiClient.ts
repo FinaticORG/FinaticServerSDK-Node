@@ -296,6 +296,23 @@ export class ApiClient {
     }
   }
 
+  async getToken(apiKey?: string): Promise<string> {
+    try {
+      const response = await this.makeRequest('POST', '/api/v1/session/init', {
+        'X-API-Key': apiKey || this.apiKey
+      });
+      // Prefer nested data shape
+      const token = response?.data?.one_time_token || response?.one_time_token;
+      if (!token) {
+        throw new Error('Missing one_time_token in response');
+      }
+      return token;
+    } catch (error) {
+      console.error('Failed to get one-time token:', error);
+      throw error;
+    }
+  }
+
   async requestOtp(_phoneNumber: string): Promise<any> {
     return {
       success: true,

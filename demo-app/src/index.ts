@@ -57,7 +57,19 @@ class FinaticDemo {
     try {
       // Step 1: Initialize SDK
       console.log(chalk.yellow('Step 1: Initializing SDK...'));
+      await this.client.initialize();
       console.log(chalk.green('✅ SDK initialized successfully'));
+
+      // Quick check: fetch a one-time token for the Client SDK
+      console.log(chalk.yellow('\nStep 1.1: Getting one-time token (server ➜ client helper)...'));
+      try {
+        const oneTimeToken = await this.client.getToken();
+        console.log(chalk.green('✅ One-time token fetched successfully'));
+        console.log(chalk.gray(`Token (truncated): ${oneTimeToken.substring(0, 12)}...`));
+      } catch (e) {
+        console.log(chalk.red('❌ Failed to fetch one-time token'));
+        console.log(chalk.gray('This does not affect the server session flow; continuing...'));
+      }
       
       // Step 2: Start session
       console.log(chalk.yellow('\nStep 2: Starting session...'));
