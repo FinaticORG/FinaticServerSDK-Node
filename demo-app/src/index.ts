@@ -124,8 +124,26 @@ class FinaticDemo {
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
       console.log(chalk.gray(`Token Type: ${userInfo.token_type}`));
       
-      // Step 6: Now we can use data methods
-      console.log(chalk.yellow('\nStep 6: Testing data methods...'));
+      // Step 6: Test get_connections immediately after portal auth
+      console.log(chalk.yellow('\nStep 6: Testing get_connections after portal auth...'));
+      try {
+        console.log(chalk.gray(`  Session ID: ${this.client.get_session_id() || 'Not set'}`));
+        console.log(chalk.gray(`  Company ID: ${this.client.get_company_id() || 'Not set'}`));
+        const connections = await this.client.get_connections();
+        console.log(chalk.green(`✅ Successfully retrieved ${connections.length} broker connections`));
+        if (connections.length > 0) {
+          console.log(chalk.gray('Connection details:'));
+          connections.slice(0, 3).forEach((conn: any, index: number) => {
+            console.log(chalk.gray(`  ${index + 1}. Broker ID: ${conn.broker_id || 'Unknown'} - Status: ${conn.status || 'Unknown'}`));
+          });
+        }
+      } catch (error: any) {
+        console.log(chalk.red(`❌ Failed to get connections: ${error.message}`));
+        throw error;
+      }
+      
+      // Step 7: Now we can use other data methods
+      console.log(chalk.yellow('\nStep 7: Testing other data methods...'));
       await this.testDataMethods();
       
       console.log(chalk.green('\n🎉 Demo completed successfully!'));

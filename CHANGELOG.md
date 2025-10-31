@@ -89,6 +89,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-01-XX
+
+### Fixed
+
+- Fixed `getBrokerConnections()` to use session-based authentication (Session-ID and Company-ID headers) instead of API key header, matching other authenticated endpoints
+- Updated demo app to call `get_connections()` after portal authentication confirmation for testing
+
+## [Unreleased]
+
 ### Added
 
 - Initial release of Finatic Server SDK for Node.js
