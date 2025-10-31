@@ -203,6 +203,9 @@ export class FinaticServerClient {
 
   async get_connections(): Promise<BrokerConnection[]> {
     /** Get broker connections. */
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
     return await this.apiClient.getBrokerConnections(this.sessionId, this.companyId);
   }
 
