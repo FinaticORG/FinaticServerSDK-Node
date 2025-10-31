@@ -89,6 +89,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-01-XX
+
+### Fixed
+
+- Removed `X-API-Key` header from all endpoints except `init` - all endpoints now use session-based authentication (Session-ID and Company-ID headers)
+- Updated `disconnect_company()`, `place_order()`, `modify_order()`, `cancel_order()`, `get_brokers()`, `get_portal_url()`, and `get_session_user()` to use session headers only
+- Added session validation to all trading methods (`place_order`, `modify_order`, `cancel_order`) and `disconnect_company()`
+
 ## [0.2.2] - 2025-01-XX
 
 ### Fixed

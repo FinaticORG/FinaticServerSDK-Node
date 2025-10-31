@@ -162,16 +162,16 @@ export class ApiClient {
       ? JSON.stringify(data) 
       : undefined;
 
-    // Debug logging for session requests
-    if (path.includes('/session/')) {
-      console.log(`🔄 Making ${path} request:`);
-      console.log(`   URL: ${url}`);
-      console.log(`   Method: ${method}`);
-      console.log(`   Headers:`, JSON.stringify(finalHeaders, null, 2));
-      if (data) {
-        console.log(`   Body:`, data);
+      // Debug logging for session requests and connection operations
+      if (path.includes('/session/') || path.includes('/brokers/connections') || path.includes('/brokers/disconnect-company')) {
+        console.log(`🔄 Making ${path} request:`);
+        console.log(`   URL: ${url}`);
+        console.log(`   Method: ${method}`);
+        console.log(`   Headers:`, JSON.stringify(finalHeaders, null, 2));
+        if (data) {
+          console.log(`   Body:`, data);
+        }
       }
-    }
 
     try {
       if (!this.httpClient) {
@@ -204,8 +204,8 @@ export class ApiClient {
       }
       const response = await this.httpClient.request(requestOptions);
 
-      // Debug logging for session responses
-      if (path.includes('/session/')) {
+      // Debug logging for session responses and connection operations
+      if (path.includes('/session/') || path.includes('/brokers/connections') || path.includes('/brokers/disconnect-company')) {
         console.log(`📥 ${path} response: ${response.statusCode}`);
       }
 
@@ -286,7 +286,6 @@ export class ApiClient {
       const startData = userId ? { user_id: userId } : {};
       const startResponse = await this.makeRequest('POST', '/api/v1/session/start', {
         'One-Time-Token': initResponse.data.one_time_token,
-        'X-API-Key': apiKey
       }, startData);
       
       return startResponse;
@@ -361,8 +360,7 @@ export class ApiClient {
       const url = `/api/v1/session/portal${queryString ? `?${queryString}` : ''}`;
       
       const response = await this.makeRequest('GET', url, {
-        'Session-ID': sessionId,
-        'X-API-Key': this.apiKey
+        'Session-ID': sessionId
       });
       return response;
     } catch (error) {
@@ -375,8 +373,7 @@ export class ApiClient {
     /** Get user information from the session after portal authentication. */
     try {
       const headers: Record<string, string> = {
-        'Session-ID': sessionId,
-        'X-API-Key': this.apiKey
+        'Session-ID': sessionId
       };
       if (companyId) {
         headers['Company-ID'] = companyId;
@@ -390,11 +387,13 @@ export class ApiClient {
     }
   }
 
-  async getBrokers(): Promise<any[]> {
+  async getBrokers(sessionId?: string, companyId?: string): Promise<any[]> {
     try {
-      const response = await this.makeRequest('GET', '/api/v1/brokers/', {
-        'X-API-Key': this.apiKey
-      });
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', '/api/v1/brokers/', headers);
       
       // Convert object with numeric keys to array
       const brokersData = response.response_data || response.data || {};
@@ -553,11 +552,13 @@ export class ApiClient {
     }
   }
 
-  async disconnectCompany(connectionId: string): Promise<any> {
+  async disconnectCompany(connectionId: string, sessionId?: string, companyId?: string): Promise<any> {
     try {
-      const response = await this.makeRequest('DELETE', `/api/v1/brokers/connections/${connectionId}`, {
-        'X-API-Key': this.apiKey
-      });
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('DELETE', `/api/v1/brokers/disconnect-company/${connectionId}`, headers);
       return response;
     } catch (error) {
       console.error('Failed to disconnect company:', error);
@@ -565,11 +566,13 @@ export class ApiClient {
     }
   }
 
-  async placeOrder(orderParams: BrokerOrderParams, _extras?: any): Promise<OrderResponse> {
+  async placeOrder(orderParams: BrokerOrderParams, sessionId?: string, companyId?: string, _extras?: any): Promise<OrderResponse> {
     try {
-      const response = await this.makeRequest('POST', '/api/v1/brokers/orders', {
-        'X-API-Key': this.apiKey
-      }, orderParams);
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('POST', '/api/v1/brokers/orders', headers, orderParams);
       return response;
     } catch (error) {
       console.error('Failed to place order:', error);
@@ -577,11 +580,13 @@ export class ApiClient {
     }
   }
 
-  async modifyOrder(orderId: string, orderParams: BrokerOrderParams, _extras?: any): Promise<OrderResponse> {
+  async modifyOrder(orderId: string, orderParams: BrokerOrderParams, sessionId?: string, companyId?: string, _extras?: any): Promise<OrderResponse> {
     try {
-      const response = await this.makeRequest('PATCH', `/api/v1/brokers/orders/${orderId}`, {
-        'X-API-Key': this.apiKey
-      }, orderParams);
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('PATCH', `/api/v1/brokers/orders/${orderId}`, headers, orderParams);
       return response;
     } catch (error) {
       console.error('Failed to modify order:', error);
@@ -589,11 +594,13 @@ export class ApiClient {
     }
   }
 
-  async cancelOrder(orderId: string): Promise<OrderResponse> {
+  async cancelOrder(orderId: string, sessionId?: string, companyId?: string): Promise<OrderResponse> {
     try {
-      const response = await this.makeRequest('DELETE', `/api/v1/brokers/orders/${orderId}`, {
-        'X-API-Key': this.apiKey
-      });
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('DELETE', `/api/v1/brokers/orders/${orderId}`, headers);
       return response;
     } catch (error) {
       console.error('Failed to cancel order:', error);

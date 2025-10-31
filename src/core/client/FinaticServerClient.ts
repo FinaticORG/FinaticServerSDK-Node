@@ -153,7 +153,7 @@ export class FinaticServerClient {
   // Broker methods - make real API calls
   async get_brokers(): Promise<BrokerInfo[]> {
     /** Get available brokers. */
-    return await this.apiClient.getBrokers();
+    return await this.apiClient.getBrokers(this.sessionId, this.companyId);
   }
 
   async get_accounts(
@@ -211,23 +211,35 @@ export class FinaticServerClient {
 
   async disconnect_company(connectionId: string): Promise<any> {
     /** Disconnect a company from a broker connection. */
-    return await this.apiClient.disconnectCompany(connectionId);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.disconnectCompany(connectionId, this.sessionId, this.companyId);
   }
 
   // Trading methods
   async place_order(orderParams: BrokerOrderParams, extras?: BrokerExtras): Promise<OrderResponse> {
     /** Place a broker order. */
-    return await this.apiClient.placeOrder(orderParams, extras);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.placeOrder(orderParams, this.sessionId, this.companyId, extras);
   }
 
   async modify_order(orderId: string, orderParams: BrokerOrderParams, extras?: BrokerExtras): Promise<OrderResponse> {
     /** Modify an existing order. */
-    return await this.apiClient.modifyOrder(orderId, orderParams, extras);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.modifyOrder(orderId, orderParams, this.sessionId, this.companyId, extras);
   }
 
   async cancel_order(orderId: string, _broker?: string, _connectionId?: string): Promise<OrderResponse> {
     /** Cancel an existing order. */
-    return await this.apiClient.cancelOrder(orderId);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.cancelOrder(orderId, this.sessionId, this.companyId);
   }
 
   // Asset-specific order methods (convenience)

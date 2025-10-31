@@ -126,10 +126,11 @@ class FinaticDemo {
       
       // Step 6: Test get_connections immediately after portal auth
       console.log(chalk.yellow('\nStep 6: Testing get_connections after portal auth...'));
+      let connections: any[] = [];
       try {
         console.log(chalk.gray(`  Session ID: ${this.client.get_session_id() || 'Not set'}`));
         console.log(chalk.gray(`  Company ID: ${this.client.get_company_id() || 'Not set'}`));
-        const connections = await this.client.get_connections();
+        connections = await this.client.get_connections();
         console.log(chalk.green(`✅ Successfully retrieved ${connections.length} broker connections`));
         if (connections.length > 0) {
           console.log(chalk.gray('Connection details:'));
@@ -142,9 +143,24 @@ class FinaticDemo {
         throw error;
       }
       
-      // Step 7: Now we can use other data methods
-      console.log(chalk.yellow('\nStep 7: Testing other data methods...'));
-      await this.testDataMethods();
+      // Step 7: Disconnect the first connection
+      if (connections.length > 0) {
+        console.log(chalk.yellow('\nStep 7: Disconnecting first connection...'));
+        try {
+          const firstConnection = connections[0];
+          const connectionId = firstConnection.id;
+          console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
+          console.log(chalk.gray(`  Broker: ${firstConnection.broker_id || 'Unknown'}`));
+          
+          await this.client.disconnect_company(connectionId);
+          console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
+        } catch (error: any) {
+          console.log(chalk.red(`❌ Failed to disconnect connection: ${error.message}`));
+          throw error;
+        }
+      } else {
+        console.log(chalk.yellow('\nStep 7: Skipping disconnect - no connections available'));
+      }
       
       console.log(chalk.green('\n🎉 Demo completed successfully!'));
       console.log(chalk.gray('\nYou are now authenticated and can use all SDK methods.'));
@@ -155,72 +171,6 @@ class FinaticDemo {
     }
   }
 
-  async testDataMethods() {
-    console.log(chalk.blue('\n📊 Testing Data Methods\n'));
-
-    try {
-      // Test 1: Get broker list
-      console.log('1. Getting available brokers...');
-      const brokers = await this.client.get_brokers();
-      console.log(chalk.green(`✅ Found ${brokers.length} brokers`));
-      
-      if (brokers.length > 0) {
-        console.log(chalk.gray('Available brokers:'));
-        brokers.slice(0, 3).forEach((broker: any, index: number) => {
-          console.log(chalk.gray(`  ${index + 1}. ${broker.display_name} (${broker.id})`));
-        });
-      }
-
-      // Test 2: Get broker accounts
-      console.log('\n2. Getting broker accounts...');
-      const accounts = await this.client.get_all_accounts();
-      console.log(chalk.green(`✅ Found ${accounts.length} accounts`));
-      
-      if (accounts.length > 0) {
-        console.log(chalk.gray('Account details:'));
-        accounts.slice(0, 2).forEach((account: any, index: number) => {
-          console.log(chalk.gray(`  ${index + 1}. ${account.account_name} - ${account.broker_provided_account_id}`));
-          console.log(chalk.gray(`     Type: ${account.account_type}, Status: ${account.status}`));
-        });
-      }
-
-      // Test 3: Get orders
-      console.log('\n3. Getting orders...');
-      const orders = await this.client.get_orders();
-      console.log(chalk.green(`✅ Found ${orders?.data?.length || 0} orders`));
-
-      // Test 4: Get positions
-      console.log('\n4. Getting positions...');
-      const positions = await this.client.get_positions();
-      console.log(chalk.green(`✅ Found ${positions?.data?.length || 0} positions`));
-
-      // Test 5: Get balances
-      console.log('\n5. Getting balances...');
-      const balancesResult = await this.client.get_balances();
-      const balances = balancesResult.data || [];
-      console.log(chalk.green(`✅ Found ${balances.length} balances`));
-      
-      if (balances.length > 0) {
-        console.log(chalk.gray('Balance details:'));
-        balances.slice(0, 3).forEach((balance: any, index: number) => {
-          console.log(chalk.gray(`  ${index + 1}. Account ${balance.account_id}`));
-          console.log(chalk.gray(`     Net Liquidation: $${balance.net_liquidation_value?.toLocaleString() || 'N/A'}`));
-          console.log(chalk.gray(`     Total Cash: $${balance.total_cash_value?.toLocaleString() || 'N/A'}`));
-        });
-      }
-
-      // Test 6: Get broker connections
-      console.log('\n6. Getting broker connections...');
-      const connections = await this.client.get_connections();
-      console.log(chalk.green(`✅ Found ${connections.length} connections`));
-
-      console.log(chalk.green('\n✅ All data methods tested successfully!'));
-      console.log(chalk.gray('\nYou can now use all SDK methods for trading, portfolio management, and broker operations.'));
-
-    } catch (error) {
-      console.log(chalk.red('❌ Data methods test failed:'), error);
-    }
-  }
 }
 
 // Run the demo
