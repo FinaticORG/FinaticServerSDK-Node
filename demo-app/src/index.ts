@@ -143,9 +143,78 @@ class FinaticDemo {
         throw error;
       }
       
-      // Step 7: Disconnect the first connection
+      // Step 7: Test get_accounts
+      console.log(chalk.yellow('\nStep 7: Testing get_accounts...'));
+      try {
+        const accountsResult = await this.client.get_accounts(1, 10);
+        const hasMore = accountsResult.metadata?.has_more ? ' (has more pages)' : '';
+        console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.data.length} accounts${hasMore}`));
+        if (accountsResult.data.length > 0) {
+          console.log(chalk.gray('Account details:'));
+          accountsResult.data.slice(0, 3).forEach((account: any, index: number) => {
+            console.log(chalk.gray(`  ${index + 1}. Account: ${account.account_number || account.id || 'Unknown'} - Broker: ${account.broker_id || 'Unknown'}`));
+          });
+        }
+      } catch (error: any) {
+        console.log(chalk.red(`❌ Failed to get accounts: ${error.message}`));
+        throw error;
+      }
+
+      // Step 8: Test get_orders
+      console.log(chalk.yellow('\nStep 8: Testing get_orders...'));
+      try {
+        const ordersResult = await this.client.get_orders(1, 10);
+        const hasMore = ordersResult.metadata?.has_more ? ' (has more pages)' : '';
+        console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.data.length} orders${hasMore}`));
+        if (ordersResult.data.length > 0) {
+          console.log(chalk.gray('Order details:'));
+          ordersResult.data.slice(0, 3).forEach((order: any, index: number) => {
+            console.log(chalk.gray(`  ${index + 1}. Symbol: ${order.symbol || 'Unknown'} - Status: ${order.status || 'Unknown'} - Quantity: ${order.quantity || order.order_qty || 'Unknown'}`));
+          });
+        }
+      } catch (error: any) {
+        console.log(chalk.red(`❌ Failed to get orders: ${error.message}`));
+        throw error;
+      }
+
+      // Step 9: Test get_balances
+      console.log(chalk.yellow('\nStep 9: Testing get_balances...'));
+      try {
+        const balancesResult = await this.client.get_balances(1, 10);
+        const hasMore = balancesResult.metadata?.has_more ? ' (has more pages)' : '';
+        console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.data.length} balances${hasMore}`));
+        if (balancesResult.data.length > 0) {
+          console.log(chalk.gray('Balance details:'));
+          balancesResult.data.slice(0, 3).forEach((balance: any, index: number) => {
+            const cashBalance = balance.cash || balance.buying_power || balance.account_value || 'Unknown';
+            console.log(chalk.gray(`  ${index + 1}. Account: ${balance.account_number || balance.account_id || 'Unknown'} - Balance: ${cashBalance}`));
+          });
+        }
+      } catch (error: any) {
+        console.log(chalk.red(`❌ Failed to get balances: ${error.message}`));
+        throw error;
+      }
+
+      // Step 10: Test get_positions
+      console.log(chalk.yellow('\nStep 10: Testing get_positions...'));
+      try {
+        const positionsResult = await this.client.get_positions(1, 10);
+        const hasMore = positionsResult.metadata?.has_more ? ' (has more pages)' : '';
+        console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.data.length} positions${hasMore}`));
+        if (positionsResult.data.length > 0) {
+          console.log(chalk.gray('Position details:'));
+          positionsResult.data.slice(0, 3).forEach((position: any, index: number) => {
+            console.log(chalk.gray(`  ${index + 1}. Symbol: ${position.symbol || 'Unknown'} - Quantity: ${position.quantity || position.qty || 'Unknown'} - Side: ${position.side || 'Unknown'}`));
+          });
+        }
+      } catch (error: any) {
+        console.log(chalk.red(`❌ Failed to get positions: ${error.message}`));
+        throw error;
+      }
+
+      // Step 11: Disconnect the first connection
       if (connections.length > 0) {
-        console.log(chalk.yellow('\nStep 7: Disconnecting first connection...'));
+        console.log(chalk.yellow('\nStep 11: Disconnecting first connection...'));
         try {
           const firstConnection = connections[0];
           const connectionId = firstConnection.id;
@@ -159,7 +228,7 @@ class FinaticDemo {
           throw error;
         }
       } else {
-        console.log(chalk.yellow('\nStep 7: Skipping disconnect - no connections available'));
+        console.log(chalk.yellow('\nStep 11: Skipping disconnect - no connections available'));
       }
       
       console.log(chalk.green('\n🎉 Demo completed successfully!'));
