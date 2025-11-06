@@ -18,6 +18,16 @@ import {
   OrderResponse,
   BrokerOrderParams,
   PaginatedResult,
+  OrderFill,
+  OrderEvent,
+  OrderGroup,
+  PositionLot,
+  PositionLotFill,
+  OrderFillsFilter,
+  OrderEventsFilter,
+  OrderGroupsFilter,
+  PositionLotsFilter,
+  PositionLotFillsFilter,
 } from '../../types';
 
 // Error classes
@@ -604,6 +614,108 @@ export class ApiClient {
       return response;
     } catch (error) {
       console.error('Failed to cancel order:', error);
+      throw error;
+    }
+  }
+
+  async getOrderFills(orderId: string, filter?: OrderFillsFilter, sessionId?: string, companyId?: string): Promise<OrderFill[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders/${orderId}/fills?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get order fills:', error);
+      throw error;
+    }
+  }
+
+  async getOrderEvents(orderId: string, filter?: OrderEventsFilter, sessionId?: string, companyId?: string): Promise<OrderEvent[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders/${orderId}/events?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get order events:', error);
+      throw error;
+    }
+  }
+
+  async getOrderGroups(filter?: OrderGroupsFilter, sessionId?: string, companyId?: string): Promise<OrderGroup[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.broker_id) params.append('broker_id', filter.broker_id);
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      if (filter?.created_after) params.append('created_after', filter.created_after);
+      if (filter?.created_before) params.append('created_before', filter.created_before);
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders/groups?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get order groups:', error);
+      throw error;
+    }
+  }
+
+  async getPositionLots(filter?: PositionLotsFilter, sessionId?: string, companyId?: string): Promise<PositionLot[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.broker_id) params.append('broker_id', filter.broker_id);
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.account_id) params.append('account_id', filter.account_id);
+      if (filter?.symbol) params.append('symbol', filter.symbol);
+      if (filter?.position_id) params.append('position_id', filter.position_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/positions/lots?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get position lots:', error);
+      throw error;
+    }
+  }
+
+  async getPositionLotFills(lotId: string, filter?: PositionLotFillsFilter, sessionId?: string, companyId?: string): Promise<PositionLotFill[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/positions/lots/${lotId}/fills?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get position lot fills:', error);
       throw error;
     }
   }
