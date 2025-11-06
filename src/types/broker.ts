@@ -330,6 +330,34 @@ export interface OrderEvent {
   recorded_at?: string;
 }
 
+export interface OrderLeg {
+  /** Leg ID */
+  id: string;
+  /** Order ID */
+  order_id: string;
+  /** Leg index */
+  leg_index: number;
+  /** Asset type */
+  asset_type: string;
+  /** Broker provided symbol */
+  broker_provided_symbol?: string;
+  /** Quantity */
+  quantity: number;
+  /** Filled quantity */
+  filled_quantity?: number;
+  /** Average fill price */
+  avg_fill_price?: number;
+  /** Creation timestamp */
+  created_at?: string;
+  /** Last update timestamp */
+  updated_at?: string;
+}
+
+export interface OrderGroupOrder extends BrokerOrder {
+  /** Order legs */
+  legs: OrderLeg[];
+}
+
 export interface OrderGroup {
   /** Group ID */
   id: string;
@@ -339,8 +367,8 @@ export interface OrderGroup {
   created_at: string;
   /** Last update timestamp */
   updated_at: string;
-  /** Orders in group */
-  orders?: BrokerOrder[];
+  /** Orders in group with their legs */
+  orders: OrderGroupOrder[];
 }
 
 export interface PositionLot {
