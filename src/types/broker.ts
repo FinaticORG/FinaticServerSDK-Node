@@ -277,3 +277,224 @@ export interface BalancesFilter {
   /** Include metadata */
   with_metadata?: boolean;
 }
+
+export interface OrderFill {
+  /** Fill ID */
+  id: string;
+  /** Order ID */
+  order_id: string;
+  /** Order leg ID */
+  leg_id?: string;
+  /** Fill price */
+  price: number;
+  /** Fill quantity */
+  quantity: number;
+  /** Execution timestamp */
+  executed_at: string;
+  /** Execution ID */
+  execution_id?: string;
+  /** Trade ID */
+  trade_id?: string;
+  /** Execution venue */
+  venue?: string;
+  /** Commission fee */
+  commission_fee?: number;
+  /** Creation timestamp */
+  created_at: string;
+  /** Last update timestamp */
+  updated_at: string;
+}
+
+export interface OrderEvent {
+  /** Event ID */
+  id: string;
+  /** Order ID */
+  order_id: string;
+  /** Order group ID */
+  order_group_id?: string;
+  /** Event type */
+  event_type?: string;
+  /** Event timestamp */
+  event_time: string;
+  /** Event ID */
+  event_id?: string;
+  /** Order status */
+  order_status?: string;
+  /** Whether event was inferred */
+  inferred: boolean;
+  /** Confidence score */
+  confidence?: number;
+  /** Reason code */
+  reason_code?: string;
+  /** Recorded timestamp */
+  recorded_at?: string;
+}
+
+export interface OrderLeg {
+  /** Leg ID */
+  id: string;
+  /** Order ID */
+  order_id: string;
+  /** Leg index */
+  leg_index: number;
+  /** Asset type */
+  asset_type: string;
+  /** Broker provided symbol */
+  broker_provided_symbol?: string;
+  /** Quantity */
+  quantity: number;
+  /** Filled quantity */
+  filled_quantity?: number;
+  /** Average fill price */
+  avg_fill_price?: number;
+  /** Creation timestamp */
+  created_at?: string;
+  /** Last update timestamp */
+  updated_at?: string;
+}
+
+export interface OrderGroupOrder extends BrokerOrder {
+  /** Order legs */
+  legs: OrderLeg[];
+}
+
+export interface OrderGroup {
+  /** Group ID */
+  id: string;
+  /** User broker connection ID */
+  user_broker_connection_id?: string;
+  /** Creation timestamp */
+  created_at: string;
+  /** Last update timestamp */
+  updated_at: string;
+  /** Orders in group with their legs */
+  orders: OrderGroupOrder[];
+}
+
+export interface PositionLot {
+  /** Lot ID */
+  id: string;
+  /** Position ID */
+  position_id?: string;
+  /** User broker connection ID */
+  user_broker_connection_id: string;
+  /** Broker provided account ID */
+  broker_provided_account_id: string;
+  /** Instrument key */
+  instrument_key: string;
+  /** Asset type */
+  asset_type?: string;
+  /** Position side */
+  side?: string;
+  /** Open quantity */
+  open_quantity: number;
+  /** Closed quantity */
+  closed_quantity: number;
+  /** Remaining quantity */
+  remaining_quantity: number;
+  /** Open price */
+  open_price: number;
+  /** Average close price */
+  close_price_avg?: number;
+  /** Cost basis */
+  cost_basis: number;
+  /** Cost basis with commission */
+  cost_basis_w_commission: number;
+  /** Realized P&L */
+  realized_pl: number;
+  /** Realized P&L with commission */
+  realized_pl_w_commission: number;
+  /** Lot opened timestamp */
+  lot_opened_at: string;
+  /** Lot closed timestamp */
+  lot_closed_at?: string;
+  /** Position group ID */
+  position_group_id?: string;
+  /** Creation timestamp */
+  created_at: string;
+  /** Last update timestamp */
+  updated_at: string;
+  /** Lot fills */
+  position_lot_fills?: PositionLotFill[];
+}
+
+export interface PositionLotFill {
+  /** Fill ID */
+  id: string;
+  /** Lot ID */
+  lot_id: string;
+  /** Order fill ID */
+  order_fill_id: string;
+  /** Fill price */
+  fill_price: number;
+  /** Fill quantity */
+  fill_quantity: number;
+  /** Execution timestamp */
+  executed_at: string;
+  /** Commission share */
+  commission_share?: number;
+  /** Creation timestamp */
+  created_at: string;
+  /** Last update timestamp */
+  updated_at: string;
+}
+
+// Filter types for detail endpoints
+export interface OrderFillsFilter {
+  /** Filter by connection ID */
+  connection_id?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
+}
+
+export interface OrderEventsFilter {
+  /** Filter by connection ID */
+  connection_id?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
+}
+
+export interface OrderGroupsFilter {
+  /** Filter by broker ID */
+  broker_id?: string;
+  /** Filter by connection ID */
+  connection_id?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
+  /** Filter by creation date after (ISO 8601) */
+  created_after?: string;
+  /** Filter by creation date before (ISO 8601) */
+  created_before?: string;
+}
+
+export interface PositionLotsFilter {
+  /** Filter by broker ID */
+  broker_id?: string;
+  /** Filter by connection ID */
+  connection_id?: string;
+  /** Filter by account ID */
+  account_id?: string;
+  /** Filter by symbol */
+  symbol?: string;
+  /** Filter by position ID */
+  position_id?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
+}
+
+export interface PositionLotFillsFilter {
+  /** Filter by connection ID */
+  connection_id?: string;
+  /** Result limit */
+  limit?: number;
+  /** Result offset */
+  offset?: number;
+}
