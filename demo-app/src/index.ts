@@ -20,6 +20,7 @@ const API_URL = process.env.FINATIC_API_URL || 'https://api.finatic.dev';
 const API_KEY = process.env.FINATIC_API_KEY;
 const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@finatic.com';
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'demo_password_123';
+const ACCOUNT_ID_FILTER = '1c0e6a5e-f6d7-4af8-b69d-09aa17f73762';
 
 // Check for required environment variables
 if (!API_KEY) {
@@ -123,6 +124,38 @@ class FinaticDemo {
       console.log(chalk.gray(`User ID: ${userInfo.user_id}`));
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
       console.log(chalk.gray(`Token Type: ${userInfo.token_type}`));
+      
+      // Step 5.1: Fetch orders for a specific Finatic account id
+      console.log(chalk.yellow('\nStep 5.1: Fetching orders for specific Finatic account...'));
+      try {
+        const filteredOrders = await this.client.get_all_orders(undefined, {
+          account_id: ACCOUNT_ID_FILTER,
+        });
+        console.log(
+          chalk.green(
+            `✅ Retrieved ${filteredOrders.length} orders for account ${ACCOUNT_ID_FILTER}`
+          )
+        );
+        if (filteredOrders.length > 0) {
+          console.log(chalk.gray('Filtered order details:'));
+          filteredOrders.slice(0, 3).forEach((order: any, index: number) => {
+            console.log(
+              chalk.gray(
+                `  ${index + 1}. Order ID: ${order.id || 'Unknown'} - Symbol: ${
+                  order.symbol || 'Unknown'
+                } - Status: ${order.status || 'Unknown'}`
+              )
+            );
+          });
+        }
+      } catch (error: any) {
+        console.log(
+          chalk.red(
+            `❌ Failed to fetch orders for account ${ACCOUNT_ID_FILTER}: ${error.message || error}`
+          )
+        );
+        throw error;
+      }
       
       // Step 6: Test get_connections immediately after portal auth
       console.log(chalk.yellow('\nStep 6: Testing get_connections after portal auth...'));

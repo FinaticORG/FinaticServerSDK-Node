@@ -5,7 +5,7 @@
 export interface BrokerDataOptions {
   /** Filter by broker name */
   broker_name?: string;
-  /** Filter by account ID */
+  /** Filter by Finatic account ID */
   account_id?: string;
   /** Filter by symbol */
   symbol?: string;
@@ -101,6 +101,8 @@ export interface BrokerOrder {
   id: string;
   /** User broker connection ID */
   user_broker_connection_id: string;
+  /** Finatic account ID */
+  account_id?: string;
   /** Broker provided account ID */
   broker_provided_account_id: string;
   /** Order ID */
@@ -193,8 +195,10 @@ export interface OrdersFilter {
   broker_id?: string;
   /** Filter by connection ID */
   connection_id?: string;
-  /** Filter by account ID */
+  /** Filter by Finatic account ID */
   account_id?: string;
+  /** Filter by broker provided account ID */
+  broker_provided_account_id?: string;
   /** Filter by symbol */
   symbol?: string;
   /** Filter by status */

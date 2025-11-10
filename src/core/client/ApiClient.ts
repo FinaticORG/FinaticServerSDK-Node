@@ -455,12 +455,30 @@ export class ApiClient {
       const params = new URLSearchParams();
       if (filter?.limit) params.append('limit', filter.limit.toString());
       if (filter?.offset) params.append('offset', filter.offset.toString());
+      if (filter?.broker_id) params.append('broker_id', filter.broker_id);
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.account_id) params.append('account_id', filter.account_id);
+      if (filter?.broker_provided_account_id) {
+        params.append('broker_provided_account_id', filter.broker_provided_account_id);
+      }
+      if (filter?.symbol) params.append('symbol', filter.symbol);
+      if (filter?.status) params.append('status', filter.status);
+      if (filter?.side) params.append('side', filter.side);
+      if (filter?.asset_type) params.append('asset_type', filter.asset_type);
+      if (filter?.created_after) params.append('created_after', filter.created_after);
+      if (filter?.created_before) params.append('created_before', filter.created_before);
+      if (filter?.with_metadata !== undefined) {
+        params.append('with_metadata', String(filter.with_metadata));
+      }
       
       const headers: Record<string, string> = {};
       if (sessionId) headers['Session-ID'] = sessionId;
       if (companyId) headers['Company-ID'] = companyId;
-      
-      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders?${params.toString()}`, headers);
+      const query = params.toString();
+      const url = query
+        ? `/api/v1/brokers/data/orders?${query}`
+        : '/api/v1/brokers/data/orders';
+      const response = await this.makeRequest('GET', url, headers);
       
       return {
         data: response.response_data || [],
