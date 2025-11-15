@@ -131,6 +131,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/init', { xApiKey }, this.sdkConfig);
@@ -228,6 +229,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/start', { OneTimeToken, body }, this.sdkConfig);
@@ -341,9 +343,10 @@ export class SessionWrapper {
       
       // Validate result structure
       if (!result || typeof result !== 'object' || !('portal_url' in result)) {
-        throw new Error(`Failed to unwrap portal URL response: expected PortalUrlResponse with portal_url property`);
+        throw new Error('Failed to unwrap portal URL response: expected PortalUrlResponse with portal_url property');
       }
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/session/portal', {  }, this.sdkConfig);
@@ -450,6 +453,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/session/{session_id}/user', { sessionId }, this.sdkConfig);
@@ -551,6 +555,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/authenticate', { body }, this.sdkConfig);
@@ -654,6 +659,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/refresh', {  }, this.sdkConfig);
@@ -755,6 +761,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/webhook/test', { body }, this.sdkConfig);
@@ -860,6 +867,7 @@ export class SessionWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/link-user', { body, sessionId }, this.sdkConfig);

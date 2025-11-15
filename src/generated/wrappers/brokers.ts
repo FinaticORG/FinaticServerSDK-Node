@@ -131,6 +131,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/', {  }, this.sdkConfig);
@@ -238,6 +239,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/brokers/connect', { body }, this.sdkConfig);
@@ -341,6 +343,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/connections', {  }, this.sdkConfig);
@@ -443,6 +446,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('PUT', '/api/v1/brokers/connections/{connection_id}', { connectionId, body }, this.sdkConfig);
@@ -544,6 +548,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/connections/{connection_id}', { connectionId }, this.sdkConfig);
@@ -645,6 +650,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/disconnect/{connection_id}', { connectionId }, this.sdkConfig);
@@ -749,6 +755,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/disconnect-company/{connection_id}', { connectionId }, this.sdkConfig);
@@ -864,6 +871,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders', { brokerId, connectionId, accountId, symbol, orderStatus, side, assetType, limit, offset, createdAfter, createdBefore, withMetadata }, this.sdkConfig);
@@ -979,6 +987,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions', { brokerId, connectionId, accountId, symbol, side, assetType, positionStatus, limit, offset, updatedAfter, updatedBefore, withMetadata }, this.sdkConfig);
@@ -1091,6 +1100,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/balances', { brokerId, connectionId, accountId, isEndOfDaySnapshot, limit, offset, balanceCreatedAfter, balanceCreatedBefore, withMetadata }, this.sdkConfig);
@@ -1202,6 +1212,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/accounts', { brokerId, connectionId, accountType, status, currency, limit, offset, withMetadata }, this.sdkConfig);
@@ -1308,6 +1319,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/{order_id}/fills', { orderId, connectionId, limit, offset }, this.sdkConfig);
@@ -1414,6 +1426,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/{order_id}/events', { orderId, connectionId, limit, offset }, this.sdkConfig);
@@ -1522,6 +1535,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/groups', { brokerId, connectionId, limit, offset, createdAfter, createdBefore }, this.sdkConfig);
@@ -1632,6 +1646,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions/lots', { brokerId, connectionId, accountId, symbol, positionId, limit, offset }, this.sdkConfig);
@@ -1738,6 +1753,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions/lots/{lot_id}/fills', { lotId, connectionId, limit, offset }, this.sdkConfig);
@@ -1837,6 +1853,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/sandbox-callback/{broker_id}', { brokerId }, this.sdkConfig);
@@ -1947,6 +1964,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/callback/tastytrade', {  }, this.sdkConfig);
@@ -2060,6 +2078,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/callback/{broker_id}', { brokerId }, this.sdkConfig);
@@ -2215,6 +2234,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('POST', '/api/v1/brokers/orders', { body, connectionId }, this.sdkConfig);
@@ -2322,6 +2342,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/orders/{order_id}', { orderId, body, accountNumber, connectionId }, this.sdkConfig);
@@ -2429,6 +2450,7 @@ export class BrokersWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('PATCH', '/api/v1/brokers/orders/{order_id}', { orderId, body, accountNumber, connectionId }, this.sdkConfig);

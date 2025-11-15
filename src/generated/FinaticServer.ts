@@ -21,7 +21,7 @@ export interface PortalOptions {
   email?: string;
 }
 
-export class FinaticServerClient {
+export class FinaticServer {
   private config: Configuration;
   private sdkConfig: SdkConfig;
   private sessionId?: string;
@@ -96,6 +96,12 @@ export class FinaticServerClient {
 
     // Get raw portal URL from session wrapper
     const response = await this.session.getPortalUrl();
+    
+    // Validate response structure
+    if (!response || typeof response !== 'object' || !('portal_url' in response)) {
+      throw new Error('Invalid portal URL response: expected PortalUrlResponse with portal_url property, got ' + typeof response);
+    }
+    
     let portalUrl = response.portal_url || '';
 
     // Append theme if provided
@@ -115,11 +121,8 @@ export class FinaticServerClient {
       portalUrl = url.toString();
     }
 
-    // Add session ID and company ID to URL
+    // Add company ID to URL (token is already in URL from backend, session_id should not be exposed)
     const url = new URL(portalUrl);
-    if (this.sessionId) {
-      url.searchParams.set('session_id', this.sessionId);
-    }
     if (this.companyId) {
       url.searchParams.set('company_id', this.companyId);
     }

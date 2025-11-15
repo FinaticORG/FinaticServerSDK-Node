@@ -125,6 +125,7 @@ export class MarketDataWrapper {
         ? response.data       // Axios-style wrapper: { data: ... }
         : response;           // Direct response
       
+
       // Store in cache (Phase 2B)
       if (cache && this.sdkConfig?.cacheEnabled) {
         const cacheKey = generateCacheKey('GET', '/api/v1/market-data/futures/historical', { symbol, startDate, endDate, expiration, provider }, this.sdkConfig);
