@@ -17,6 +17,68 @@ import { applyResponseInterceptors } from '../../generated/utils/interceptors';
  * Automatically adds session headers to all API requests.
  */
 export class CustomBrokersWrapper extends BrokersWrapper {
+
+  /**
+   * Helper method to transform API response to metadata structure when withMetadata is true.
+   * Handles both snake_case (response_data) and camelCase (data) responses.
+   */
+  private _transformToMetadataStructure(result: any, withMetadata: boolean, methodName: string): any {
+    if (!withMetadata) {
+      return Array.isArray(result) ? result : [];
+    }
+
+    // If result has response_data (snake_case from API), transform it
+    if (result && typeof result === 'object' && 'response_data' in result) {
+      const dataArray = Array.isArray(result.response_data) ? result.response_data : [];
+      const metadata: any = {};
+      
+      // Extract pagination if present
+      if (result.pagination && typeof result.pagination === 'object') {
+        metadata.pagination = result.pagination;
+        if (result.pagination.has_more !== undefined) {
+          metadata.has_more = result.pagination.has_more;
+        }
+      }
+      
+      // Extract warnings if present
+      if (result.warnings && Array.isArray(result.warnings)) {
+        metadata.warnings = result.warnings;
+      }
+      
+      // Extract errors if present
+      if (result.errors && Array.isArray(result.errors)) {
+        metadata.errors = result.errors;
+      }
+      
+      this.logger.debug(`${methodName} returning metadata structure from response_data`, {
+        data_length: dataArray.length,
+        has_pagination: !!metadata.pagination,
+        has_warnings: !!metadata.warnings,
+        has_errors: !!metadata.errors,
+      });
+      
+      return { data: dataArray, metadata } as any;
+    }
+
+    // If result already has data and metadata structure, return as-is
+    if (result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
+      this.logger.debug(`${methodName} returning metadata structure from unwrapped result`, {
+        data_length: result.data?.length,
+        has_metadata: !!result.metadata,
+      });
+      return result as any;
+    }
+
+    // Otherwise, return array (or empty array if not an array)
+    const finalResult = Array.isArray(result) ? result : [];
+    this.logger.debug(`${methodName} returning array (no metadata structure found)`, {
+      array_length: finalResult.length,
+      result_type: typeof result,
+      result_keys: result && typeof result === 'object' ? Object.keys(result) : [],
+    });
+    return finalResult;
+  }
+
   /**
    * Helper method to ensure session headers are set on the configuration.
    * This is called both from setSessionContext and can be called before API calls.
@@ -145,24 +207,6 @@ export class CustomBrokersWrapper extends BrokersWrapper {
     // Apply response interceptors (same as parent)
     const response = await applyResponseInterceptors(apiResponse, (this as any).sdkConfig);
 
-    // When withMetadata is true, the API returns { data: [...], metadata: {...} }
-    // This is wrapped in Axios as response.data = { data: [...], metadata: {...} }
-    // So we need to check response.data BEFORE unwrapping
-    if (withMetadata === true && response && typeof response === 'object' && 'data' in response) {
-      const responseData = response.data;
-      // Check if response.data already has the structure we want
-      if (responseData && typeof responseData === 'object' && 'data' in responseData && 'metadata' in responseData && Array.isArray(responseData.data)) {
-        return responseData;  // Return { data: [...], metadata: {...} } directly
-      }
-      // If nested deeper, unwrap once and check
-      if (responseData && typeof responseData === 'object' && 'data' in responseData && 
-          responseData.data && typeof responseData.data === 'object' &&
-          'data' in responseData.data && 'metadata' in responseData.data &&
-          Array.isArray(responseData.data.data)) {
-        return responseData.data;  // Return { data: [...], metadata: {...} }
-      }
-    }
-
     // Unwrap FinaticResponse if present, otherwise use response directly (same as generated wrapper)
     const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
       ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
@@ -170,13 +214,8 @@ export class CustomBrokersWrapper extends BrokersWrapper {
       ? response.data       // Axios-style wrapper: { data: ... }
       : response;           // Direct response
 
-    // If withMetadata is true and result has both data and metadata, preserve the structure
-    if (withMetadata === true && result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-      return result;  // Return { data: [...], metadata: {...} } structure
-    }
-
-    // Otherwise, return array (or empty array if not an array)
-    return Array.isArray(result) ? result : [];
+    // Transform to metadata structure if needed
+    return this._transformToMetadataStructure(result, withMetadata === true, 'getOrders');
   }
 
   /**
@@ -245,20 +284,14 @@ export class CustomBrokersWrapper extends BrokersWrapper {
     const response = await applyResponseInterceptors(apiResponse, (this as any).sdkConfig);
 
     // Unwrap FinaticResponse if present, otherwise use response directly (same as generated wrapper)
-    // When withMetadata is true, the unwrapped result might be { data: [...], metadata: {...} }
     const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
       ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
       : (response && typeof response === 'object' && 'data' in response)
       ? response.data       // Axios-style wrapper: { data: ... }
       : response;           // Direct response
 
-    // If withMetadata is true and result has both data and metadata, preserve the structure
-    if (withMetadata === true && result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-      return result;  // Return { data: [...], metadata: {...} } structure
-    }
-
-    // Otherwise, return array (or empty array if not an array)
-    return Array.isArray(result) ? result : [];
+    // Transform to metadata structure if needed
+    return this._transformToMetadataStructure(result, withMetadata === true, 'getAccounts');
   }
 
   /**
@@ -307,20 +340,14 @@ export class CustomBrokersWrapper extends BrokersWrapper {
     const response = await applyResponseInterceptors(apiResponse, (this as any).sdkConfig);
 
     // Unwrap FinaticResponse if present, otherwise use response directly (same as generated wrapper)
-    // When withMetadata is true, the unwrapped result might be { data: [...], metadata: {...} }
     const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
       ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
       : (response && typeof response === 'object' && 'data' in response)
       ? response.data       // Axios-style wrapper: { data: ... }
       : response;           // Direct response
 
-    // If withMetadata is true and result has both data and metadata, preserve the structure
-    if (withMetadata === true && result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-      return result;  // Return { data: [...], metadata: {...} } structure
-    }
-
-    // Otherwise, return array (or empty array if not an array)
-    return Array.isArray(result) ? result : [];
+    // Transform to metadata structure if needed
+    return this._transformToMetadataStructure(result, withMetadata === true, 'getPositions');
   }
 
   /**
@@ -363,19 +390,13 @@ export class CustomBrokersWrapper extends BrokersWrapper {
     const response = await applyResponseInterceptors(apiResponse, (this as any).sdkConfig);
 
     // Unwrap FinaticResponse if present, otherwise use response directly (same as generated wrapper)
-    // When withMetadata is true, the unwrapped result might be { data: [...], metadata: {...} }
     const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
       ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
       : (response && typeof response === 'object' && 'data' in response)
       ? response.data       // Axios-style wrapper: { data: ... }
       : response;           // Direct response
 
-    // If withMetadata is true and result has both data and metadata, preserve the structure
-    if (withMetadata === true && result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-      return result;  // Return { data: [...], metadata: {...} } structure
-    }
-
-    // Otherwise, return array (or empty array if not an array)
-    return Array.isArray(result) ? result : [];
+    // Transform to metadata structure if needed
+    return this._transformToMetadataStructure(result, withMetadata === true, 'getBalances');
   }
 }

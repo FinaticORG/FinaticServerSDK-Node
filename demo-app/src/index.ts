@@ -43,7 +43,12 @@ class FinaticDemo {
     // Initialize client like Python SDK - only API key required
     // baseUrl is optional and defaults to https://api.finatic.dev
     // For localhost testing, pass the API_URL as second parameter
-    this.client = new FinaticServerClient(apiKey, API_URL);
+    // Enable debug logging in dev mode
+    const isDev = process.env.NODE_ENV !== 'production' || API_URL.includes('localhost');
+    this.client = new FinaticServerClient(apiKey, API_URL, {
+      logLevel: isDev ? 'debug' : 'error',
+      structuredLogging: true,
+    });
   }
 
   async run() {
@@ -129,12 +134,36 @@ class FinaticDemo {
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
       console.log(chalk.gray(`Token Type: ${userInfo.token_type}`));
       
+      // Track core method results
+      const coreResults = {
+        passed: 0,
+        failed: 0,
+        total: 0,
+      };
+
+      // Helper to test core methods and track results
+      const testCore = async (name: string, fn: () => Promise<any>, showDetails: boolean = true): Promise<any> => {
+        coreResults.total++;
+        try {
+          const result = await fn();
+          coreResults.passed++;
+          if (showDetails) {
+            console.log(chalk.gray(`  ✅ ${name}`));
+          }
+          return result;
+        } catch (error: any) {
+          coreResults.failed++;
+          console.log(chalk.red(`  ❌ ${name} (${error.message?.substring(0, 50) || 'error'})`));
+          throw error;
+        }
+      };
+      
       // Step 5.1: Fetch orders for a specific Finatic account id
-      console.log(chalk.yellow('\nStep 5.1: Fetching orders for specific Finatic account...'));
+      console.log(chalk.yellow('\nStep 5.1: Testing core methods...'));
       try {
-        const filteredOrders = await this.client.getAllOrders({
+        const filteredOrders = await testCore('getAllOrders (filtered)', () => this.client.getAllOrders({
           account_id: ACCOUNT_ID_FILTER,
-        });
+        }), false);
         console.log(
           chalk.green(
             `✅ Retrieved ${filteredOrders.length} orders for account ${ACCOUNT_ID_FILTER}`
@@ -153,21 +182,16 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(
-          chalk.red(
-            `❌ Failed to fetch orders for account ${ACCOUNT_ID_FILTER}: ${error.message || error}`
-          )
-        );
-        throw error;
+        // Error already logged by testCore
       }
       
       // Step 6: Test get_connections immediately after portal auth
-      console.log(chalk.yellow('\nStep 6: Testing get_connections after portal auth...'));
+      console.log(chalk.yellow('\nStep 6: Testing getBrokerConnections...'));
       let connections: any[] = [];
       try {
         console.log(chalk.gray(`  Session ID: ${this.client.getSessionId() || 'Not set'}`));
         console.log(chalk.gray(`  Company ID: ${this.client.getCompanyId() || 'Not set'}`));
-        connections = await this.client.getBrokerConnections();
+        connections = await testCore('getBrokerConnections', () => this.client.getBrokerConnections(), false);
         console.log(chalk.green(`✅ Successfully retrieved ${connections.length} broker connections`));
         if (connections.length > 0) {
           console.log(chalk.gray('Connection details:'));
@@ -176,14 +200,14 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get connections: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
       
       // Step 7: Test get_accounts
-      console.log(chalk.yellow('\nStep 7: Testing get_accounts...'));
+      console.log(chalk.yellow('\nStep 7: Testing getAccounts...'));
+      let accountsResult: any;
       try {
-        const accountsResult = await this.client.getAccounts(1, 10);
+        accountsResult = await testCore('getAccounts (paginated)', () => this.client.getAccounts(1, 10), false);
         const hasMore = accountsResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.data.length} accounts${hasMore}`));
         if (accountsResult.data.length > 0) {
@@ -193,14 +217,14 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get accounts: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
       // Step 8: Test get_orders
-      console.log(chalk.yellow('\nStep 8: Testing get_orders...'));
+      console.log(chalk.yellow('\nStep 8: Testing getOrders...'));
+      let ordersResult: any;
       try {
-        const ordersResult = await this.client.getOrders(1, 10);
+        ordersResult = await testCore('getOrders (paginated)', () => this.client.getOrders(1, 10), false);
         const hasMore = ordersResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.data.length} orders${hasMore}`));
         if (ordersResult.data.length > 0) {
@@ -210,14 +234,13 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get orders: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
       // Step 9: Test get_balances
-      console.log(chalk.yellow('\nStep 9: Testing get_balances...'));
+      console.log(chalk.yellow('\nStep 9: Testing getBalances...'));
       try {
-        const balancesResult = await this.client.getBalances(1, 10);
+        const balancesResult = await testCore('getBalances (paginated)', () => this.client.getBalances(1, 10), false);
         const hasMore = balancesResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.data.length} balances${hasMore}`));
         if (balancesResult.data.length > 0) {
@@ -228,14 +251,13 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get balances: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
       // Step 10: Test get_positions
-      console.log(chalk.yellow('\nStep 10: Testing get_positions...'));
+      console.log(chalk.yellow('\nStep 10: Testing getPositions...'));
       try {
-        const positionsResult = await this.client.getPositions(1, 10);
+        const positionsResult = await testCore('getPositions (paginated)', () => this.client.getPositions(1, 10), false);
         const hasMore = positionsResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.data.length} positions${hasMore}`));
         if (positionsResult.data.length > 0) {
@@ -245,13 +267,83 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get positions: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
-      // Step 11: Disconnect the first connection
+      // Core methods summary
+      console.log(chalk.gray(`\n  Core Methods Summary: ${coreResults.passed}/${coreResults.total} passed`));
+      if (coreResults.failed > 0) {
+        console.log(chalk.yellow(`  ${coreResults.failed} core method(s) failed (see details above)`));
+      } else {
+        console.log(chalk.green('  ✅ All core methods passed!'));
+      }
+
+      // Step 11: Test helper methods
+      console.log(chalk.yellow('\nStep 11: Testing helper methods...'));
+      const helperResults = {
+        passed: 0,
+        failed: 0,
+        total: 0,
+      };
+
+      // Helper to test a method and track results
+      const testHelper = async (name: string, fn: () => Promise<any>, expectedType: 'array' | 'object' = 'array'): Promise<void> => {
+        helperResults.total++;
+        try {
+          const result = await fn();
+          const isValid = expectedType === 'array' 
+            ? Array.isArray(result) 
+            : (result && typeof result === 'object');
+          
+          if (isValid) {
+            helperResults.passed++;
+            console.log(chalk.gray(`  ✅ ${name}`));
+          } else {
+            helperResults.failed++;
+            console.log(chalk.red(`  ❌ ${name} (invalid return type)`));
+          }
+        } catch (error: any) {
+          helperResults.failed++;
+          console.log(chalk.red(`  ❌ ${name} (${error.message?.substring(0, 50) || 'error'})`));
+        }
+      };
+
+      // Test getAll* methods (fetch all data across pages)
+      await testHelper('getAllAccounts', () => this.client.getAllAccounts());
+      await testHelper('getAllOrders', () => this.client.getAllOrders());
+      await testHelper('getAllPositions', () => this.client.getAllPositions());
+      await testHelper('getAllBalances', () => this.client.getAllBalances());
+
+      // Test filtered helper methods (use symbols/statuses from earlier results if available)
+      const sampleSymbol = ordersResult?.data?.length > 0 ? ordersResult.data[0].symbol : 'AAPL';
+      const sampleBrokerId = connections?.length > 0 ? connections[0].broker_id : undefined;
+
+      await testHelper('getOpenPositions', () => this.client.getOpenPositions());
+      await testHelper('getFilledOrders', () => this.client.getFilledOrders());
+      await testHelper('getPendingOrders', () => this.client.getPendingOrders());
+      await testHelper('getActiveAccounts', () => this.client.getActiveAccounts());
+      
+      if (sampleSymbol) {
+        await testHelper(`getOrdersBySymbol("${sampleSymbol}")`, () => this.client.getOrdersBySymbol(sampleSymbol));
+        await testHelper(`getPositionsBySymbol("${sampleSymbol}")`, () => this.client.getPositionsBySymbol(sampleSymbol));
+      }
+      
+      if (sampleBrokerId) {
+        await testHelper(`getOrdersByBroker("${sampleBrokerId}")`, () => this.client.getOrdersByBroker(sampleBrokerId));
+        await testHelper(`getPositionsByBroker("${sampleBrokerId}")`, () => this.client.getPositionsByBroker(sampleBrokerId));
+      }
+
+      // Summary
+      console.log(chalk.gray(`\n  Helper Methods Summary: ${helperResults.passed}/${helperResults.total} passed`));
+      if (helperResults.failed > 0) {
+        console.log(chalk.yellow(`  ${helperResults.failed} helper method(s) failed (see details above)`));
+      } else {
+        console.log(chalk.green('  ✅ All helper methods passed!'));
+      }
+
+      // Step 12: Disconnect the first connection
       if (connections.length > 0) {
-        console.log(chalk.yellow('\nStep 11: Disconnecting first connection...'));
+        console.log(chalk.yellow('\nStep 12: Disconnecting first connection...'));
         try {
           const firstConnection = connections[0];
           const connectionId = firstConnection.id;
@@ -265,10 +357,20 @@ class FinaticDemo {
           throw error;
         }
       } else {
-        console.log(chalk.yellow('\nStep 11: Skipping disconnect - no connections available'));
+        console.log(chalk.yellow('\nStep 12: Skipping disconnect - no connections available'));
       }
       
       console.log(chalk.green('\n🎉 Demo completed successfully!'));
+      console.log(chalk.gray(`\n📊 Test Summary:`));
+      console.log(chalk.gray(`  Core methods: ${coreResults.passed}/${coreResults.total} passed`));
+      console.log(chalk.gray(`  Helper methods: ${helperResults.passed}/${helperResults.total} passed`));
+      const totalPassed = coreResults.passed + helperResults.passed;
+      const totalTests = coreResults.total + helperResults.total;
+      if (totalPassed === totalTests) {
+        console.log(chalk.green(`  Total: ${totalPassed}/${totalTests} passed ✅`));
+      } else {
+        console.log(chalk.yellow(`  Total: ${totalPassed}/${totalTests} passed`));
+      }
       console.log(chalk.gray('\nYou are now authenticated and can use all SDK methods.'));
       
     } catch (error) {
