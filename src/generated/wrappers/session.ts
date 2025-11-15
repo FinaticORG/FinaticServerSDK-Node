@@ -89,8 +89,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/session/init', { xApiKey }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -132,10 +134,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/init', { xApiKey }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -144,7 +150,7 @@ export class SessionWrapper {
         action: 'initSession'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -186,8 +192,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/session/start', { OneTimeToken, body }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -230,10 +238,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/start', { OneTimeToken, body }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -242,7 +254,7 @@ export class SessionWrapper {
         action: 'startSession'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -287,8 +299,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !true;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/session/portal', {  }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -347,10 +361,14 @@ export class SessionWrapper {
       }
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/session/portal', {  }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -359,7 +377,7 @@ export class SessionWrapper {
         action: 'getPortalUrl'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -411,8 +429,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/session/{session_id}/user', { sessionId }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -454,10 +474,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/session/{session_id}/user', { sessionId }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -466,7 +490,7 @@ export class SessionWrapper {
         action: 'getSessionUser'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -513,8 +537,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/session/authenticate', { body }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -556,10 +582,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/authenticate', { body }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -568,7 +598,7 @@ export class SessionWrapper {
         action: 'authenticateSession'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -618,8 +648,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/session/refresh', {  }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -660,10 +692,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/refresh', {  }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -672,7 +708,7 @@ export class SessionWrapper {
         action: 'refreshSession'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -719,8 +755,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/session/webhook/test', { body }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -762,10 +800,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/webhook/test', { body }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -774,7 +816,7 @@ export class SessionWrapper {
         action: 'testWebhook'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
@@ -824,8 +866,10 @@ export class SessionWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
+    // Portal URLs are single-use tokens - must NOT be cached
+    const shouldCache = !false;
     const cache = getCache(this.sdkConfig);
-    if (cache && this.sdkConfig?.cacheEnabled) {
+    if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/session/link-user', { body, sessionId }, this.sdkConfig);
       const cached = cache.get(cacheKey);
       if (cached) {
@@ -868,10 +912,14 @@ export class SessionWrapper {
         : response;           // Direct response
       
 
+      const finalResult = result;
+      
+
       // Store in cache (Phase 2B)
-      if (cache && this.sdkConfig?.cacheEnabled) {
+      // Portal URLs are single-use tokens - must NOT be cached
+      if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/session/link-user', { body, sessionId }, this.sdkConfig);
-        cache.set(cacheKey, result, this.sdkConfig.cacheTtl || 300);
+        cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
       // Structured logging (Phase 2B)
@@ -880,7 +928,7 @@ export class SessionWrapper {
         action: 'linkUserToSession'
       });
       
-      return result;
+      return finalResult;
       
     } catch (error) {
       // Error handling with interceptors (Phase 2B)
