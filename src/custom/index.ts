@@ -4,8 +4,8 @@
  * This file is protected - add your custom exports here.
  */
 
-// Core - Export custom FinaticServerClient that extends generated class
-export { FinaticServerClient } from './FinaticServerClient';
+// Core - Export custom FinaticServer that extends generated class
+export { FinaticServer } from './FinaticServer';
 // Re-export types from generated class
 export type { PortalOptions } from '../generated/FinaticServerClient';
 

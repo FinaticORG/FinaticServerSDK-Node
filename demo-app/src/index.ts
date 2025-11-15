@@ -11,7 +11,7 @@
  */
 
 import 'dotenv/config';
-import { FinaticServerClient } from '@finatic/server-node';
+import { FinaticServer } from '@finatic/server-node';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 
@@ -37,7 +37,7 @@ if (!API_KEY) {
 const apiKey: string = API_KEY;
 
 class FinaticDemo {
-  private client: FinaticServerClient;
+  private client: FinaticServer;
 
   constructor() {
     // Initialize client like Python SDK - only API key required
@@ -45,7 +45,7 @@ class FinaticDemo {
     // For localhost testing, pass the API_URL as second parameter
     // Enable debug logging in dev mode
     const isDev = process.env.NODE_ENV !== 'production' || API_URL.includes('localhost');
-    this.client = new FinaticServerClient(apiKey, API_URL, {
+    this.client = new FinaticServer(apiKey, API_URL, {
       logLevel: isDev ? 'debug' : 'error',
       structuredLogging: true,
     });

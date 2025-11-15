@@ -14,7 +14,7 @@ export * from './generated/config';
 
 // Re-export main client class explicitly (custom version that extends generated class)
 // MUST come before export * from './custom' to ensure custom version is used
-export { FinaticServerClient } from './custom/FinaticServerClient';
+export { FinaticServer } from './custom/FinaticServer';
 export type { PortalOptions } from './generated/FinaticServerClient';
 
 // Re-export all other custom code (wrappers, utils, etc.)

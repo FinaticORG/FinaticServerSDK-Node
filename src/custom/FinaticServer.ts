@@ -1,11 +1,11 @@
 /**
- * Custom FinaticServerClient extension.
+ * Custom FinaticServer extension.
  *
  * This file is protected and will not be overwritten during regeneration.
- * Add custom logic to extend or override generated FinaticServerClient behavior.
+ * Add custom logic to extend or override generated FinaticServer behavior.
  */
 
-import { FinaticServerClient as GeneratedFinaticServerClient } from '../generated/FinaticServerClient';
+import { FinaticServerClient as GeneratedFinaticServer } from '../generated/FinaticServerClient';
 import type { PortalOptions } from '../generated/FinaticServerClient';
 import type { SdkConfig } from '../generated/config';
 import { SessionApi } from '../generated/api/session-api';
@@ -14,10 +14,10 @@ import { CustomSessionWrapper } from './wrappers/session';
 import { CustomBrokersWrapper } from './wrappers/brokers';
 
 /**
- * Custom FinaticServerClient class that extends the generated class.
+ * Custom FinaticServer class that extends the generated class.
  * Use this to add custom initialization logic or override methods.
  */
-export class FinaticServerClient extends GeneratedFinaticServerClient {
+export class FinaticServer extends GeneratedFinaticServer {
   // Marker to verify custom class is being used
   static readonly __CUSTOM_CLASS__ = true;
 
