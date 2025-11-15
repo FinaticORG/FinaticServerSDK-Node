@@ -1,0 +1,20 @@
+/**
+ * Custom code exports.
+ * 
+ * This file is protected - add your custom exports here.
+ */
+
+// Core - Export custom FinaticServerClient that extends generated class
+export { FinaticServerClient } from './FinaticServerClient';
+// Re-export types from generated class
+export type { PortalOptions } from '../generated/FinaticServerClient';
+
+// Wrappers
+export * from './wrappers/session';
+
+// Utils
+// export * from './utils/errors';
+// export * from './utils/events';
+
+// Types
+// export * from './types';

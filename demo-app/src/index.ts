@@ -64,7 +64,7 @@ class FinaticDemo {
       // Quick check: fetch a one-time token for the Client SDK
       console.log(chalk.yellow('\nStep 1.1: Getting one-time token (server ➜ client helper)...'));
       try {
-        const oneTimeToken = await this.client.getToken();
+        const oneTimeToken = await this.client.initSession(apiKey);
         console.log(chalk.green('✅ One-time token fetched successfully'));
         console.log(chalk.gray(`Token (truncated): ${oneTimeToken.substring(0, 12)}...`));
       } catch (e) {
@@ -75,13 +75,17 @@ class FinaticDemo {
       // Step 2: Start session
       console.log(chalk.yellow('\nStep 2: Starting session...'));
       try {
-        const sessionResponse = await this.client.start_session();
-        const sessionId = sessionResponse.session_id || sessionResponse.data?.session_id || this.client.get_session_id();
+        // For server SDK, we need to use API key-based auth
+        // First get a one-time token using initSession
+        const oneTimeToken = await this.client.initSession(apiKey);
+        // Then start session with the token
+        const sessionResponse = await this.client.startSession(oneTimeToken);
+        const sessionId = sessionResponse.session_id || this.client.getSessionId();
         console.log(chalk.green(`✅ Session started: ${sessionId}`));
         
         // Step 3: Get portal URL
         console.log(chalk.yellow('\nStep 3: Getting portal URL...'));
-        const portalUrl = await this.client.get_portal_url();
+        const portalUrl = await this.client.getPortalUrl();
         console.log(chalk.green('✅ Portal URL retrieved'));
         console.log(chalk.blue(`\n🌐 Please visit this URL to authenticate:`));
         console.log(chalk.cyan(portalUrl));
@@ -119,7 +123,7 @@ class FinaticDemo {
 
       // Step 5: Get session user (this completes authentication)
       console.log(chalk.yellow('\nStep 5: Getting authenticated user...'));
-      const userInfo = await this.client.get_session_user();
+      const userInfo = await this.client.getSessionUser();
       console.log(chalk.green('✅ User authenticated successfully!'));
       console.log(chalk.gray(`User ID: ${userInfo.user_id}`));
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
@@ -128,7 +132,7 @@ class FinaticDemo {
       // Step 5.1: Fetch orders for a specific Finatic account id
       console.log(chalk.yellow('\nStep 5.1: Fetching orders for specific Finatic account...'));
       try {
-        const filteredOrders = await this.client.get_all_orders(undefined, {
+        const filteredOrders = await this.client.getAllOrders({
           account_id: ACCOUNT_ID_FILTER,
         });
         console.log(
@@ -161,9 +165,9 @@ class FinaticDemo {
       console.log(chalk.yellow('\nStep 6: Testing get_connections after portal auth...'));
       let connections: any[] = [];
       try {
-        console.log(chalk.gray(`  Session ID: ${this.client.get_session_id() || 'Not set'}`));
-        console.log(chalk.gray(`  Company ID: ${this.client.get_company_id() || 'Not set'}`));
-        connections = await this.client.get_connections();
+        console.log(chalk.gray(`  Session ID: ${this.client.getSessionId() || 'Not set'}`));
+        console.log(chalk.gray(`  Company ID: ${this.client.getCompanyId() || 'Not set'}`));
+        connections = await this.client.getBrokerConnections();
         console.log(chalk.green(`✅ Successfully retrieved ${connections.length} broker connections`));
         if (connections.length > 0) {
           console.log(chalk.gray('Connection details:'));
@@ -179,7 +183,7 @@ class FinaticDemo {
       // Step 7: Test get_accounts
       console.log(chalk.yellow('\nStep 7: Testing get_accounts...'));
       try {
-        const accountsResult = await this.client.get_accounts(1, 10);
+        const accountsResult = await this.client.getAccounts(1, 10);
         const hasMore = accountsResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.data.length} accounts${hasMore}`));
         if (accountsResult.data.length > 0) {
@@ -196,7 +200,7 @@ class FinaticDemo {
       // Step 8: Test get_orders
       console.log(chalk.yellow('\nStep 8: Testing get_orders...'));
       try {
-        const ordersResult = await this.client.get_orders(1, 10);
+        const ordersResult = await this.client.getOrders(1, 10);
         const hasMore = ordersResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.data.length} orders${hasMore}`));
         if (ordersResult.data.length > 0) {
@@ -213,7 +217,7 @@ class FinaticDemo {
       // Step 9: Test get_balances
       console.log(chalk.yellow('\nStep 9: Testing get_balances...'));
       try {
-        const balancesResult = await this.client.get_balances(1, 10);
+        const balancesResult = await this.client.getBalances(1, 10);
         const hasMore = balancesResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.data.length} balances${hasMore}`));
         if (balancesResult.data.length > 0) {
@@ -231,7 +235,7 @@ class FinaticDemo {
       // Step 10: Test get_positions
       console.log(chalk.yellow('\nStep 10: Testing get_positions...'));
       try {
-        const positionsResult = await this.client.get_positions(1, 10);
+        const positionsResult = await this.client.getPositions(1, 10);
         const hasMore = positionsResult.metadata?.has_more ? ' (has more pages)' : '';
         console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.data.length} positions${hasMore}`));
         if (positionsResult.data.length > 0) {
@@ -254,7 +258,7 @@ class FinaticDemo {
           console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
           console.log(chalk.gray(`  Broker: ${firstConnection.broker_id || 'Unknown'}`));
           
-          await this.client.disconnect_company(connectionId);
+          await this.client.brokers.disconnectCompanyFromBroker(connectionId);
           console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
         } catch (error: any) {
           console.log(chalk.red(`❌ Failed to disconnect connection: ${error.message}`));

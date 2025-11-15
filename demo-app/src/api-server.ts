@@ -201,11 +201,11 @@ app.post('/api/session/start', asyncHandler(async (req: Request, res: Response) 
     const { user_id } = req.body;
     console.log(`🔄 Starting session with Node SDK... user_id: ${user_id || 'None'}`);
     
-    const sessionResponse = await sdkClient.start_session(user_id);
+    const sessionResponse = await sdkClient.startSession(user_id);
     
-    // Update session state - handle both flat and nested response structures
-    const sessionId = sessionResponse.data?.session_id || 'demo-session-' + Date.now();
-    const companyId = sessionResponse.data?.company_id || 'demo-company-' + Date.now();
+    // Update session state - handle flat response structure
+    const sessionId = sessionResponse.session_id || 'demo-session-' + Date.now();
+    const companyId = sessionResponse.company_id || 'demo-company-' + Date.now();
     
     sessionState = {
       sessionId,
@@ -376,7 +376,11 @@ app.get('/api/session/portal-url', asyncHandler(async (req: Request, res: Respon
     } catch (apiError) {
       console.error('❌ Direct API call failed, falling back to SDK:', apiError);
       // Fallback to SDK method
-      let portalUrl = await sdkClient.get_portal_url(themeObj, brokerList, email as string);
+      let portalUrl = await sdkClient.getPortalUrl({
+        theme: themeObj,
+        brokers: brokerList,
+        email: email as string,
+      });
       
       // Append parameters to the portal URL even in fallback
       const urlParams = new URLSearchParams();
@@ -484,7 +488,7 @@ app.get('/api/broker/list', asyncHandler(async (req: Request, res: Response) => 
   }
 
   try {
-    const brokers = await sdkClient.get_brokers();
+    const brokers = await sdkClient.getBrokerList();
     
     // Convert object with numeric keys to array if needed
     let brokerArray = brokers;
@@ -504,7 +508,7 @@ app.get('/api/broker/connections', asyncHandler(async (req: Request, res: Respon
   }
 
   try {
-    const connections = await sdkClient.get_connections();
+    const connections = await sdkClient.getBrokerConnections();
     sendApiResponse(res, true, connections);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -520,8 +524,8 @@ app.get('/api/broker/accounts', asyncHandler(async (req: Request, res: Response)
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 100;
 
-    // Use the new get_accounts method with built-in pagination
-    const result = await sdkClient.get_accounts();
+    // Use the new getAccounts method with built-in pagination
+    const result = await sdkClient.getAccounts();
 
     const response = {
       data: result.data,
@@ -545,7 +549,7 @@ app.get('/api/broker/accounts/all', asyncHandler(async (req: Request, res: Respo
   }
 
   try {
-    const accounts = await sdkClient.get_all_accounts();
+    const accounts = await sdkClient.getAllAccounts();
     sendApiResponse(res, true, accounts);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -561,7 +565,7 @@ app.post('/api/broker/disconnect', asyncHandler(async (req: Request, res: Respon
 
   if (!connection_id || !connection_id.trim()) {
     // In demo environment, don't fail if no connection_id provided
-    console.log('🔍 disconnect_company called with empty connection_id - returning success for demo');
+    console.log('🔍 brokers.disconnectCompanyFromBroker called with empty connection_id - returning success for demo');
     return sendApiResponse(res, true, {
       message: 'No connection_id provided - demo mode',
       disconnected: false
@@ -569,13 +573,13 @@ app.post('/api/broker/disconnect', asyncHandler(async (req: Request, res: Respon
   }
 
   try {
-    const result = await sdkClient.disconnect_company(connection_id);
+    const result = await sdkClient.brokers.disconnectCompanyFromBroker(connection_id);
     sendApiResponse(res, true, result);
   } catch (error: any) {
     // In demo environment, return success even if the connection doesn't exist
     const errorMsg = error.message || String(error);
     if (errorMsg.includes('not found') || errorMsg.includes('400') || errorMsg.includes('404')) {
-      console.log('🔍 disconnect_company failed but returning success for demo:', errorMsg);
+      console.log('🔍 brokers.disconnectCompanyFromBroker failed but returning success for demo:', errorMsg);
       return sendApiResponse(res, true, {
         message: `Connection not found or invalid: ${errorMsg}`,
         disconnected: false
@@ -596,7 +600,7 @@ app.get('/api/trading/orders', asyncHandler(async (req: Request, res: Response) 
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 100;
 
-    const orders = await sdkClient.get_orders();
+    const orders = await sdkClient.getOrders();
 
     // Return the paginated result directly
     const response = {
@@ -623,7 +627,7 @@ app.get('/api/trading/orders/all', asyncHandler(async (req: Request, res: Respon
   }
 
   try {
-    const orders = await sdkClient.get_orders();
+    const orders = await sdkClient.getOrders();
     const orderList = orders?.data || [];
     sendApiResponse(res, true, orderList);
   } catch (error: any) {
@@ -640,7 +644,7 @@ app.get('/api/trading/positions', asyncHandler(async (req: Request, res: Respons
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 100;
 
-    const positions = await sdkClient.get_positions();
+    const positions = await sdkClient.getPositions();
 
     // Return the paginated result directly
     const response = {
@@ -667,7 +671,7 @@ app.get('/api/trading/positions/all', asyncHandler(async (req: Request, res: Res
   }
 
   try {
-    const positions = await sdkClient.get_positions();
+    const positions = await sdkClient.getPositions();
     const positionList = positions?.data || [];
     sendApiResponse(res, true, positionList);
   } catch (error: any) {
@@ -684,7 +688,7 @@ app.get('/api/trading/balances', asyncHandler(async (req: Request, res: Response
     const page = parseInt(req.query.page as string) || 1;
     const perPage = parseInt(req.query.per_page as string) || 100;
 
-    const balances = await sdkClient.get_balances();
+    const balances = await sdkClient.getBalances();
 
     // Return the paginated result directly
     const response = {
@@ -711,7 +715,7 @@ app.get('/api/trading/balances/all', asyncHandler(async (req: Request, res: Resp
   }
 
   try {
-    const balances = await sdkClient.get_all_balances();
+    const balances = await sdkClient.getAllBalances();
     sendApiResponse(res, true, balances);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -748,7 +752,7 @@ app.post('/api/trading/order', asyncHandler(async (req: Request, res: Response) 
     }
 
     console.log('🔄 Placing order with params:', orderParams);
-    const result = await sdkClient.place_order(orderParams as any);
+    const result = await sdkClient.placeOrder(orderParams as any);
     sendApiResponse(res, true, result);
   } catch (error: any) {
     console.error('❌ Failed to place order:', error.message);
@@ -764,7 +768,7 @@ app.post('/api/trading/order/cancel', asyncHandler(async (req: Request, res: Res
   const { order_id }: OrderCancelRequest = req.body;
 
   try {
-    const result = await sdkClient.cancel_order(order_id);
+    const result = await sdkClient.cancelOrder(order_id);
     sendApiResponse(res, true, result);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -779,7 +783,7 @@ app.post('/api/trading/order/modify', asyncHandler(async (req: Request, res: Res
   const { order_id, modifications }: OrderModifyRequest = req.body;
 
   try {
-    const result = await sdkClient.modify_order(order_id, modifications as any);
+    const result = await sdkClient.modifyOrder(order_id, modifications as any);
     sendApiResponse(res, true, result);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -793,7 +797,7 @@ app.get('/api/trading/positions/open', asyncHandler(async (req: Request, res: Re
       throw new Error('SDK client not initialized');
     }
 
-    const positions = await sdkClient.get_open_positions();
+    const positions = await sdkClient.getOpenPositions();
     sendApiResponse(res, true, positions);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -806,7 +810,7 @@ app.get('/api/trading/orders/filled', asyncHandler(async (req: Request, res: Res
       throw new Error('SDK client not initialized');
     }
 
-    const orders = await sdkClient.get_filled_orders();
+    const orders = await sdkClient.getFilledOrders();
     sendApiResponse(res, true, orders);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -819,7 +823,7 @@ app.get('/api/trading/orders/pending', asyncHandler(async (req: Request, res: Re
       throw new Error('SDK client not initialized');
     }
 
-    const orders = await sdkClient.get_pending_orders();
+    const orders = await sdkClient.getPendingOrders();
     sendApiResponse(res, true, orders);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -832,7 +836,7 @@ app.get('/api/trading/accounts/active', asyncHandler(async (req: Request, res: R
       throw new Error('SDK client not initialized');
     }
 
-    const accounts = await sdkClient.get_active_accounts();
+    const accounts = await sdkClient.getActiveAccounts();
     sendApiResponse(res, true, accounts);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -846,7 +850,7 @@ app.get('/api/trading/orders/by-symbol/:symbol', asyncHandler(async (req: Reques
     }
 
     const { symbol } = req.params;
-    const orders = await sdkClient.get_orders_by_symbol(symbol);
+    const orders = await sdkClient.getOrdersBySymbol(symbol);
     sendApiResponse(res, true, orders);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -860,7 +864,7 @@ app.get('/api/trading/positions/by-symbol/:symbol', asyncHandler(async (req: Req
     }
 
     const { symbol } = req.params;
-    const positions = await sdkClient.get_positions_by_symbol(symbol);
+    const positions = await sdkClient.getPositionsBySymbol(symbol);
     sendApiResponse(res, true, positions);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -874,7 +878,7 @@ app.get('/api/trading/orders/by-broker/:broker', asyncHandler(async (req: Reques
     }
 
     const { broker } = req.params;
-    const orders = await sdkClient.get_orders_by_broker(broker);
+    const orders = await sdkClient.getOrdersByBroker(broker);
     sendApiResponse(res, true, orders);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -888,7 +892,7 @@ app.get('/api/trading/positions/by-broker/:broker', asyncHandler(async (req: Req
     }
 
     const { broker } = req.params;
-    const positions = await sdkClient.get_positions_by_broker(broker);
+    const positions = await sdkClient.getPositionsByBroker(broker);
     sendApiResponse(res, true, positions);
   } catch (error: any) {
     sendApiResponse(res, false, null, error.message);
@@ -903,7 +907,7 @@ app.post('/api/trading/order/stock/market', asyncHandler(async (req: Request, re
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_stock_market_order(
+    const result = await sdkClient.placeStockMarketOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -923,7 +927,7 @@ app.post('/api/trading/order/stock/limit', asyncHandler(async (req: Request, res
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_stock_limit_order(
+    const result = await sdkClient.placeStockLimitOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -945,7 +949,7 @@ app.post('/api/trading/order/stock/stop', asyncHandler(async (req: Request, res:
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_stock_stop_order(
+    const result = await sdkClient.placeStockStopOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -967,7 +971,7 @@ app.post('/api/trading/order/crypto/market', asyncHandler(async (req: Request, r
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_crypto_market_order(
+    const result = await sdkClient.placeCryptoMarketOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -987,7 +991,7 @@ app.post('/api/trading/order/crypto/limit', asyncHandler(async (req: Request, re
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_crypto_limit_order(
+    const result = await sdkClient.placeCryptoLimitOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -1009,7 +1013,7 @@ app.post('/api/trading/order/options/market', asyncHandler(async (req: Request, 
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_options_market_order(
+    const result = await sdkClient.placeOptionsMarketOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -1029,7 +1033,7 @@ app.post('/api/trading/order/options/limit', asyncHandler(async (req: Request, r
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_options_limit_order(
+    const result = await sdkClient.placeOptionsLimitOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -1051,7 +1055,7 @@ app.post('/api/trading/order/futures/market', asyncHandler(async (req: Request, 
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_futures_market_order(
+    const result = await sdkClient.placeFuturesMarketOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',
@@ -1071,7 +1075,7 @@ app.post('/api/trading/order/futures/limit', asyncHandler(async (req: Request, r
     }
 
     const request = req.body as OrderRequest;
-    const result = await sdkClient.place_futures_limit_order(
+    const result = await sdkClient.placeFuturesLimitOrder(
       request.symbol,
       request.quantity || request.orderQty || 0,
       (request.side || request.action || 'buy') as 'buy' | 'sell',

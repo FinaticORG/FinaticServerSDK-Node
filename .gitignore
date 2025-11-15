@@ -66,18 +66,9 @@ pids/
 # Yarn lock file
 yarn.lock
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache
 .cache
 .parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
 
 # Serverless directories
 .serverless
@@ -90,5 +81,3 @@ yarn.lock
 
 # TernJS port file
 .tern-port
-*/install-state.gz
-demo-app/.yarn/install-state.gz
