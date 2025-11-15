@@ -127,11 +127,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -241,11 +262,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -351,11 +393,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -460,11 +523,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -568,11 +652,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -665,7 +770,7 @@ export class BrokersWrapper {
         async () => {
           // Apply request interceptors (Phase 2B)
           // Public API methods already handle calling the function, so await directly
-          const apiResponse = await this.api.disconnectBrokerApiV1BrokersDisconnectConnectionIdDelete({ connectionId: connectionId,  }, { headers: { 'x-request-id': requestId } });
+          const apiResponse = await this.api.disconnectBrokerApiV1BrokersDisconnectConnectionIdDelete({ connectionId: connectionId,  }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
           // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
@@ -676,11 +781,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -776,7 +902,7 @@ export class BrokersWrapper {
         async () => {
           // Apply request interceptors (Phase 2B)
           // Public API methods already handle calling the function, so await directly
-          const apiResponse = await this.api.disconnectCompanyFromBrokerApiV1BrokersDisconnectCompanyConnectionIdDelete({ connectionId: connectionId,  }, { headers: { 'x-request-id': requestId } });
+          const apiResponse = await this.api.disconnectCompanyFromBrokerApiV1BrokersDisconnectCompanyConnectionIdDelete({ connectionId: connectionId,  }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
           // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
@@ -787,11 +913,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -909,11 +1056,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       // Transform to metadata structure if withMetadata is true
@@ -1084,11 +1252,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       // Transform to metadata structure if withMetadata is true
@@ -1256,11 +1445,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       // Transform to metadata structure if withMetadata is true
@@ -1427,11 +1637,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       // Transform to metadata structure if withMetadata is true
@@ -1593,11 +1824,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -1706,11 +1958,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -1821,11 +2094,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -1938,11 +2232,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2051,11 +2366,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2157,11 +2493,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2274,11 +2631,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2394,11 +2772,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2556,11 +2955,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2670,11 +3090,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;
@@ -2784,11 +3225,32 @@ export class BrokersWrapper {
       
       // Unwrap FinaticResponse if present, otherwise use response directly
       // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      const result = (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'data' in response.data)
-        ? response.data.data  // FinaticResponse wrapper: { data: { data: ... } }
-        : (response && typeof response === 'object' && 'data' in response)
-        ? response.data       // Axios-style wrapper: { data: ... }
-        : response;           // Direct response
+      // Unwrap FinaticResponse wrapper if present
+      // The API returns an AxiosResponse, so the actual response is in response.data
+      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
+      let result;
+      // First unwrap Axios response wrapper (response.data)
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
+      // Now unwrap FinaticResponse wrapper
+      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
+        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
+        // Handle null/undefined response_data as empty array for array-returning methods
+        if (responseData.response_data !== null && responseData.response_data !== undefined) {
+          result = responseData.response_data;
+        } else {
+          // response_data is null or undefined - return empty array for array-returning methods
+          result = [];
+        }
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
+        // FinaticResponse wrapper: { data: { data: ... } }
+        result = responseData.data.data;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // FinaticResponse with single data property: { data: ... }
+        result = responseData.data;
+      } else {
+        // Direct response (already unwrapped)
+        result = responseData;
+      }
       
 
       const finalResult = result;

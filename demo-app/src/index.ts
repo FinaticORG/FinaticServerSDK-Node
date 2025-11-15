@@ -342,13 +342,31 @@ class FinaticDemo {
       }
 
       // Step 12: Disconnect the first connection
-      if (connections.length > 0) {
+      // Re-check for connections in case they were created between Step 6 and Step 12
+      let connectionsForDisconnect: any[] = connections;
+      if (connections.length === 0) {
+        try {
+          connectionsForDisconnect = await this.client.getBrokerConnections();
+        } catch (error: any) {
+          // If re-fetch fails, use the original connections list
+          connectionsForDisconnect = connections;
+        }
+      }
+      
+      if (connectionsForDisconnect.length > 0) {
         console.log(chalk.yellow('\nStep 12: Disconnecting first connection...'));
         try {
-          const firstConnection = connections[0];
-          const connectionId = firstConnection.id;
+          const firstConnection = connectionsForDisconnect[0];
+          // Handle both 'id' and 'connection_id' properties
+          const connectionId = firstConnection.id || firstConnection.connection_id;
+          const brokerId = firstConnection.broker_id || 'Unknown';
+          
+          if (!connectionId) {
+            throw new Error('Connection ID not found in connection object');
+          }
+          
           console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
-          console.log(chalk.gray(`  Broker: ${firstConnection.broker_id || 'Unknown'}`));
+          console.log(chalk.gray(`  Broker: ${brokerId}`));
           
           await this.client.brokers.disconnectCompanyFromBroker(connectionId);
           console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
