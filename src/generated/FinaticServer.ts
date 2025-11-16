@@ -12,7 +12,6 @@ import { BrokersApi } from './api/brokers-api';
 import { SessionApi } from './api/session-api';
 import { BrokersWrapper } from './wrappers/brokers';
 import { SessionWrapper } from './wrappers/session';
-import * as Models from './models';
 
 export interface PortalOptions {
   theme?: string | { preset?: string; custom?: Record<string, unknown> };
@@ -297,29 +296,28 @@ export class FinaticServer {
    * Get only open positions.
    */
   async getOpenPositions(filter?: any): Promise<any[]> {
-    return await this.getAllPositions({ ...filter, positionStatus: Models.PositionStatus.Open });
+    return await this.getAllPositions({ ...filter, positionStatus: 'active' });
   }
 
   /**
    * Get only filled orders.
    */
   async getFilledOrders(filter?: any): Promise<any[]> {
-    return await this.getAllOrders({ ...filter, orderStatus: Models.OrderStatus.Filled });
+    return await this.getAllOrders({ ...filter, orderStatus: 'filled' });
   }
 
   /**
    * Get only pending orders.
    */
   async getPendingOrders(filter?: any): Promise<any[]> {
-    // API enum has PendingNew, not Pending
-    return await this.getAllOrders({ ...filter, orderStatus: Models.OrderStatus.PendingNew });
+    return await this.getAllOrders({ ...filter, orderStatus: 'new' });
   }
 
   /**
    * Get only active accounts.
    */
   async getActiveAccounts(filter?: any): Promise<any[]> {
-    return await this.getAllAccounts({ ...filter, status: Models.AccountStatus.Active });
+    return await this.getAllAccounts({ ...filter, status: 'active' });
   }
 
   /**

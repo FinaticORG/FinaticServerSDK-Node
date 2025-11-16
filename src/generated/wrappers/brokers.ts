@@ -14,25 +14,8 @@ import { getLogger, type Logger } from '../utils/logger';
 import { handleError } from '../utils/error-handling';
 import { getCache, generateCacheKey } from '../utils/cache';
 import { applyRequestInterceptors, applyResponseInterceptors, applyErrorInterceptors } from '../utils/interceptors';
-import {
-  BrokerInfo,
-  UserBrokerConnections,
-  OrderStatus,
-  OrderSide,
-  AssetType,
-  OrderResponse,
-  PositionStatus,
-  PositionResponse,
-  Balances,
-  AccountType,
-  AccountStatus,
-  Accounts,
-  OrderFillResponse,
-  OrderEventResponse,
-  OrderGroupResponse,
-  PositionLotResponse,
-  PositionLotFillResponse,
-} from '../models';
+import type { DisconnectActionResult } from '../models';
+import type { OrderActionResult } from '../models';
 
 
 /**
@@ -92,7 +75,8 @@ export class BrokersWrapper {
    * FinaticResponse[list[BrokerInfo]]
    *     list of available brokers with their metadata.
 
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {BrokerInfo[]}
    * 
    * Generated from: GET /api/v1/brokers/
    * @methodId get_brokers_api_v1_brokers__get
@@ -103,7 +87,7 @@ export class BrokersWrapper {
    * const result = await finatic.getBrokers();
    * ```
    */
-  async getBrokers(): Promise<any[]> {
+  async getBrokers(withEnvelope?: boolean): Promise<BrokerInfo[]> {
     // Generate request ID
     const requestId = this._generateRequestId();
 
@@ -115,8 +99,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/', {  }, this.sdkConfig);
@@ -136,61 +119,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getBrokersApiV1BrokersGet({ headers: { 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/', {  }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Brokers completed', {
         request_id: requestId,
         action: 'getBrokers'
@@ -199,12 +160,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Brokers failed', error, {
         request_id: requestId,
@@ -227,7 +185,8 @@ export class BrokersWrapper {
    * This endpoint is accessible from the portal and uses session-only authentication.
    * Returns connections that the user has any permissions for.
 
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {UserBrokerConnections[]}
    * 
    * Generated from: GET /api/v1/brokers/connections
    * @methodId list_broker_connections_api_v1_brokers_connections_get
@@ -238,7 +197,7 @@ export class BrokersWrapper {
    * const result = await finatic.listBrokerConnections();
    * ```
    */
-  async listBrokerConnections(): Promise<any[]> {
+  async listBrokerConnections(withEnvelope?: boolean): Promise<UserBrokerConnections[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -255,8 +214,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/connections', {  }, this.sdkConfig);
@@ -276,61 +234,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.listBrokerConnectionsApiV1BrokersConnectionsGet({ headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/connections', {  }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('List Broker Connections completed', {
         request_id: requestId,
         action: 'listBrokerConnections'
@@ -339,12 +275,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('List Broker Connections failed', error, {
         request_id: requestId,
@@ -368,7 +301,8 @@ export class BrokersWrapper {
    * If other companies have access, only the company's access is removed.
 
    * @param connectionId {string}
-   * @returns {any}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {DisconnectActionResult}
    * 
    * Generated from: DELETE /api/v1/brokers/disconnect-company/{connection_id}
    * @methodId disconnect_company_from_broker_api_v1_brokers_disconnect_company__connection_id__delete
@@ -379,7 +313,7 @@ export class BrokersWrapper {
    * const result = await finatic.disconnectCompanyFromBroker('example');
    * ```
    */
-  async disconnectCompanyFromBroker(connectionId: string): Promise<any> {
+  async disconnectCompanyFromBroker(connectionId: string, withEnvelope?: boolean): Promise<DisconnectActionResult> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -396,8 +330,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/disconnect-company/{connection_id}', { connectionId }, this.sdkConfig);
@@ -418,61 +351,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.disconnectCompanyFromBrokerApiV1BrokersDisconnectCompanyConnectionIdDelete({ connectionId: connectionId,  }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/disconnect-company/{connection_id}', { connectionId }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Disconnect Company From Broker completed', {
         request_id: requestId,
         action: 'disconnectCompanyFromBroker'
@@ -481,12 +392,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Disconnect Company From Broker failed', error, {
         request_id: requestId,
@@ -509,19 +417,20 @@ export class BrokersWrapper {
    * This endpoint is accessible from the portal and uses session-only authentication.
    * Returns orders from connections the company has read access to.
 
-   * @param brokerId {any}
-   * @param connectionId {any}
-   * @param accountId {any}
-   * @param symbol {any}
-   * @param orderStatus {any}
-   * @param side {any}
-   * @param assetType {any}
+   * @param brokerId {string}
+   * @param connectionId {string}
+   * @param accountId {string}
+   * @param symbol {string}
+   * @param orderStatus {PublicOrderStatusEnum}
+   * @param side {PublicOrderSideEnum}
+   * @param assetType {PublicAssetTypeEnum}
    * @param limit {number}
    * @param offset {number}
-   * @param createdAfter {any}
-   * @param createdBefore {any}
+   * @param createdAfter {string}
+   * @param createdBefore {string}
    * @param withMetadata {boolean}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/orders
    * @methodId get_orders_api_v1_brokers_data_orders_get
@@ -532,7 +441,7 @@ export class BrokersWrapper {
    * const result = await finatic.getOrders();
    * ```
    */
-  async getOrders(brokerId?: any, connectionId?: any, accountId?: any, symbol?: any, orderStatus?: any, side?: any, assetType?: any, limit?: number, offset?: number, createdAfter?: any, createdBefore?: any, withMetadata?: boolean): Promise<any[]> {
+  async getOrders(brokerId?: string, connectionId?: string, accountId?: string, symbol?: string, orderStatus?: PublicOrderStatusEnum, side?: PublicOrderSideEnum, assetType?: PublicAssetTypeEnum, limit?: number, offset?: number, createdAfter?: string, createdBefore?: string, withMetadata?: boolean, withEnvelope?: boolean): Promise<OrderResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -549,8 +458,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders', { brokerId, connectionId, accountId, symbol, orderStatus, side, assetType, limit, offset, createdAfter, createdBefore, withMetadata }, this.sdkConfig);
@@ -582,114 +490,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getOrdersApiV1BrokersDataOrdersGet({ ...(brokerId !== undefined ? { brokerId: brokerId } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(accountId !== undefined ? { accountId: accountId } : {}), ...(symbol !== undefined ? { symbol: symbol } : {}), ...(orderStatus !== undefined ? { orderStatus: orderStatus } : {}), ...(side !== undefined ? { side: side } : {}), ...(assetType !== undefined ? { assetType: assetType } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}), ...(createdAfter !== undefined ? { createdAfter: createdAfter } : {}), ...(createdBefore !== undefined ? { createdBefore: createdBefore } : {}), ...(withMetadata !== undefined ? { withMetadata: withMetadata } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
-      // Transform to metadata structure if withMetadata is true
-      let finalResult = result;
-      if (withMetadata === true) {
-        // If result has response_data (snake_case from API), transform it
-        if (result && typeof result === 'object' && 'response_data' in result) {
-          const dataArray = Array.isArray(result.response_data) ? result.response_data : [];
-          const metadata: any = {};
-          
-          // Extract pagination if present
-          if (result.pagination && typeof result.pagination === 'object') {
-            metadata.pagination = result.pagination;
-            if (result.pagination.has_more !== undefined) {
-              metadata.has_more = result.pagination.has_more;
-            }
-          }
-          
-          // Extract warnings if present
-          if (result.warnings && Array.isArray(result.warnings)) {
-            metadata.warnings = result.warnings;
-          }
-          
-          // Extract errors if present
-          if (result.errors && Array.isArray(result.errors)) {
-            metadata.errors = result.errors;
-          }
-          
-          this.logger.debug('getOrders returning metadata structure from response_data', {
-            data_length: dataArray.length,
-            has_pagination: !!metadata.pagination,
-            has_warnings: !!metadata.warnings,
-            has_errors: !!metadata.errors,
-          });
-          
-          finalResult = { data: dataArray, metadata };
-        } else if (result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-          // If result already has data and metadata structure, return as-is
-          this.logger.debug('getOrders returning metadata structure from unwrapped result', {
-            data_length: result.data?.length,
-            has_metadata: !!result.metadata,
-          });
-          finalResult = result;
-        } else {
-          // Otherwise, return array (or empty array if not an array)
-          finalResult = Array.isArray(result) ? result : [];
-          this.logger.debug('getOrders returning array (no metadata structure found)', {
-            array_length: finalResult.length,
-            result_type: typeof result,
-            result_keys: result && typeof result === 'object' ? Object.keys(result) : [],
-          });
-        }
-      } else {
-        // If withMetadata is false or undefined, return array (or empty array if not an array)
-        finalResult = Array.isArray(result) ? result : [];
-      }
+      const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders', { brokerId, connectionId, accountId, symbol, orderStatus, side, assetType, limit, offset, createdAfter, createdBefore, withMetadata }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Orders completed', {
         request_id: requestId,
         action: 'getOrders'
@@ -698,12 +531,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Orders failed', error, {
         request_id: requestId,
@@ -726,19 +556,20 @@ export class BrokersWrapper {
    * This endpoint is accessible from the portal and uses session-only authentication.
    * Returns positions from connections the company has read access to.
 
-   * @param brokerId {any}
-   * @param connectionId {any}
-   * @param accountId {any}
-   * @param symbol {any}
-   * @param side {any}
-   * @param assetType {any}
-   * @param positionStatus {any}
+   * @param brokerId {string}
+   * @param connectionId {string}
+   * @param accountId {string}
+   * @param symbol {string}
+   * @param side {PublicOrderSideEnum}
+   * @param assetType {PublicAssetTypeEnum}
+   * @param positionStatus {PublicPositionStatusEnum}
    * @param limit {number}
    * @param offset {number}
-   * @param updatedAfter {any}
-   * @param updatedBefore {any}
+   * @param updatedAfter {string}
+   * @param updatedBefore {string}
    * @param withMetadata {boolean}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {PositionResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/positions
    * @methodId get_positions_api_v1_brokers_data_positions_get
@@ -749,7 +580,7 @@ export class BrokersWrapper {
    * const result = await finatic.getPositions();
    * ```
    */
-  async getPositions(brokerId?: any, connectionId?: any, accountId?: any, symbol?: any, side?: any, assetType?: any, positionStatus?: any, limit?: number, offset?: number, updatedAfter?: any, updatedBefore?: any, withMetadata?: boolean): Promise<any[]> {
+  async getPositions(brokerId?: string, connectionId?: string, accountId?: string, symbol?: string, side?: PublicOrderSideEnum, assetType?: PublicAssetTypeEnum, positionStatus?: PublicPositionStatusEnum, limit?: number, offset?: number, updatedAfter?: string, updatedBefore?: string, withMetadata?: boolean, withEnvelope?: boolean): Promise<PositionResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -766,8 +597,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions', { brokerId, connectionId, accountId, symbol, side, assetType, positionStatus, limit, offset, updatedAfter, updatedBefore, withMetadata }, this.sdkConfig);
@@ -799,114 +629,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getPositionsApiV1BrokersDataPositionsGet({ ...(brokerId !== undefined ? { brokerId: brokerId } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(accountId !== undefined ? { accountId: accountId } : {}), ...(symbol !== undefined ? { symbol: symbol } : {}), ...(side !== undefined ? { side: side } : {}), ...(assetType !== undefined ? { assetType: assetType } : {}), ...(positionStatus !== undefined ? { positionStatus: positionStatus } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}), ...(updatedAfter !== undefined ? { updatedAfter: updatedAfter } : {}), ...(updatedBefore !== undefined ? { updatedBefore: updatedBefore } : {}), ...(withMetadata !== undefined ? { withMetadata: withMetadata } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
-      // Transform to metadata structure if withMetadata is true
-      let finalResult = result;
-      if (withMetadata === true) {
-        // If result has response_data (snake_case from API), transform it
-        if (result && typeof result === 'object' && 'response_data' in result) {
-          const dataArray = Array.isArray(result.response_data) ? result.response_data : [];
-          const metadata: any = {};
-          
-          // Extract pagination if present
-          if (result.pagination && typeof result.pagination === 'object') {
-            metadata.pagination = result.pagination;
-            if (result.pagination.has_more !== undefined) {
-              metadata.has_more = result.pagination.has_more;
-            }
-          }
-          
-          // Extract warnings if present
-          if (result.warnings && Array.isArray(result.warnings)) {
-            metadata.warnings = result.warnings;
-          }
-          
-          // Extract errors if present
-          if (result.errors && Array.isArray(result.errors)) {
-            metadata.errors = result.errors;
-          }
-          
-          this.logger.debug('getPositions returning metadata structure from response_data', {
-            data_length: dataArray.length,
-            has_pagination: !!metadata.pagination,
-            has_warnings: !!metadata.warnings,
-            has_errors: !!metadata.errors,
-          });
-          
-          finalResult = { data: dataArray, metadata };
-        } else if (result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-          // If result already has data and metadata structure, return as-is
-          this.logger.debug('getPositions returning metadata structure from unwrapped result', {
-            data_length: result.data?.length,
-            has_metadata: !!result.metadata,
-          });
-          finalResult = result;
-        } else {
-          // Otherwise, return array (or empty array if not an array)
-          finalResult = Array.isArray(result) ? result : [];
-          this.logger.debug('getPositions returning array (no metadata structure found)', {
-            array_length: finalResult.length,
-            result_type: typeof result,
-            result_keys: result && typeof result === 'object' ? Object.keys(result) : [],
-          });
-        }
-      } else {
-        // If withMetadata is false or undefined, return array (or empty array if not an array)
-        finalResult = Array.isArray(result) ? result : [];
-      }
+      const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions', { brokerId, connectionId, accountId, symbol, side, assetType, positionStatus, limit, offset, updatedAfter, updatedBefore, withMetadata }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Positions completed', {
         request_id: requestId,
         action: 'getPositions'
@@ -915,12 +670,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Positions failed', error, {
         request_id: requestId,
@@ -943,16 +695,17 @@ export class BrokersWrapper {
    * This endpoint is accessible from the portal and uses session-only authentication.
    * Returns balances from connections the company has read access to.
 
-   * @param brokerId {any}
-   * @param connectionId {any}
-   * @param accountId {any}
-   * @param isEndOfDaySnapshot {any}
+   * @param brokerId {string}
+   * @param connectionId {string}
+   * @param accountId {string}
+   * @param isEndOfDaySnapshot {boolean}
    * @param limit {number}
    * @param offset {number}
-   * @param balanceCreatedAfter {any}
-   * @param balanceCreatedBefore {any}
+   * @param balanceCreatedAfter {string}
+   * @param balanceCreatedBefore {string}
    * @param withMetadata {boolean}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {Balances[]}
    * 
    * Generated from: GET /api/v1/brokers/data/balances
    * @methodId get_balances_api_v1_brokers_data_balances_get
@@ -963,7 +716,7 @@ export class BrokersWrapper {
    * const result = await finatic.getBalances();
    * ```
    */
-  async getBalances(brokerId?: any, connectionId?: any, accountId?: any, isEndOfDaySnapshot?: any, limit?: number, offset?: number, balanceCreatedAfter?: any, balanceCreatedBefore?: any, withMetadata?: boolean): Promise<any[]> {
+  async getBalances(brokerId?: string, connectionId?: string, accountId?: string, isEndOfDaySnapshot?: boolean, limit?: number, offset?: number, balanceCreatedAfter?: string, balanceCreatedBefore?: string, withMetadata?: boolean, withEnvelope?: boolean): Promise<Balances[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -980,8 +733,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/balances', { brokerId, connectionId, accountId, isEndOfDaySnapshot, limit, offset, balanceCreatedAfter, balanceCreatedBefore, withMetadata }, this.sdkConfig);
@@ -1010,114 +762,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getBalancesApiV1BrokersDataBalancesGet({ ...(brokerId !== undefined ? { brokerId: brokerId } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(accountId !== undefined ? { accountId: accountId } : {}), ...(isEndOfDaySnapshot !== undefined ? { isEndOfDaySnapshot: isEndOfDaySnapshot } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}), ...(balanceCreatedAfter !== undefined ? { balanceCreatedAfter: balanceCreatedAfter } : {}), ...(balanceCreatedBefore !== undefined ? { balanceCreatedBefore: balanceCreatedBefore } : {}), ...(withMetadata !== undefined ? { withMetadata: withMetadata } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
-      // Transform to metadata structure if withMetadata is true
-      let finalResult = result;
-      if (withMetadata === true) {
-        // If result has response_data (snake_case from API), transform it
-        if (result && typeof result === 'object' && 'response_data' in result) {
-          const dataArray = Array.isArray(result.response_data) ? result.response_data : [];
-          const metadata: any = {};
-          
-          // Extract pagination if present
-          if (result.pagination && typeof result.pagination === 'object') {
-            metadata.pagination = result.pagination;
-            if (result.pagination.has_more !== undefined) {
-              metadata.has_more = result.pagination.has_more;
-            }
-          }
-          
-          // Extract warnings if present
-          if (result.warnings && Array.isArray(result.warnings)) {
-            metadata.warnings = result.warnings;
-          }
-          
-          // Extract errors if present
-          if (result.errors && Array.isArray(result.errors)) {
-            metadata.errors = result.errors;
-          }
-          
-          this.logger.debug('getBalances returning metadata structure from response_data', {
-            data_length: dataArray.length,
-            has_pagination: !!metadata.pagination,
-            has_warnings: !!metadata.warnings,
-            has_errors: !!metadata.errors,
-          });
-          
-          finalResult = { data: dataArray, metadata };
-        } else if (result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-          // If result already has data and metadata structure, return as-is
-          this.logger.debug('getBalances returning metadata structure from unwrapped result', {
-            data_length: result.data?.length,
-            has_metadata: !!result.metadata,
-          });
-          finalResult = result;
-        } else {
-          // Otherwise, return array (or empty array if not an array)
-          finalResult = Array.isArray(result) ? result : [];
-          this.logger.debug('getBalances returning array (no metadata structure found)', {
-            array_length: finalResult.length,
-            result_type: typeof result,
-            result_keys: result && typeof result === 'object' ? Object.keys(result) : [],
-          });
-        }
-      } else {
-        // If withMetadata is false or undefined, return array (or empty array if not an array)
-        finalResult = Array.isArray(result) ? result : [];
-      }
+      const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/balances', { brokerId, connectionId, accountId, isEndOfDaySnapshot, limit, offset, balanceCreatedAfter, balanceCreatedBefore, withMetadata }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Balances completed', {
         request_id: requestId,
         action: 'getBalances'
@@ -1126,12 +803,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Balances failed', error, {
         request_id: requestId,
@@ -1154,15 +828,16 @@ export class BrokersWrapper {
    * This endpoint is accessible from the portal and uses session-only authentication.
    * Returns accounts from connections the company has read access to.
 
-   * @param brokerId {any}
-   * @param connectionId {any}
-   * @param accountType {any}
-   * @param status {any}
-   * @param currency {any}
+   * @param brokerId {string}
+   * @param connectionId {string}
+   * @param accountType {PublicAccountTypeEnum}
+   * @param status {AccountStatus}
+   * @param currency {string}
    * @param limit {number}
    * @param offset {number}
-   * @param withMetadata {any}
-   * @returns {any[]}
+   * @param withMetadata {boolean}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {Accounts[]}
    * 
    * Generated from: GET /api/v1/brokers/data/accounts
    * @methodId get_accounts_api_v1_brokers_data_accounts_get
@@ -1173,7 +848,7 @@ export class BrokersWrapper {
    * const result = await finatic.getAccounts();
    * ```
    */
-  async getAccounts(brokerId?: any, connectionId?: any, accountType?: any, status?: any, currency?: any, limit?: number, offset?: number, withMetadata?: any): Promise<any[]> {
+  async getAccounts(brokerId?: string, connectionId?: string, accountType?: PublicAccountTypeEnum, status?: AccountStatus, currency?: string, limit?: number, offset?: number, withMetadata?: boolean, withEnvelope?: boolean): Promise<Accounts[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -1190,8 +865,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/accounts', { brokerId, connectionId, accountType, status, currency, limit, offset, withMetadata }, this.sdkConfig);
@@ -1219,114 +893,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getAccountsApiV1BrokersDataAccountsGet({ ...(brokerId !== undefined ? { brokerId: brokerId } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(accountType !== undefined ? { accountType: accountType } : {}), ...(status !== undefined ? { status: status } : {}), ...(currency !== undefined ? { currency: currency } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}), ...(withMetadata !== undefined ? { withMetadata: withMetadata } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
-      // Transform to metadata structure if withMetadata is true
-      let finalResult = result;
-      if (withMetadata === true) {
-        // If result has response_data (snake_case from API), transform it
-        if (result && typeof result === 'object' && 'response_data' in result) {
-          const dataArray = Array.isArray(result.response_data) ? result.response_data : [];
-          const metadata: any = {};
-          
-          // Extract pagination if present
-          if (result.pagination && typeof result.pagination === 'object') {
-            metadata.pagination = result.pagination;
-            if (result.pagination.has_more !== undefined) {
-              metadata.has_more = result.pagination.has_more;
-            }
-          }
-          
-          // Extract warnings if present
-          if (result.warnings && Array.isArray(result.warnings)) {
-            metadata.warnings = result.warnings;
-          }
-          
-          // Extract errors if present
-          if (result.errors && Array.isArray(result.errors)) {
-            metadata.errors = result.errors;
-          }
-          
-          this.logger.debug('getAccounts returning metadata structure from response_data', {
-            data_length: dataArray.length,
-            has_pagination: !!metadata.pagination,
-            has_warnings: !!metadata.warnings,
-            has_errors: !!metadata.errors,
-          });
-          
-          finalResult = { data: dataArray, metadata };
-        } else if (result && typeof result === 'object' && 'data' in result && 'metadata' in result && Array.isArray(result.data)) {
-          // If result already has data and metadata structure, return as-is
-          this.logger.debug('getAccounts returning metadata structure from unwrapped result', {
-            data_length: result.data?.length,
-            has_metadata: !!result.metadata,
-          });
-          finalResult = result;
-        } else {
-          // Otherwise, return array (or empty array if not an array)
-          finalResult = Array.isArray(result) ? result : [];
-          this.logger.debug('getAccounts returning array (no metadata structure found)', {
-            array_length: finalResult.length,
-            result_type: typeof result,
-            result_keys: result && typeof result === 'object' ? Object.keys(result) : [],
-          });
-        }
-      } else {
-        // If withMetadata is false or undefined, return array (or empty array if not an array)
-        finalResult = Array.isArray(result) ? result : [];
-      }
+      const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/accounts', { brokerId, connectionId, accountType, status, currency, limit, offset, withMetadata }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Accounts completed', {
         request_id: requestId,
         action: 'getAccounts'
@@ -1335,12 +934,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Accounts failed', error, {
         request_id: requestId,
@@ -1363,10 +959,11 @@ export class BrokersWrapper {
    * This endpoint returns all execution fills for the specified order.
 
    * @param orderId {string}
-   * @param connectionId {any}
+   * @param connectionId {string}
    * @param limit {number}
    * @param offset {number}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderFillResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/orders/{order_id}/fills
    * @methodId get_order_fills_api_v1_brokers_data_orders__order_id__fills_get
@@ -1377,7 +974,7 @@ export class BrokersWrapper {
    * const result = await finatic.getOrderFills('example');
    * ```
    */
-  async getOrderFills(orderId: string, connectionId?: any, limit?: number, offset?: number): Promise<any[]> {
+  async getOrderFills(orderId: string, connectionId?: string, limit?: number, offset?: number, withEnvelope?: boolean): Promise<OrderFillResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -1394,8 +991,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/{order_id}/fills', { orderId, connectionId, limit, offset }, this.sdkConfig);
@@ -1419,61 +1015,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getOrderFillsApiV1BrokersDataOrdersOrderIdFillsGet({ orderId: orderId, ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/{order_id}/fills', { orderId, connectionId, limit, offset }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Order Fills completed', {
         request_id: requestId,
         action: 'getOrderFills'
@@ -1482,12 +1056,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Order Fills failed', error, {
         request_id: requestId,
@@ -1510,10 +1081,11 @@ export class BrokersWrapper {
    * This endpoint returns all lifecycle events for the specified order.
 
    * @param orderId {string}
-   * @param connectionId {any}
+   * @param connectionId {string}
    * @param limit {number}
    * @param offset {number}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderEventResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/orders/{order_id}/events
    * @methodId get_order_events_api_v1_brokers_data_orders__order_id__events_get
@@ -1524,7 +1096,7 @@ export class BrokersWrapper {
    * const result = await finatic.getOrderEvents('example');
    * ```
    */
-  async getOrderEvents(orderId: string, connectionId?: any, limit?: number, offset?: number): Promise<any[]> {
+  async getOrderEvents(orderId: string, connectionId?: string, limit?: number, offset?: number, withEnvelope?: boolean): Promise<OrderEventResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -1541,8 +1113,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/{order_id}/events', { orderId, connectionId, limit, offset }, this.sdkConfig);
@@ -1566,61 +1137,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getOrderEventsApiV1BrokersDataOrdersOrderIdEventsGet({ orderId: orderId, ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/{order_id}/events', { orderId, connectionId, limit, offset }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Order Events completed', {
         request_id: requestId,
         action: 'getOrderEvents'
@@ -1629,12 +1178,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Order Events failed', error, {
         request_id: requestId,
@@ -1656,13 +1202,14 @@ export class BrokersWrapper {
    *
    * This endpoint returns order groups that contain multiple orders.
 
-   * @param brokerId {any}
-   * @param connectionId {any}
+   * @param brokerId {string}
+   * @param connectionId {string}
    * @param limit {number}
    * @param offset {number}
-   * @param createdAfter {any}
-   * @param createdBefore {any}
-   * @returns {any[]}
+   * @param createdAfter {string}
+   * @param createdBefore {string}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderGroupResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/orders/groups
    * @methodId get_order_groups_api_v1_brokers_data_orders_groups_get
@@ -1673,7 +1220,7 @@ export class BrokersWrapper {
    * const result = await finatic.getOrderGroups();
    * ```
    */
-  async getOrderGroups(brokerId?: any, connectionId?: any, limit?: number, offset?: number, createdAfter?: any, createdBefore?: any): Promise<any[]> {
+  async getOrderGroups(brokerId?: string, connectionId?: string, limit?: number, offset?: number, createdAfter?: string, createdBefore?: string, withEnvelope?: boolean): Promise<OrderGroupResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -1690,8 +1237,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/groups', { brokerId, connectionId, limit, offset, createdAfter, createdBefore }, this.sdkConfig);
@@ -1717,61 +1263,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getOrderGroupsApiV1BrokersDataOrdersGroupsGet({ ...(brokerId !== undefined ? { brokerId: brokerId } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}), ...(createdAfter !== undefined ? { createdAfter: createdAfter } : {}), ...(createdBefore !== undefined ? { createdBefore: createdBefore } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/orders/groups', { brokerId, connectionId, limit, offset, createdAfter, createdBefore }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Order Groups completed', {
         request_id: requestId,
         action: 'getOrderGroups'
@@ -1780,12 +1304,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Order Groups failed', error, {
         request_id: requestId,
@@ -1808,14 +1329,15 @@ export class BrokersWrapper {
    * This endpoint returns tax lots for positions, which are used for tax reporting.
    * Each lot tracks when a position was opened/closed and at what prices.
 
-   * @param brokerId {any}
-   * @param connectionId {any}
-   * @param accountId {any}
-   * @param symbol {any}
-   * @param positionId {any}
+   * @param brokerId {string}
+   * @param connectionId {string}
+   * @param accountId {string}
+   * @param symbol {string}
+   * @param positionId {string}
    * @param limit {number}
    * @param offset {number}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {PositionLotResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/positions/lots
    * @methodId get_position_lots_api_v1_brokers_data_positions_lots_get
@@ -1826,7 +1348,7 @@ export class BrokersWrapper {
    * const result = await finatic.getPositionLots();
    * ```
    */
-  async getPositionLots(brokerId?: any, connectionId?: any, accountId?: any, symbol?: any, positionId?: any, limit?: number, offset?: number): Promise<any[]> {
+  async getPositionLots(brokerId?: string, connectionId?: string, accountId?: string, symbol?: string, positionId?: string, limit?: number, offset?: number, withEnvelope?: boolean): Promise<PositionLotResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -1843,8 +1365,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions/lots', { brokerId, connectionId, accountId, symbol, positionId, limit, offset }, this.sdkConfig);
@@ -1871,61 +1392,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getPositionLotsApiV1BrokersDataPositionsLotsGet({ ...(brokerId !== undefined ? { brokerId: brokerId } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(accountId !== undefined ? { accountId: accountId } : {}), ...(symbol !== undefined ? { symbol: symbol } : {}), ...(positionId !== undefined ? { positionId: positionId } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions/lots', { brokerId, connectionId, accountId, symbol, positionId, limit, offset }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Position Lots completed', {
         request_id: requestId,
         action: 'getPositionLots'
@@ -1934,12 +1433,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Position Lots failed', error, {
         request_id: requestId,
@@ -1962,10 +1458,11 @@ export class BrokersWrapper {
    * This endpoint returns all fills associated with a specific position lot.
 
    * @param lotId {string}
-   * @param connectionId {any}
+   * @param connectionId {string}
    * @param limit {number}
    * @param offset {number}
-   * @returns {any[]}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {PositionLotFillResponse[]}
    * 
    * Generated from: GET /api/v1/brokers/data/positions/lots/{lot_id}/fills
    * @methodId get_position_lot_fills_api_v1_brokers_data_positions_lots__lot_id__fills_get
@@ -1976,7 +1473,7 @@ export class BrokersWrapper {
    * const result = await finatic.getPositionLotFills('example');
    * ```
    */
-  async getPositionLotFills(lotId: string, connectionId?: any, limit?: number, offset?: number): Promise<any[]> {
+  async getPositionLotFills(lotId: string, connectionId?: string, limit?: number, offset?: number, withEnvelope?: boolean): Promise<PositionLotFillResponse[]> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -1993,8 +1490,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions/lots/{lot_id}/fills', { lotId, connectionId, limit, offset }, this.sdkConfig);
@@ -2018,61 +1514,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.getPositionLotFillsApiV1BrokersDataPositionsLotsLotIdFillsGet({ lotId: lotId, ...(connectionId !== undefined ? { connectionId: connectionId } : {}), ...(limit !== undefined ? { limit: limit } : {}), ...(offset !== undefined ? { offset: offset } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('GET', '/api/v1/brokers/data/positions/lots/{lot_id}/fills', { lotId, connectionId, limit, offset }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Get Position Lot Fills completed', {
         request_id: requestId,
         action: 'getPositionLotFills'
@@ -2081,12 +1555,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Get Position Lot Fills failed', error, {
         request_id: requestId,
@@ -2160,8 +1631,9 @@ export class BrokersWrapper {
    * handle this logic for you, but for now you need to fetch the option chain manually.
 
    * @param body {any}
-   * @param connectionId {any}
-   * @returns {any}
+   * @param connectionId {string}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderActionResult}
    * 
    * Generated from: POST /api/v1/brokers/orders
    * @methodId place_order_api_v1_brokers_orders_post
@@ -2172,7 +1644,7 @@ export class BrokersWrapper {
    * const result = await finatic.placeOrder();
    * ```
    */
-  async placeOrder(body?: any, connectionId?: any): Promise<any> {
+  async placeOrder(body?: any, connectionId?: string, withEnvelope?: boolean): Promise<OrderActionResult> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -2189,8 +1661,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('POST', '/api/v1/brokers/orders', { body, connectionId }, this.sdkConfig);
@@ -2212,61 +1683,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.placeOrderApiV1BrokersOrdersPost({ ...(body !== undefined ? { body: body } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('POST', '/api/v1/brokers/orders', { body, connectionId }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Place Order completed', {
         request_id: requestId,
         action: 'placeOrder'
@@ -2275,12 +1724,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Place Order failed', error, {
         request_id: requestId,
@@ -2305,9 +1751,10 @@ export class BrokersWrapper {
 
    * @param orderId {string}
    * @param body {any}
-   * @param accountNumber {any}
-   * @param connectionId {any}
-   * @returns {any}
+   * @param accountNumber {string}
+   * @param connectionId {string}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderActionResult}
    * 
    * Generated from: DELETE /api/v1/brokers/orders/{order_id}
    * @methodId cancel_order_api_v1_brokers_orders__order_id__delete
@@ -2318,7 +1765,7 @@ export class BrokersWrapper {
    * const result = await finatic.cancelOrder('example');
    * ```
    */
-  async cancelOrder(orderId: string, body?: any, accountNumber?: any, connectionId?: any): Promise<any> {
+  async cancelOrder(orderId: string, body?: any, accountNumber?: string, connectionId?: string, withEnvelope?: boolean): Promise<OrderActionResult> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -2335,8 +1782,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/orders/{order_id}', { orderId, body, accountNumber, connectionId }, this.sdkConfig);
@@ -2360,61 +1806,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.cancelOrderApiV1BrokersOrdersOrderIdDelete({ orderId: orderId, ...(body !== undefined ? { body: body } : {}), ...(accountNumber !== undefined ? { accountNumber: accountNumber } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('DELETE', '/api/v1/brokers/orders/{order_id}', { orderId, body, accountNumber, connectionId }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Cancel Order completed', {
         request_id: requestId,
         action: 'cancelOrder'
@@ -2423,12 +1847,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Cancel Order failed', error, {
         request_id: requestId,
@@ -2453,9 +1874,10 @@ export class BrokersWrapper {
 
    * @param orderId {string}
    * @param body {any}
-   * @param accountNumber {any}
-   * @param connectionId {any}
-   * @returns {any}
+   * @param accountNumber {string}
+   * @param connectionId {string}
+   * @param withEnvelope {boolean} return unified envelope when true
+   * @returns {OrderActionResult}
    * 
    * Generated from: PATCH /api/v1/brokers/orders/{order_id}
    * @methodId modify_order_api_v1_brokers_orders__order_id__patch
@@ -2466,7 +1888,7 @@ export class BrokersWrapper {
    * const result = await finatic.modifyOrder('example');
    * ```
    */
-  async modifyOrder(orderId: string, body?: any, accountNumber?: any, connectionId?: any): Promise<any> {
+  async modifyOrder(orderId: string, body?: any, accountNumber?: string, connectionId?: string, withEnvelope?: boolean): Promise<OrderActionResult> {
     // Authentication check
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
@@ -2483,8 +1905,7 @@ export class BrokersWrapper {
     }
 
     // Check cache (Phase 2B: optional caching)
-    // Portal URLs are single-use tokens - must NOT be cached
-    const shouldCache = !false;
+    const shouldCache = true;
     const cache = getCache(this.sdkConfig);
     if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
       const cacheKey = generateCacheKey('PATCH', '/api/v1/brokers/orders/{order_id}', { orderId, body, accountNumber, connectionId }, this.sdkConfig);
@@ -2508,61 +1929,39 @@ export class BrokersWrapper {
     });
 
     try {
-      // Full retry logic (Phase 2B: p-retry)
       const response = await retryApiCall(
         async () => {
-          // Apply request interceptors (Phase 2B)
-          // Public API methods already handle calling the function, so await directly
           const apiResponse = await this.api.modifyOrderApiV1BrokersOrdersOrderIdPatch({ orderId: orderId, ...(body !== undefined ? { body: body } : {}), ...(accountNumber !== undefined ? { accountNumber: accountNumber } : {}), ...(connectionId !== undefined ? { connectionId: connectionId } : {}) }, { headers: { 'x-session-id': this.sessionId, 'x-company-id': this.companyId, 'x-csrf-token': this.csrfToken, 'x-request-id': requestId } });
           const result = apiResponse;
-          // Apply response interceptors (Phase 2B)
           return await applyResponseInterceptors(result, this.sdkConfig);
         },
         {},
         this.sdkConfig
       );
       
-      // Unwrap FinaticResponse if present, otherwise use response directly
-      // OpenAPI generator returns responses directly, but may be wrapped in FinaticResponse
-      // Unwrap FinaticResponse wrapper if present
-      // The API returns an AxiosResponse, so the actual response is in response.data
-      // response.data might be FinaticResponse[Model] (with .data property) or FinaticResponseList[...] (with .response_data property)
-      let result;
-      // First unwrap Axios response wrapper (response.data)
-      const responseData = (response && typeof response === 'object' && 'data' in response) ? response.data : response;
-      // Now unwrap FinaticResponse wrapper
-      if (responseData && typeof responseData === 'object' && 'response_data' in responseData) {
-        // Unwrap FinaticResponseList wrapper (e.g., FinaticResponseListUserBrokerConnections -> Array<UserBrokerConnections>)
-        // Handle null/undefined response_data as empty array for array-returning methods
-        if (responseData.response_data !== null && responseData.response_data !== undefined) {
-          result = responseData.response_data;
-        } else {
-          // response_data is null or undefined - return empty array for array-returning methods
-          result = [];
-        }
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && responseData.data && typeof responseData.data === 'object' && 'data' in responseData.data) {
-        // FinaticResponse wrapper: { data: { data: ... } }
-        result = responseData.data.data;
-      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // FinaticResponse with single data property: { data: ... }
-        result = responseData.data;
-      } else {
-        // Direct response (already unwrapped)
-        result = responseData;
+      // Canonical unwrap: AxiosResponse.data.data or Pydantic-like data
+      const responseData = (response && typeof response === 'object' && 'data' in response) ? (response as any).data : response;
+      if (!(responseData && typeof responseData === 'object' && 'data' in responseData)) {
+        throw new Error('Unexpected response shape: missing data');
+      }
+      const result = (responseData as any).data;
+      
+      if (withEnvelope === true) {
+        const warnings = (responseData as any).warnings;
+        const meta = (responseData as any).meta;
+        const envelope: any = { data: result };
+        if (Array.isArray(warnings)) envelope.warnings = warnings;
+        if (meta) envelope.meta = meta;
+        return envelope;
       }
       
-
       const finalResult = result;
       
-
-      // Store in cache (Phase 2B)
-      // Portal URLs are single-use tokens - must NOT be cached
       if (cache && this.sdkConfig?.cacheEnabled && shouldCache) {
         const cacheKey = generateCacheKey('PATCH', '/api/v1/brokers/orders/{order_id}', { orderId, body, accountNumber, connectionId }, this.sdkConfig);
         cache.set(cacheKey, finalResult, this.sdkConfig.cacheTtl || 300);
       }
       
-      // Structured logging (Phase 2B)
       this.logger.debug('Modify Order completed', {
         request_id: requestId,
         action: 'modifyOrder'
@@ -2571,12 +1970,9 @@ export class BrokersWrapper {
       return finalResult;
       
     } catch (error) {
-      // Error handling with interceptors (Phase 2B)
       try {
         await applyErrorInterceptors(error, this.sdkConfig);
-      } catch (interceptorError) {
-        // If interceptor throws, use original error
-      }
+      } catch {}
       
       this.logger.error('Modify Order failed', error, {
         request_id: requestId,
