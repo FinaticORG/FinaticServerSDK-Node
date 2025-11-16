@@ -12,7 +12,6 @@
 
 import 'dotenv/config';
 import { FinaticServer } from '@finatic/server-node';
-import * as Models from '@finatic/server-node/dist/generated/models';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 

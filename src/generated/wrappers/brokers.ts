@@ -14,8 +14,25 @@ import { getLogger, type Logger } from '../utils/logger';
 import { handleError } from '../utils/error-handling';
 import { getCache, generateCacheKey } from '../utils/cache';
 import { applyRequestInterceptors, applyResponseInterceptors, applyErrorInterceptors } from '../utils/interceptors';
+import type { AccountStatus } from '../models';
+import type { Accounts } from '../models';
+import type { Balances } from '../models';
+import type { BrokerInfo } from '../models';
 import type { DisconnectActionResult } from '../models';
 import type { OrderActionResult } from '../models';
+import type { OrderEventResponse } from '../models';
+import type { OrderFillResponse } from '../models';
+import type { OrderGroupResponse } from '../models';
+import type { OrderResponse } from '../models';
+import type { PositionLotFillResponse } from '../models';
+import type { PositionLotResponse } from '../models';
+import type { PositionResponse } from '../models';
+import type { PublicAccountTypeEnum } from '../models';
+import type { PublicAssetTypeEnum } from '../models';
+import type { PublicOrderSideEnum } from '../models';
+import type { PublicOrderStatusEnum } from '../models';
+import type { PublicPositionStatusEnum } from '../models';
+import type { UserBrokerConnections } from '../models';
 
 
 /**

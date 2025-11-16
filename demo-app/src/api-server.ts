@@ -8,7 +8,7 @@
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { FinaticServerClient } from '@finatic/server-node';
+import { FinaticServer } from '@finatic/server-node';
 
 // Types
 interface ApiResponse {
@@ -54,7 +54,7 @@ interface TradingContextRequest {
 }
 
 // Global SDK client instance
-let sdkClient: FinaticServerClient | null = null;
+let sdkClient: FinaticServer | null = null;
 
 // Global trading context storage (in production, use proper session management)
 const tradingContext = { broker: null as string | null, account: null as string | null };
@@ -82,7 +82,7 @@ async function initializeSDK(): Promise<void> {
   console.log(`   API URL: ${apiUrl}`);
   console.log(`   API Key: ${apiKey.substring(0, 10)}...`);
 
-  sdkClient = new FinaticServerClient(apiKey, apiUrl);
+  sdkClient = new FinaticServer(apiKey, apiUrl);
 
   console.log('✅ Node.js Server SDK initialized successfully');
 }

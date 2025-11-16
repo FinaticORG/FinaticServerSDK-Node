@@ -9,8 +9,8 @@
 export * from './generated/wrappers';
 export * from './generated/utils';
 export * from './generated/config';
-export { FinaticServerClient } from './generated/FinaticServerClient';
-export type { PortalOptions } from './generated/FinaticServerClient';
+export { FinaticServer } from './custom/FinaticServer';
+export type { PortalOptions } from './generated/FinaticServer';
 export * from './custom';
 export * from './generated/api';
 export type { ValidationError as ApiValidationError } from './generated/models/validation-error';

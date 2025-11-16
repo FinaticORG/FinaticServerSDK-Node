@@ -11,7 +11,7 @@ npm install @finatic/server-node
 ## Quick Start
 
 ```typescript
-import { FinaticServerClient} from '@finatic/server-node';
+import { FinaticServer } from '@finatic/server-node';
 
 // TODO: Add example usage
 ```

@@ -15,10 +15,10 @@ export * from './generated/config';
 // Re-export main client class explicitly (custom version that extends generated class)
 // MUST come before export * from './custom' to ensure custom version is used
 export { FinaticServer } from './custom/FinaticServer';
-export type { PortalOptions } from './generated/FinaticServerClient';
+export type { PortalOptions } from './generated/FinaticServer';
 
 // Re-export all other custom code (wrappers, utils, etc.)
-// Note: This might export FinaticServerClient again, but the explicit export above takes precedence
+// Note: This might export FinaticServer again, but the explicit export above takes precedence
 export * from './custom';
 
 // Also export the raw API clients and models from OpenAPI generator
