@@ -22,6 +22,9 @@ const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@finatic.com';
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'demo_password_123';
 const ACCOUNT_ID_FILTER = '1c0e6a5e-f6d7-4af8-b69d-09aa17f73762';
 
+// Feature flags
+const ENABLE_DISCONNECT = process.env.ENABLE_DISCONNECT === 'true';
+
 // Check for required environment variables
 if (!API_KEY) {
   console.error(chalk.red('❌ Error: FINATIC_API_KEY environment variable is required'));
@@ -133,6 +136,42 @@ class FinaticDemo {
       console.log(chalk.gray(`User ID: ${userInfo.user_id}`));
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
       console.log(chalk.gray(`Token Type: ${userInfo.token_type}`));
+
+      // Test session/auth methods
+      console.log(chalk.yellow('\nStep 5.1: Testing session/auth methods...'));
+      const sessionResults = {
+        passed: 0,
+        failed: 0,
+        total: 0,
+      };
+
+      const testSession = async (name: string, fn: () => any | Promise<any>, expectedType: 'string' | 'object' = 'object'): Promise<void> => {
+        sessionResults.total++;
+        try {
+          const result = await (fn() instanceof Promise ? fn() : Promise.resolve(fn()));
+          const isValid = expectedType === 'string' 
+            ? typeof result === 'string'
+            : (result && typeof result === 'object');
+          
+          if (isValid) {
+            sessionResults.passed++;
+            console.log(chalk.gray(`  ✅ ${name}`));
+          } else {
+            sessionResults.failed++;
+            console.log(chalk.red(`  ❌ ${name} (invalid return type)`));
+          }
+        } catch (error: any) {
+          sessionResults.failed++;
+          console.log(chalk.red(`  ❌ ${name} (${error.message?.substring(0, 50) || 'error'})`));
+        }
+      };
+
+      await testSession('getSessionId', () => this.client.getSessionId(), 'string');
+      await testSession('getCompanyId', () => this.client.getCompanyId(), 'string');
+      await testSession('getUserId', () => this.client.getUserId(), 'string');
+      await testSession('getPortalUrl', () => this.client.getPortalUrl(), 'string');
+      
+      console.log(chalk.gray(`\n  Session Methods Summary: ${sessionResults.passed}/${sessionResults.total} passed`));
       
       // Track core method results
       const coreResults = {
@@ -308,14 +347,37 @@ class FinaticDemo {
         }
       };
 
+      // Test broker list (getBrokerConnections is already tested in core methods)
+      await testHelper('getBrokerList', () => this.client.getBrokerList());
+
       // Test getAll* methods (fetch all data across pages)
       await testHelper('getAllAccounts', () => this.client.getAllAccounts());
+      // Capture getAllOrders result for use in detail methods (tested via testHelper)
+      let allOrdersResult: any[] = [];
+      try {
+        allOrdersResult = await this.client.getAllOrders();
+      } catch (error: any) {
+        // Error will be logged by testHelper below
+      }
+      // Test getAllOrders (this will also be counted in test results)
       await testHelper('getAllOrders', () => this.client.getAllOrders());
       await testHelper('getAllPositions', () => this.client.getAllPositions());
       await testHelper('getAllBalances', () => this.client.getAllBalances());
+      await testHelper('getAllOrderGroups', () => this.client.getAllOrderGroups());
+      // Capture getAllPositionLots result for use in detail methods
+      let allPositionLotsResult: any[] = [];
+      try {
+        allPositionLotsResult = await this.client.getAllPositionLots();
+      } catch (error: any) {
+        // Error will be logged by testHelper below
+      }
+      // Test getAllPositionLots (this will also be counted in test results)
+      await testHelper('getAllPositionLots', () => this.client.getAllPositionLots());
 
       // Test filtered helper methods (use symbols/statuses from earlier results if available)
-      const sampleSymbol = ordersResult?.data?.length > 0 ? ordersResult.data[0].symbol : 'AAPL';
+      // Use allOrdersResult if available, otherwise fall back to ordersResult
+      const ordersForSymbol = allOrdersResult.length > 0 ? allOrdersResult : (ordersResult?.data || []);
+      const sampleSymbol = ordersForSymbol.length > 0 ? ordersForSymbol[0].symbol : 'AAPL';
       const sampleBrokerId = connections?.length > 0 ? connections[0].broker_id : undefined;
 
       await testHelper('getOpenPositions', () => this.client.getOpenPositions());
@@ -333,6 +395,87 @@ class FinaticDemo {
         await testHelper(`getPositionsByBroker("${sampleBrokerId}")`, () => this.client.getPositionsByBroker(sampleBrokerId));
       }
 
+      // Test paginated methods
+      await testHelper('getAccounts', () => this.client.getAccounts(1, 10), 'object');
+      await testHelper('getOrders', () => this.client.getOrders(1, 10), 'object');
+      await testHelper('getPositions', () => this.client.getPositions(1, 10), 'object');
+      await testHelper('getBalances', () => this.client.getBalances(1, 10), 'object');
+      await testHelper('getOrderGroups', () => this.client.getOrderGroups(1, 10), 'object');
+      await testHelper('getPositionLots', () => this.client.getPositionLots(1, 10), 'object');
+
+      // Test order/position detail methods (require IDs from earlier results)
+      // Use allOrdersResult if available (list), otherwise fall back to ordersResult (paginated object)
+      const ordersForDetails = allOrdersResult.length > 0 ? allOrdersResult : (ordersResult?.data || []);
+      if (ordersForDetails.length > 0) {
+        const sampleOrderId = ordersForDetails[0].id || ordersForDetails[0].order_id;
+        if (sampleOrderId) {
+          await testHelper(
+            `getOrderFills("${sampleOrderId}")`,
+            () => this.client.getOrderFills(sampleOrderId, 1, 10),
+            'object'
+          );
+          await testHelper(
+            `getOrderEvents("${sampleOrderId}")`,
+            () => this.client.getOrderEvents(sampleOrderId, 1, 10),
+            'object'
+          );
+        }
+      }
+
+      // Test getPositionLotFills (use allPositionLotsResult if available)
+      if (allPositionLotsResult.length > 0) {
+        const sampleLotId =
+          allPositionLotsResult[0].id ||
+          allPositionLotsResult[0].lot_id ||
+          allPositionLotsResult[0].position_lot_id;
+        if (sampleLotId) {
+          await testHelper(
+            `getPositionLotFills("${sampleLotId}")`,
+            () => this.client.getPositionLotFills(sampleLotId, 1, 10),
+            'object'
+          );
+        }
+      } else {
+        // Fallback: try to get position lots from paginated call
+        try {
+          const positionLotsResult = await this.client.getPositionLots(1, 10);
+          if (positionLotsResult?.data && positionLotsResult.data.length > 0) {
+            const sampleLotId =
+              positionLotsResult.data[0].id ||
+              positionLotsResult.data[0].lot_id ||
+              positionLotsResult.data[0].position_lot_id;
+            if (sampleLotId) {
+              await testHelper(
+                `getPositionLotFills("${sampleLotId}")`,
+                () => this.client.getPositionLotFills(sampleLotId, 1, 10),
+                'object'
+              );
+            }
+          }
+        } catch (error: any) {
+          // If getPositionLots fails, skip getPositionLotFills test
+        }
+      }
+
+      // Test disconnect (if enabled)
+      if (ENABLE_DISCONNECT && connections && connections.length > 0) {
+        console.log(chalk.yellow('\nStep 11.1: Testing disconnectCompany...'));
+        try {
+          const firstConnection = connections[0];
+          const connectionId = firstConnection.id || firstConnection.connection_id;
+          if (connectionId) {
+            await testHelper('disconnectCompany', () => this.client.disconnectCompany(connectionId));
+            console.log(chalk.green('✅ Disconnect test completed'));
+          } else {
+            console.log(chalk.yellow('⚠️  No connection ID available for disconnect test'));
+          }
+        } catch (error: any) {
+          console.log(chalk.red(`❌ Disconnect test failed: ${error.message?.substring(0, 50) || 'error'}`));
+        }
+      } else if (ENABLE_DISCONNECT) {
+        console.log(chalk.yellow('⚠️  ENABLE_DISCONNECT is true but no connections available'));
+      }
+
       // Summary
       console.log(chalk.gray(`\n  Helper Methods Summary: ${helperResults.passed}/${helperResults.total} passed`));
       if (helperResults.failed > 0) {
@@ -341,49 +484,13 @@ class FinaticDemo {
         console.log(chalk.green('  ✅ All helper methods passed!'));
       }
 
-      // Step 12: Disconnect the first connection
-      // Re-check for connections in case they were created between Step 6 and Step 12
-      // let connectionsForDisconnect: any[] = connections;
-      // if (connections.length === 0) {
-      //   try {
-      //     connectionsForDisconnect = await this.client.getBrokerConnections();
-      //   } catch (error: any) {
-      //     // If re-fetch fails, use the original connections list
-      //     connectionsForDisconnect = connections;
-      //   }
-      // }
-      
-      // if (connectionsForDisconnect.length > 0) {
-      //   console.log(chalk.yellow('\nStep 12: Disconnecting first connection...'));
-      //   try {
-      //     const firstConnection = connectionsForDisconnect[0];
-      //     // Handle both 'id' and 'connection_id' properties
-      //     const connectionId = firstConnection.id || firstConnection.connection_id;
-      //     const brokerId = firstConnection.broker_id || 'Unknown';
-          
-      //     if (!connectionId) {
-      //       throw new Error('Connection ID not found in connection object');
-      //     }
-          
-      //     console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
-      //     console.log(chalk.gray(`  Broker: ${brokerId}`));
-          
-      //     await this.client.brokers.disconnectCompanyFromBroker(connectionId);
-      //     console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
-      //   } catch (error: any) {
-      //     console.log(chalk.red(`❌ Failed to disconnect connection: ${error.message}`));
-      //     throw error;
-      //   }
-      // } else {
-      //   console.log(chalk.yellow('\nStep 12: Skipping disconnect - no connections available'));
-      // }
-      
       console.log(chalk.green('\n🎉 Demo completed successfully!'));
       console.log(chalk.gray(`\n📊 Test Summary:`));
+      console.log(chalk.gray(`  Session methods: ${sessionResults.passed}/${sessionResults.total} passed`));
       console.log(chalk.gray(`  Core methods: ${coreResults.passed}/${coreResults.total} passed`));
       console.log(chalk.gray(`  Helper methods: ${helperResults.passed}/${helperResults.total} passed`));
-      const totalPassed = coreResults.passed + helperResults.passed;
-      const totalTests = coreResults.total + helperResults.total;
+      const totalPassed = sessionResults.passed + coreResults.passed + helperResults.passed;
+      const totalTests = sessionResults.total + coreResults.total + helperResults.total;
       if (totalPassed === totalTests) {
         console.log(chalk.green(`  Total: ${totalPassed}/${totalTests} passed ✅`));
       } else {

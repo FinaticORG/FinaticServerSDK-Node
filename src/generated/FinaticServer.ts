@@ -25,6 +25,7 @@ export class FinaticServer {
   private sessionId?: string;
   private companyId?: string;
   private csrfToken?: string;
+  private userId?: string;
 
   public readonly brokers: BrokersWrapper;
   public readonly session: SessionWrapper;
@@ -135,9 +136,17 @@ export class FinaticServer {
     }
     
     const response = await this.session.getSessionUser(this.sessionId);
+    const userId = response.user_id || '';
+    const companyId = response.company_id || this.companyId || '';
+    
+    // Store userId for getUserId() method
+    if (userId) {
+      this.userId = userId;
+    }
+    
     return {
-      user_id: response.user_id || '',
-      company_id: response.company_id || this.companyId || '',
+      user_id: userId,
+      company_id: companyId,
       token_type: response.token_type || 'Bearer',
     };
   }
@@ -167,6 +176,13 @@ export class FinaticServer {
    */
   getCompanyId(): string | undefined {
     return this.companyId;
+  }
+
+  /**
+   * Get current user ID (set after portal authentication).
+   */
+  getUserId(): string | undefined {
+    return this.userId;
   }
 
 
@@ -346,6 +362,148 @@ export class FinaticServer {
    */
   async getPositionsByBroker(brokerId: string, filter?: any): Promise<any[]> {
     return await this.getAllPositions({ ...filter, brokerId });
+  }
+
+  /**
+   * Get all order groups across all pages.
+   */
+  async getAllOrderGroups(filter?: any): Promise<any[]> {
+    const allData: any[] = [];
+    let offset = 0;
+    const limit = 100;
+    
+    while (true) {
+      const result = await this.brokers.getOrderGroups(
+        filter?.brokerId,
+        filter?.connectionId,
+        limit,
+        offset,
+        filter?.createdAfter,
+        filter?.createdBefore
+      );
+      if (!result || result.length === 0) break;
+      allData.push(...result);
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    return allData;
+  }
+
+  /**
+   * Get paginated order groups.
+   */
+  async getOrderGroups(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+    const offset = (page - 1) * perPage;
+    return await this.brokers.getOrderGroups(
+      filter?.brokerId,
+      filter?.connectionId,
+      perPage,
+      offset,
+      filter?.createdAfter,
+      filter?.createdBefore
+    );
+  }
+
+  /**
+   * Get all position lots across all pages.
+   */
+  async getAllPositionLots(filter?: any): Promise<any[]> {
+    const allData: any[] = [];
+    let offset = 0;
+    const limit = 100;
+    
+    while (true) {
+      const result = await this.brokers.getPositionLots(
+        filter?.brokerId,
+        filter?.connectionId,
+        filter?.accountId,
+        filter?.symbol,
+        filter?.positionId,
+        limit,
+        offset
+      );
+      if (!result || result.length === 0) break;
+      allData.push(...result);
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    return allData;
+  }
+
+  /**
+   * Get paginated position lots.
+   */
+  async getPositionLots(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+    const offset = (page - 1) * perPage;
+    return await this.brokers.getPositionLots(
+      filter?.brokerId,
+      filter?.connectionId,
+      filter?.accountId,
+      filter?.symbol,
+      filter?.positionId,
+      perPage,
+      offset
+    );
+  }
+
+  /**
+   * Disconnect company from broker.
+   */
+  async disconnectCompany(connectionId: string): Promise<any> {
+    if (!this.sessionId) {
+      throw new Error('Session not initialized. Call startSession() first.');
+    }
+    return await this.brokers.disconnectCompanyFromBroker(connectionId);
+  }
+
+  /**
+   * Get order fills for a specific order.
+   */
+  async getOrderFills(orderId: string, page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+    if (!this.sessionId) {
+      throw new Error('Session not initialized. Call startSession() first.');
+    }
+    const offset = (page - 1) * perPage;
+    return await this.brokers.getOrderFills(
+      orderId,
+      filter?.connectionId,
+      perPage,
+      offset
+    );
+  }
+
+  /**
+   * Get order events for a specific order.
+   */
+  async getOrderEvents(orderId: string, page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+    if (!this.sessionId) {
+      throw new Error('Session not initialized. Call startSession() first.');
+    }
+    const offset = (page - 1) * perPage;
+    return await this.brokers.getOrderEvents(
+      orderId,
+      filter?.connectionId,
+      perPage,
+      offset
+    );
+  }
+
+  /**
+   * Get position lot fills for a specific lot.
+   */
+  async getPositionLotFills(lotId: string, page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+    if (!this.sessionId) {
+      throw new Error('Session not initialized. Call startSession() first.');
+    }
+    const offset = (page - 1) * perPage;
+    return await this.brokers.getPositionLotFills(
+      lotId,
+      filter?.connectionId,
+      perPage,
+      offset
+    );
   }
 
 
