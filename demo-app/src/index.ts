@@ -321,7 +321,7 @@ class FinaticDemo {
 
       await testHelper('getOpenPositions', () => this.client.getOpenPositions());
       await testHelper('getFilledOrders', () => this.client.getFilledOrders());
-      await testHelper('getPendingOrders', () => this.client.getAllOrders({ orderStatus: Models.OrderStatus.PendingNew }));
+      await testHelper('getPendingOrders', () => this.client.getPendingOrders());
       await testHelper('getActiveAccounts', () => this.client.getActiveAccounts());
       
       if (sampleSymbol) {
