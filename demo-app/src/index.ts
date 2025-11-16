@@ -12,6 +12,7 @@
 
 import 'dotenv/config';
 import { FinaticServer } from '@finatic/server-node';
+import * as Models from '@finatic/server-node/dist/generated/models';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 
@@ -320,7 +321,7 @@ class FinaticDemo {
 
       await testHelper('getOpenPositions', () => this.client.getOpenPositions());
       await testHelper('getFilledOrders', () => this.client.getFilledOrders());
-      await testHelper('getPendingOrders', () => this.client.getPendingOrders());
+      await testHelper('getPendingOrders', () => this.client.getAllOrders({ orderStatus: Models.OrderStatus.PendingNew }));
       await testHelper('getActiveAccounts', () => this.client.getActiveAccounts());
       
       if (sampleSymbol) {
@@ -343,40 +344,40 @@ class FinaticDemo {
 
       // Step 12: Disconnect the first connection
       // Re-check for connections in case they were created between Step 6 and Step 12
-      let connectionsForDisconnect: any[] = connections;
-      if (connections.length === 0) {
-        try {
-          connectionsForDisconnect = await this.client.getBrokerConnections();
-        } catch (error: any) {
-          // If re-fetch fails, use the original connections list
-          connectionsForDisconnect = connections;
-        }
-      }
+      // let connectionsForDisconnect: any[] = connections;
+      // if (connections.length === 0) {
+      //   try {
+      //     connectionsForDisconnect = await this.client.getBrokerConnections();
+      //   } catch (error: any) {
+      //     // If re-fetch fails, use the original connections list
+      //     connectionsForDisconnect = connections;
+      //   }
+      // }
       
-      if (connectionsForDisconnect.length > 0) {
-        console.log(chalk.yellow('\nStep 12: Disconnecting first connection...'));
-        try {
-          const firstConnection = connectionsForDisconnect[0];
-          // Handle both 'id' and 'connection_id' properties
-          const connectionId = firstConnection.id || firstConnection.connection_id;
-          const brokerId = firstConnection.broker_id || 'Unknown';
+      // if (connectionsForDisconnect.length > 0) {
+      //   console.log(chalk.yellow('\nStep 12: Disconnecting first connection...'));
+      //   try {
+      //     const firstConnection = connectionsForDisconnect[0];
+      //     // Handle both 'id' and 'connection_id' properties
+      //     const connectionId = firstConnection.id || firstConnection.connection_id;
+      //     const brokerId = firstConnection.broker_id || 'Unknown';
           
-          if (!connectionId) {
-            throw new Error('Connection ID not found in connection object');
-          }
+      //     if (!connectionId) {
+      //       throw new Error('Connection ID not found in connection object');
+      //     }
           
-          console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
-          console.log(chalk.gray(`  Broker: ${brokerId}`));
+      //     console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
+      //     console.log(chalk.gray(`  Broker: ${brokerId}`));
           
-          await this.client.brokers.disconnectCompanyFromBroker(connectionId);
-          console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
-        } catch (error: any) {
-          console.log(chalk.red(`❌ Failed to disconnect connection: ${error.message}`));
-          throw error;
-        }
-      } else {
-        console.log(chalk.yellow('\nStep 12: Skipping disconnect - no connections available'));
-      }
+      //     await this.client.brokers.disconnectCompanyFromBroker(connectionId);
+      //     console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
+      //   } catch (error: any) {
+      //     console.log(chalk.red(`❌ Failed to disconnect connection: ${error.message}`));
+      //     throw error;
+      //   }
+      // } else {
+      //   console.log(chalk.yellow('\nStep 12: Skipping disconnect - no connections available'));
+      // }
       
       console.log(chalk.green('\n🎉 Demo completed successfully!'));
       console.log(chalk.gray(`\n📊 Test Summary:`));

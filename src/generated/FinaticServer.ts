@@ -9,11 +9,10 @@ import { Configuration } from './configuration';
 import { SdkConfig, defaultConfig } from './config';
 import { appendThemeToURL, appendBrokerFilterToURL } from './utils/url-utils';
 import { BrokersApi } from './api/brokers-api';
-import { MarketDataApi } from './api/market-data-api';
 import { SessionApi } from './api/session-api';
 import { BrokersWrapper } from './wrappers/brokers';
-import { MarketDataWrapper } from './wrappers/market-data';
 import { SessionWrapper } from './wrappers/session';
+import * as Models from './models';
 
 export interface PortalOptions {
   theme?: string | { preset?: string; custom?: Record<string, unknown> };
@@ -29,7 +28,6 @@ export class FinaticServer {
   private csrfToken?: string;
 
   public readonly brokers: BrokersWrapper;
-  public readonly marketData: MarketDataWrapper;
   public readonly session: SessionWrapper;
 
   constructor(apiKey: string, baseUrl?: string, sdkConfig?: Partial<SdkConfig>) {
@@ -40,7 +38,6 @@ export class FinaticServer {
     this.sdkConfig = { ...defaultConfig, ...sdkConfig };
 
     this.brokers = new BrokersWrapper(new BrokersApi(this.config), this.config, this.sdkConfig);
-    this.marketData = new MarketDataWrapper(new MarketDataApi(this.config), this.config, this.sdkConfig);
     this.session = new SessionWrapper(new SessionApi(this.config), this.config, this.sdkConfig);
   }
 
@@ -156,7 +153,6 @@ export class FinaticServer {
     
     // Update all wrappers with session context
     this.brokers.setSessionContext(sessionId, companyId, csrfToken);
-    this.marketData.setSessionContext(sessionId, companyId, csrfToken);
     this.session.setSessionContext(sessionId, companyId, csrfToken);
   }
 
@@ -301,28 +297,29 @@ export class FinaticServer {
    * Get only open positions.
    */
   async getOpenPositions(filter?: any): Promise<any[]> {
-    return await this.getAllPositions({ ...filter, positionStatus: 'open' });
+    return await this.getAllPositions({ ...filter, positionStatus: Models.PositionStatus.Open });
   }
 
   /**
    * Get only filled orders.
    */
   async getFilledOrders(filter?: any): Promise<any[]> {
-    return await this.getAllOrders({ ...filter, orderStatus: 'filled' });
+    return await this.getAllOrders({ ...filter, orderStatus: Models.OrderStatus.Filled });
   }
 
   /**
    * Get only pending orders.
    */
   async getPendingOrders(filter?: any): Promise<any[]> {
-    return await this.getAllOrders({ ...filter, orderStatus: 'pending' });
+    // API enum has PendingNew, not Pending
+    return await this.getAllOrders({ ...filter, orderStatus: Models.OrderStatus.PendingNew });
   }
 
   /**
    * Get only active accounts.
    */
   async getActiveAccounts(filter?: any): Promise<any[]> {
-    return await this.getAllAccounts({ ...filter, status: 'active' });
+    return await this.getAllAccounts({ ...filter, status: Models.AccountStatus.Active });
   }
 
   /**
