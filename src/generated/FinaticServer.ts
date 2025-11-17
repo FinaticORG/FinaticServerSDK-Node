@@ -8,7 +8,7 @@
 import { Configuration } from './configuration';
 import { SdkConfig, defaultConfig } from './config';
 import { appendThemeToURL, appendBrokerFilterToURL } from './utils/url-utils';
-import { getLogger } from './utils/logger';
+import { getLogger, type Logger } from './utils/logger';
 import type { SessionStartRequest } from './models';
 import { BrokersApi } from './api/brokers-api';
 import { SessionApi } from './api/session-api';
@@ -29,7 +29,7 @@ export class FinaticServer {
   private companyId?: string;
   private csrfToken?: string;
   private userId?: string;
-  private logger: any;
+  private logger: Logger;
 
   public readonly brokers: BrokersWrapper;
   public readonly session: SessionWrapper;
