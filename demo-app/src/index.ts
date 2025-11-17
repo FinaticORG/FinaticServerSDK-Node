@@ -69,27 +69,22 @@ class FinaticDemo {
       await this.client.initialize();
       console.log(chalk.green('✅ SDK initialized successfully'));
 
-      // Quick check: fetch a one-time token for the Client SDK
-      console.log(chalk.yellow('\nStep 1.1: Getting one-time token (server ➜ client helper)...'));
+      // Step 2: Initialize session (combined method)
+      console.log(chalk.yellow('\nStep 2: Initializing session...'));
       try {
-        const oneTimeToken = await this.client.initSession(apiKey);
-        console.log(chalk.green('✅ One-time token fetched successfully'));
-        console.log(chalk.gray(`Token (truncated): ${oneTimeToken.substring(0, 12)}...`));
-      } catch (e) {
-        console.log(chalk.red('❌ Failed to fetch one-time token'));
-        console.log(chalk.gray('This does not affect the server session flow; continuing...'));
-      }
-      
-      // Step 2: Start session
-      console.log(chalk.yellow('\nStep 2: Starting session...'));
-      try {
-        // For server SDK, we need to use API key-based auth
-        // First get a one-time token using initSession
-        const oneTimeToken = await this.client.initSession(apiKey);
-        // Then start session with the token
-        const sessionResponse = await this.client.startSession(oneTimeToken);
-        const sessionId = sessionResponse.session_id || this.client.getSessionId();
-        console.log(chalk.green(`✅ Session started: ${sessionId}`));
+        // Use the combined initSession method that handles everything
+        const sessionResult = await this.client.initSession(apiKey);
+        
+        if (!sessionResult.success) {
+          console.log(chalk.red(`❌ Failed to initialize session: ${sessionResult.error}`));
+          return;
+        }
+        
+        const sessionId = sessionResult.session_id || this.client.getSessionId();
+        const companyId = sessionResult.company_id;
+        console.log(chalk.green(`✅ Session initialized successfully`));
+        console.log(chalk.gray(`Session ID: ${sessionId}`));
+        console.log(chalk.gray(`Company ID: ${companyId}`));
         
         // Step 3: Get portal URL
         console.log(chalk.yellow('\nStep 3: Getting portal URL...'));

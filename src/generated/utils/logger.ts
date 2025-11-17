@@ -28,19 +28,55 @@ export function getLogger(config?: SdkConfig): Logger {
   }
   
   const logLevel = (config?.logLevel || process.env['FINATIC_LOG_LEVEL'] || 'error') as LogLevel;
+  const isDevelopment = process.env['NODE_ENV'] !== 'production' && process.env['NODE_ENV'] !== 'prod';
+  const usePrettyPrint = isDevelopment && config?.structuredLogging !== true;
   
-  const pinoConfig: pino.LoggerOptions = {
+  let pinoConfig: pino.LoggerOptions = {
     level: logLevel === 'silent' ? 'silent' : logLevel,
-    ...(config?.structuredLogging !== false && {
+  };
+  
+  // Try to use pino-pretty in development for cleaner logs
+  if (usePrettyPrint) {
+    try {
+      // Check if pino-pretty is available (it's a dev dependency, might not be installed)
+      require.resolve('pino-pretty');
+      pinoConfig = {
+        ...pinoConfig,
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss.l',
+            ignore: 'pid,hostname',
+            singleLine: false,
+            hideObject: false,
+          },
+        },
+      };
+    } catch {
+      // pino-pretty not available, use structured logging with minimal output
+      pinoConfig = {
+        ...pinoConfig,
+        formatters: {
+          level: (label: string) => {
+            return { level: label };
+          },
+        },
+        timestamp: false, // Less verbose in dev
+      };
+    }
+  } else if (config?.structuredLogging !== false) {
+    // Production or structured logging enabled
+    pinoConfig = {
+      ...pinoConfig,
       formatters: {
         level: (label: string) => {
           return { level: label };
         },
       },
-      // Use default timestamp - pino will handle it automatically
       timestamp: true,
-    }),
-  };
+    };
+  }
   
   _loggerInstance = pino(pinoConfig);
   

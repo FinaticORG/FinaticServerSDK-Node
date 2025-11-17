@@ -12,3 +12,5 @@ export * from './validation';
 export * from './cache';
 export * from './interceptors';
 export * from './url-utils';
+export * from './enum-coercion';
+export * from './plain-object';
