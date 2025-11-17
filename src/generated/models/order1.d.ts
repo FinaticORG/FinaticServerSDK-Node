@@ -16,13 +16,17 @@ import type { RobinhoodTrailingStopOrderPlaceQueryParams } from './robinhood-tra
 /**
  * @type Order1
  */
-export type Order1 = {
-    orderType: 'Limit';
-} & RobinhoodLimitOrderPlaceQueryParams | {
-    orderType: 'Market';
-} & RobinhoodMarketOrderPlaceQueryParams | {
-    orderType: 'Stop';
-} & RobinhoodStopOrderPlaceQueryParams | {
-    orderType: 'TrailingStop';
-} & RobinhoodTrailingStopOrderPlaceQueryParams;
+export type Order1 =
+  | ({
+      orderType: 'Limit';
+    } & RobinhoodLimitOrderPlaceQueryParams)
+  | ({
+      orderType: 'Market';
+    } & RobinhoodMarketOrderPlaceQueryParams)
+  | ({
+      orderType: 'Stop';
+    } & RobinhoodStopOrderPlaceQueryParams)
+  | ({
+      orderType: 'TrailingStop';
+    } & RobinhoodTrailingStopOrderPlaceQueryParams);
 //# sourceMappingURL=order1.d.ts.map

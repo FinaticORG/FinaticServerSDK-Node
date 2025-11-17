@@ -6,10 +6,10 @@
 import type { SdkConfig } from '../config';
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 export interface Logger {
-    debug(message: string, data?: Record<string, any>): void;
-    info(message: string, data?: Record<string, any>): void;
-    warn(message: string, data?: Record<string, any>): void;
-    error(message: string, error?: Error | any, data?: Record<string, any>): void;
+  debug(message: string, data?: Record<string, any>): void;
+  info(message: string, data?: Record<string, any>): void;
+  warn(message: string, data?: Record<string, any>): void;
+  error(message: string, error?: Error | any, data?: Record<string, any>): void;
 }
 /**
  * Get or create a pino logger instance.

@@ -13,7 +13,7 @@
  * Request model for linking user to session.
  */
 export interface SessionLinkRequest {
-    'user_id': string;
-    'email'?: string | null;
+  user_id: string;
+  email?: string | null;
 }
 //# sourceMappingURL=session-link-request.d.ts.map

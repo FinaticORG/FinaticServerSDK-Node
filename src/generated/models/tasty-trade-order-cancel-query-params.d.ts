@@ -13,14 +13,14 @@
  * Cancel-order payload enriched with TastyTrade-specific *account_number*.
  */
 export interface TastyTradeOrderCancelQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    /**
-     * TastyTrade account number owning the order.
-     */
-    'accountNumber': number;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  /**
+   * TastyTrade account number owning the order.
+   */
+  accountNumber: number;
 }
 //# sourceMappingURL=tasty-trade-order-cancel-query-params.d.ts.map

@@ -13,9 +13,9 @@
  * Good till canceled - no additional parameters required.
  */
 export interface GTCTIF {
-    'timeInForce': GTCTIFTimeInForceEnum;
+  timeInForce: GTCTIFTimeInForceEnum;
 }
 export declare enum GTCTIFTimeInForceEnum {
-    Gtc = "gtc"
+  Gtc = 'gtc',
 }
 //# sourceMappingURL=gtctif.d.ts.map

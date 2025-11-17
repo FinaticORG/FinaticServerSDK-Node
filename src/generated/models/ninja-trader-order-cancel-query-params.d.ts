@@ -13,14 +13,14 @@
  * Cancel-order payload enriched with NinjaTrader-specific extras.
  */
 export interface NinjaTraderOrderCancelQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'clOrdId'?: string | null;
-    'customTag50'?: string | null;
-    'activationTime'?: string | null;
-    'isAutomated'?: boolean | null;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  clOrdId?: string | null;
+  customTag50?: string | null;
+  activationTime?: string | null;
+  isAutomated?: boolean | null;
 }
 //# sourceMappingURL=ninja-trader-order-cancel-query-params.d.ts.map

@@ -16,13 +16,17 @@ import type { TastyTradeTrailingStopOrderPlaceQueryParams } from './tasty-trade-
 /**
  * @type Order2
  */
-export type Order2 = {
-    orderType: 'Limit';
-} & TastyTradeLimitOrderPlaceQueryParams | {
-    orderType: 'Market';
-} & TastyTradeMarketOrderPlaceQueryParams | {
-    orderType: 'Stop';
-} & TastyTradeStopOrderPlaceQueryParams | {
-    orderType: 'TrailingStop';
-} & TastyTradeTrailingStopOrderPlaceQueryParams;
+export type Order2 =
+  | ({
+      orderType: 'Limit';
+    } & TastyTradeLimitOrderPlaceQueryParams)
+  | ({
+      orderType: 'Market';
+    } & TastyTradeMarketOrderPlaceQueryParams)
+  | ({
+      orderType: 'Stop';
+    } & TastyTradeStopOrderPlaceQueryParams)
+  | ({
+      orderType: 'TrailingStop';
+    } & TastyTradeTrailingStopOrderPlaceQueryParams);
 //# sourceMappingURL=order2.d.ts.map

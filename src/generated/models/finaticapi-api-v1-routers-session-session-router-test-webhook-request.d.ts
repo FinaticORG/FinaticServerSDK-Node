@@ -13,12 +13,12 @@
  * Test webhook request model.
  */
 export interface FinaticapiApiV1RoutersSessionSessionRouterTestWebhookRequest {
-    /**
-     * Event type to test (e.g., \'order:filled\', \'connection:needs_reauth\')
-     */
-    'event_type': string;
-    'sample_data'?: {
-        [key: string]: any;
-    } | null;
+  /**
+   * Event type to test (e.g., \'order:filled\', \'connection:needs_reauth\')
+   */
+  event_type: string;
+  sample_data?: {
+    [key: string]: any;
+  } | null;
 }
 //# sourceMappingURL=finaticapi-api-v1-routers-session-session-router-test-webhook-request.d.ts.map

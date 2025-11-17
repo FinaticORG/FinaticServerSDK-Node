@@ -15,24 +15,24 @@ import type { Timeinforce } from './timeinforce';
  * Limit-order modification payload.
  */
 export interface TastyTradeLimitOrderModifyQueryParams {
-    [key: string]: any;
-    'accountNumber': number;
-    'automated-source'?: boolean;
-    'external-identifier'?: string | null;
-    'partition-key'?: string | null;
-    'preflight-id'?: string | null;
-    'source'?: string | null;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': TastyTradeLimitOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'price': number;
+  [key: string]: any;
+  accountNumber: number;
+  'automated-source'?: boolean;
+  'external-identifier'?: string | null;
+  'partition-key'?: string | null;
+  'preflight-id'?: string | null;
+  source?: string | null;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: TastyTradeLimitOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  price: number;
 }
 export declare enum TastyTradeLimitOrderModifyQueryParamsOrderTypeEnum {
-    Limit = "Limit"
+  Limit = 'Limit',
 }
 //# sourceMappingURL=tasty-trade-limit-order-modify-query-params.d.ts.map

@@ -17,102 +17,129 @@ import type { FinaticResponseListDict } from '../models';
  * MarketDataApi - axios parameter creator
  */
 export declare const MarketDataApiAxiosParamCreator: (configuration?: Configuration) => {
-    /**
-     * Return full futures historical dataset for the requested symbol(s).
-     * @summary Get Futures Historical
-     * @param {string} symbol Futures symbol to fetch. Comma-separated allowed for certain providers (e.g., yfinance).
-     * @param {string | null} [startDate] Start date (YYYY-MM-DD)
-     * @param {string | null} [endDate] End date (YYYY-MM-DD)
-     * @param {string | null} [expiration] Future expiry YYYY-MM
-     * @param {GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum} [provider] Data provider (defaults to server configuration priority)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet: (symbol: string, startDate?: string | null, endDate?: string | null, expiration?: string | null, provider?: GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum, options?: RawAxiosRequestConfig) => Promise<RequestArgs>;
+  /**
+   * Return full futures historical dataset for the requested symbol(s).
+   * @summary Get Futures Historical
+   * @param {string} symbol Futures symbol to fetch. Comma-separated allowed for certain providers (e.g., yfinance).
+   * @param {string | null} [startDate] Start date (YYYY-MM-DD)
+   * @param {string | null} [endDate] End date (YYYY-MM-DD)
+   * @param {string | null} [expiration] Future expiry YYYY-MM
+   * @param {GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum} [provider] Data provider (defaults to server configuration priority)
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet: (
+    symbol: string,
+    startDate?: string | null,
+    endDate?: string | null,
+    expiration?: string | null,
+    provider?: GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum,
+    options?: RawAxiosRequestConfig
+  ) => Promise<RequestArgs>;
 };
 /**
  * MarketDataApi - functional programming interface
  */
 export declare const MarketDataApiFp: (configuration?: Configuration) => {
-    /**
-     * Return full futures historical dataset for the requested symbol(s).
-     * @summary Get Futures Historical
-     * @param {string} symbol Futures symbol to fetch. Comma-separated allowed for certain providers (e.g., yfinance).
-     * @param {string | null} [startDate] Start date (YYYY-MM-DD)
-     * @param {string | null} [endDate] End date (YYYY-MM-DD)
-     * @param {string | null} [expiration] Future expiry YYYY-MM
-     * @param {GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum} [provider] Data provider (defaults to server configuration priority)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(symbol: string, startDate?: string | null, endDate?: string | null, expiration?: string | null, provider?: GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<FinaticResponseListDict>>;
+  /**
+   * Return full futures historical dataset for the requested symbol(s).
+   * @summary Get Futures Historical
+   * @param {string} symbol Futures symbol to fetch. Comma-separated allowed for certain providers (e.g., yfinance).
+   * @param {string | null} [startDate] Start date (YYYY-MM-DD)
+   * @param {string | null} [endDate] End date (YYYY-MM-DD)
+   * @param {string | null} [expiration] Future expiry YYYY-MM
+   * @param {GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum} [provider] Data provider (defaults to server configuration priority)
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(
+    symbol: string,
+    startDate?: string | null,
+    endDate?: string | null,
+    expiration?: string | null,
+    provider?: GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum,
+    options?: RawAxiosRequestConfig
+  ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<FinaticResponseListDict>>;
 };
 /**
  * MarketDataApi - factory interface
  */
-export declare const MarketDataApiFactory: (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) => {
-    /**
-     * Return full futures historical dataset for the requested symbol(s).
-     * @summary Get Futures Historical
-     * @param {MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(requestParameters: MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest, options?: RawAxiosRequestConfig): AxiosPromise<FinaticResponseListDict>;
+export declare const MarketDataApiFactory: (
+  configuration?: Configuration,
+  basePath?: string,
+  axios?: AxiosInstance
+) => {
+  /**
+   * Return full futures historical dataset for the requested symbol(s).
+   * @summary Get Futures Historical
+   * @param {MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest} requestParameters Request parameters.
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(
+    requestParameters: MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest,
+    options?: RawAxiosRequestConfig
+  ): AxiosPromise<FinaticResponseListDict>;
 };
 /**
  * MarketDataApi - interface
  */
 export interface MarketDataApiInterface {
-    /**
-     * Return full futures historical dataset for the requested symbol(s).
-     * @summary Get Futures Historical
-     * @param {MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(requestParameters: MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest, options?: RawAxiosRequestConfig): AxiosPromise<FinaticResponseListDict>;
+  /**
+   * Return full futures historical dataset for the requested symbol(s).
+   * @summary Get Futures Historical
+   * @param {MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest} requestParameters Request parameters.
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(
+    requestParameters: MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest,
+    options?: RawAxiosRequestConfig
+  ): AxiosPromise<FinaticResponseListDict>;
 }
 /**
  * Request parameters for getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet operation in MarketDataApi.
  */
 export interface MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest {
-    /**
-     * Futures symbol to fetch. Comma-separated allowed for certain providers (e.g., yfinance).
-     */
-    readonly symbol: string;
-    /**
-     * Start date (YYYY-MM-DD)
-     */
-    readonly startDate?: string | null;
-    /**
-     * End date (YYYY-MM-DD)
-     */
-    readonly endDate?: string | null;
-    /**
-     * Future expiry YYYY-MM
-     */
-    readonly expiration?: string | null;
-    /**
-     * Data provider (defaults to server configuration priority)
-     */
-    readonly provider?: GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum;
+  /**
+   * Futures symbol to fetch. Comma-separated allowed for certain providers (e.g., yfinance).
+   */
+  readonly symbol: string;
+  /**
+   * Start date (YYYY-MM-DD)
+   */
+  readonly startDate?: string | null;
+  /**
+   * End date (YYYY-MM-DD)
+   */
+  readonly endDate?: string | null;
+  /**
+   * Future expiry YYYY-MM
+   */
+  readonly expiration?: string | null;
+  /**
+   * Data provider (defaults to server configuration priority)
+   */
+  readonly provider?: GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum;
 }
 /**
  * MarketDataApi - object-oriented interface
  */
 export declare class MarketDataApi extends BaseAPI implements MarketDataApiInterface {
-    /**
-     * Return full futures historical dataset for the requested symbol(s).
-     * @summary Get Futures Historical
-     * @param {MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(requestParameters: MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest, options?: RawAxiosRequestConfig): Promise<import("axios").AxiosResponse<FinaticResponseListDict, any, {}>>;
+  /**
+   * Return full futures historical dataset for the requested symbol(s).
+   * @summary Get Futures Historical
+   * @param {MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest} requestParameters Request parameters.
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  getFuturesHistoricalApiV1MarketDataFuturesHistoricalGet(
+    requestParameters: MarketDataApiGetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetRequest,
+    options?: RawAxiosRequestConfig
+  ): Promise<import('axios').AxiosResponse<FinaticResponseListDict, any, {}>>;
 }
 export declare enum GetFuturesHistoricalApiV1MarketDataFuturesHistoricalGetProviderEnum {
-    Yfinance = "yfinance",
-    Deribit = "deribit"
+  Yfinance = 'yfinance',
+  Deribit = 'deribit',
 }
 //# sourceMappingURL=market-data-api.d.ts.map

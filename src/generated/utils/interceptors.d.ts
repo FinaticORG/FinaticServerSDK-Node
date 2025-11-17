@@ -5,13 +5,17 @@
  */
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { SdkConfig } from '../config';
-export type RequestInterceptor = (config: AxiosRequestConfig) => AxiosRequestConfig | Promise<AxiosRequestConfig>;
-export type ResponseInterceptor = (response: AxiosResponse) => AxiosResponse | Promise<AxiosResponse>;
+export type RequestInterceptor = (
+  config: AxiosRequestConfig
+) => AxiosRequestConfig | Promise<AxiosRequestConfig>;
+export type ResponseInterceptor = (
+  response: AxiosResponse
+) => AxiosResponse | Promise<AxiosResponse>;
 export type ErrorInterceptor = (error: any) => any;
 export interface InterceptorChain {
-    request: RequestInterceptor[];
-    response: ResponseInterceptor[];
-    error: ErrorInterceptor[];
+  request: RequestInterceptor[];
+  response: ResponseInterceptor[];
+  error: ErrorInterceptor[];
 }
 /**
  * Add request interceptor.
@@ -28,11 +32,17 @@ export declare function addErrorInterceptor(interceptor: ErrorInterceptor): void
 /**
  * Apply request interceptors.
  */
-export declare function applyRequestInterceptors(config: AxiosRequestConfig, sdkConfig?: SdkConfig): Promise<AxiosRequestConfig>;
+export declare function applyRequestInterceptors(
+  config: AxiosRequestConfig,
+  sdkConfig?: SdkConfig
+): Promise<AxiosRequestConfig>;
 /**
  * Apply response interceptors.
  */
-export declare function applyResponseInterceptors(response: AxiosResponse, sdkConfig?: SdkConfig): Promise<AxiosResponse>;
+export declare function applyResponseInterceptors(
+  response: AxiosResponse,
+  sdkConfig?: SdkConfig
+): Promise<AxiosResponse>;
 /**
  * Apply error interceptors.
  */

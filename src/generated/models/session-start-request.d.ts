@@ -13,6 +13,6 @@
  * Request model for session start.
  */
 export interface SessionStartRequest {
-    'user_id'?: string | null;
+  user_id?: string | null;
 }
 //# sourceMappingURL=session-start-request.d.ts.map

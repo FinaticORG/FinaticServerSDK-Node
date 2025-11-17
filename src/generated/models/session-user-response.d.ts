@@ -13,33 +13,33 @@
  * Response model for session user information and tokens.
  */
 export interface SessionUserResponse {
-    /**
-     * User ID
-     */
-    'user_id': string;
-    /**
-     * Freshly generated access token
-     */
-    'access_token': string;
-    /**
-     * Freshly generated refresh token
-     */
-    'refresh_token': string;
-    /**
-     * Token expiration time in seconds
-     */
-    'expires_in': number;
-    /**
-     * Token type
-     */
-    'token_type'?: string;
-    /**
-     * Token scope
-     */
-    'scope'?: string;
-    /**
-     * Company ID
-     */
-    'company_id': string;
+  /**
+   * User ID
+   */
+  user_id: string;
+  /**
+   * Freshly generated access token
+   */
+  access_token: string;
+  /**
+   * Freshly generated refresh token
+   */
+  refresh_token: string;
+  /**
+   * Token expiration time in seconds
+   */
+  expires_in: number;
+  /**
+   * Token type
+   */
+  token_type?: string;
+  /**
+   * Token scope
+   */
+  scope?: string;
+  /**
+   * Company ID
+   */
+  company_id: string;
 }
 //# sourceMappingURL=session-user-response.d.ts.map

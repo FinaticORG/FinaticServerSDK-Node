@@ -13,10 +13,10 @@
  * Base class for Finatic API warnings.  Attributes ---------- category : str     The warning category (e.g., \"EMPTY_RESPONSE\", \"DEPRECATED\", etc.) message : str     The warning message details : dict[str, Any] | None     Additional warning details, if any
  */
 export interface FinaticAPIWarning {
-    'category': string;
-    'message': string;
-    'details'?: {
-        [key: string]: any;
-    } | null;
+  category: string;
+  message: string;
+  details?: {
+    [key: string]: any;
+  } | null;
 }
 //# sourceMappingURL=finatic-apiwarning.d.ts.map

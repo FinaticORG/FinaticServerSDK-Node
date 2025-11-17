@@ -17,15 +17,20 @@ import type { IOCTIF } from './ioctif';
 /**
  * @type Timeinforce
  */
-export type Timeinforce = {
-    timeInForce: 'day';
-} & DayTIF | {
-    timeInForce: 'fok';
-} & FOKTIF | {
-    timeInForce: 'gtc';
-} & GTCTIF | {
-    timeInForce: 'gtd';
-} & GTDTIF | {
-    timeInForce: 'ioc';
-} & IOCTIF;
+export type Timeinforce =
+  | ({
+      timeInForce: 'day';
+    } & DayTIF)
+  | ({
+      timeInForce: 'fok';
+    } & FOKTIF)
+  | ({
+      timeInForce: 'gtc';
+    } & GTCTIF)
+  | ({
+      timeInForce: 'gtd';
+    } & GTDTIF)
+  | ({
+      timeInForce: 'ioc';
+    } & IOCTIF);
 //# sourceMappingURL=timeinforce.d.ts.map

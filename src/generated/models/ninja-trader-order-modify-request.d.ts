@@ -11,11 +11,11 @@
  */
 import type { Order3 } from './order3';
 export interface NinjaTraderOrderModifyRequest {
-    [key: string]: any;
-    'broker': NinjaTraderOrderModifyRequestBrokerEnum;
-    'order': Order3;
+  [key: string]: any;
+  broker: NinjaTraderOrderModifyRequestBrokerEnum;
+  order: Order3;
 }
 export declare enum NinjaTraderOrderModifyRequestBrokerEnum {
-    NinjaTrader = "ninja_trader"
+  NinjaTrader = 'ninja_trader',
 }
 //# sourceMappingURL=ninja-trader-order-modify-request.d.ts.map

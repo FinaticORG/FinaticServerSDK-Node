@@ -13,13 +13,13 @@
  * Direct authentication request model.
  */
 export interface DirectAuthRequest {
-    /**
-     * Session ID
-     */
-    'session_id': string;
-    /**
-     * User ID
-     */
-    'user_id': string;
+  /**
+   * Session ID
+   */
+  session_id: string;
+  /**
+   * User ID
+   */
+  user_id: string;
 }
 //# sourceMappingURL=direct-auth-request.d.ts.map

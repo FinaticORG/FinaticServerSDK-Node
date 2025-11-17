@@ -11,8 +11,8 @@
  */
 import type { TokenResponseData } from './token-response-data';
 export interface FinaticResponseTokenResponseData {
-    'success'?: boolean;
-    'message'?: string | null;
-    'data'?: TokenResponseData | null;
+  success?: boolean;
+  message?: string | null;
+  data?: TokenResponseData | null;
 }
 //# sourceMappingURL=finatic-response-token-response-data.d.ts.map

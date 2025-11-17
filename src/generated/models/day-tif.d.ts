@@ -13,9 +13,9 @@
  * Good for the *day* (executes today or bust).
  */
 export interface DayTIF {
-    'timeInForce': DayTIFTimeInForceEnum;
+  timeInForce: DayTIFTimeInForceEnum;
 }
 export declare enum DayTIFTimeInForceEnum {
-    Day = "day"
+  Day = 'day',
 }
 //# sourceMappingURL=day-tif.d.ts.map

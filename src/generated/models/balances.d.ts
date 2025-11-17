@@ -10,19 +10,19 @@
  * Do not edit the class manually.
  */
 export interface Balances {
-    'id'?: string;
-    'account_id': string;
-    'available_to_withdraw'?: number | null;
-    'balance_created_at'?: string | null;
-    'balance_updated_at'?: string | null;
-    'created_at': string | null;
-    'initial_margin'?: number | null;
-    'is_end_of_day_snapshot'?: boolean | null;
-    'maintenance_margin'?: number | null;
-    'net_liquidation_value'?: number | null;
-    'raw_payload'?: null;
-    'total_cash_value'?: number | null;
-    'total_realized_pnl'?: number | null;
-    'updated_at': string | null;
+  id?: string;
+  account_id: string;
+  available_to_withdraw?: number | null;
+  balance_created_at?: string | null;
+  balance_updated_at?: string | null;
+  created_at: string | null;
+  initial_margin?: number | null;
+  is_end_of_day_snapshot?: boolean | null;
+  maintenance_margin?: number | null;
+  net_liquidation_value?: number | null;
+  raw_payload?: null;
+  total_cash_value?: number | null;
+  total_realized_pnl?: number | null;
+  updated_at: string | null;
 }
 //# sourceMappingURL=balances.d.ts.map

@@ -16,11 +16,14 @@ import type { TastyTradeOrderModifyRequest } from './tasty-trade-order-modify-re
  * @type ModifyOrderApiV1BrokersOrdersOrderIdPatchRequest
  * Broker-specific parameters object for *modify order* operations
  */
-export type ModifyOrderApiV1BrokersOrdersOrderIdPatchRequest = {
-    broker: 'ninja_trader';
-} & NinjaTraderOrderModifyRequest | {
-    broker: 'robinhood';
-} & RobinhoodOrderModifyRequest | {
-    broker: 'tasty_trade';
-} & TastyTradeOrderModifyRequest;
+export type ModifyOrderApiV1BrokersOrdersOrderIdPatchRequest =
+  | ({
+      broker: 'ninja_trader';
+    } & NinjaTraderOrderModifyRequest)
+  | ({
+      broker: 'robinhood';
+    } & RobinhoodOrderModifyRequest)
+  | ({
+      broker: 'tasty_trade';
+    } & TastyTradeOrderModifyRequest);
 //# sourceMappingURL=modify-order-api-v1-brokers-orders-order-id-patch-request.d.ts.map

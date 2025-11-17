@@ -1,6 +1,6 @@
 /**
  * Main client class for Finatic Server SDK (Node.js).
- * 
+ *
  * This file is regenerated on each run - do not edit directly.
  * For custom logic, extend this class or use custom wrappers.
  */
@@ -79,9 +79,15 @@ export class FinaticServer {
   /**
    * Start a session with a one-time token.
    */
-  async startSession(oneTimeToken: string, userId?: string): Promise<{ session_id: string; company_id: string }> {
+  async startSession(
+    oneTimeToken: string,
+    userId?: string
+  ): Promise<{ session_id: string; company_id: string }> {
     const requestBody: SessionStartRequest = userId !== undefined ? { user_id: userId } : {};
-    const response = await this.session.startSession({ OneTimeToken: oneTimeToken, body: requestBody });
+    const response = await this.session.startSession({
+      OneTimeToken: oneTimeToken,
+      body: requestBody,
+    });
     if (response.Error) {
       throw new Error(response.Error.message || 'Failed to start session');
     }
@@ -89,28 +95,36 @@ export class FinaticServer {
     const companyId = response.success?.data?.company_id || '';
     // csrf_token is not in SessionResponseData, get from response headers if available
     const csrfToken = (response.success?.data as any)?.csrf_token || '';
-    
+
     if (sessionId && companyId) {
       this.setSessionContext(sessionId, companyId, csrfToken);
     }
-    
+
     return { session_id: sessionId, company_id: companyId };
   }
 
   /**
    * Convenience method that combines initSession and startSession (Phase 2C).
-   * 
+   *
    * This method:
    * 1. Gets a one-time token using the API key
    * 2. Starts a session with that token
    * 3. Sets the session context automatically
    * 4. Returns success/error information
-   * 
+   *
    * @param apiKey - Company API key (uses instance API key if not provided)
    * @param userId - Optional user ID for direct authentication
    * @returns Object with success, session_id, company_id, and error fields
    */
-  async initSession(apiKey?: string, userId?: string): Promise<{ success: boolean; session_id: string | null; company_id: string | null; error: string | null }> {
+  async initSession(
+    apiKey?: string,
+    userId?: string
+  ): Promise<{
+    success: boolean;
+    session_id: string | null;
+    company_id: string | null;
+    error: string | null;
+  }> {
     try {
       // Use provided API key or fall back to instance API key
       const keyToUse = apiKey || this.apiKey || '';
@@ -125,7 +139,7 @@ export class FinaticServer {
 
       // Step 1: Get one-time token
       const oneTimeToken = await this._initSession(keyToUse);
-      
+
       if (!oneTimeToken || typeof oneTimeToken !== 'string') {
         return {
           success: false,
@@ -137,7 +151,7 @@ export class FinaticServer {
 
       // Step 2: Start session with the token
       const sessionResult = await this.startSession(oneTimeToken, userId);
-      
+
       const sessionId = sessionResult.session_id || null;
       const companyId = sessionResult.company_id || null;
 
@@ -172,14 +186,14 @@ export class FinaticServer {
     if (response.Error) {
       throw new Error(response.Error.message || 'Failed to get portal URL');
     }
-    
+
     // Validate response structure
     if (!response.success?.data) {
       throw new Error('Invalid portal URL response: missing data');
     }
-    
+
     let portalUrl = response.success.data.portal_url || '';
-    
+
     // Validate URL before manipulation
     try {
       new URL(portalUrl);
@@ -228,19 +242,19 @@ export class FinaticServer {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
-    
+
     const response = await this.session.getSessionUser({ sessionId: this.sessionId });
     if (response.Error) {
       throw new Error(response.Error.message || 'Failed to get session user');
     }
     const userId = response.success?.data?.user_id || '';
     const companyId = response.success?.data?.company_id || this.companyId || '';
-    
+
     // Store userId for getUserId() method
     if (userId) {
       this.userId = userId;
     }
-    
+
     return {
       user_id: userId,
       company_id: companyId,
@@ -255,7 +269,7 @@ export class FinaticServer {
     this.sessionId = sessionId;
     this.companyId = companyId;
     this.csrfToken = csrfToken;
-    
+
     // Update all wrappers with session context
     this.brokers.setSessionContext(sessionId, companyId, csrfToken);
     this.session.setSessionContext(sessionId, companyId, csrfToken);
@@ -281,7 +295,6 @@ export class FinaticServer {
   getUserId(): string | undefined {
     return this.userId;
   }
-
 
   /**
    * Get list of supported brokers.
@@ -315,19 +328,19 @@ export class FinaticServer {
     const allData: any[] = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       // Phase 2C: Use typed input object
       const response = await this.brokers.getAccounts({
         limit,
         offset,
       });
-      
+
       // Phase 2C: Check for errors first
       if (response.Error) {
         throw new Error(response.Error.message || 'Failed to get accounts');
       }
-      
+
       // Phase 2C: Unwrap standard response structure
       const result = response.success?.data || [];
       if (!result || result.length === 0) break;
@@ -335,7 +348,7 @@ export class FinaticServer {
       if (result.length < limit) break;
       offset += limit;
     }
-    
+
     return allData;
   }
 
@@ -347,7 +360,7 @@ export class FinaticServer {
     const allData: any[] = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       // Phase 2C: Use typed input object
       const response = await this.brokers.getOrders({
@@ -358,12 +371,12 @@ export class FinaticServer {
         limit,
         offset,
       });
-      
+
       // Phase 2C: Check for errors first
       if (response.Error) {
         throw new Error(response.Error.message || 'Failed to get orders');
       }
-      
+
       // Phase 2C: Unwrap standard response structure
       const result = response.success?.data || [];
       if (!result || result.length === 0) break;
@@ -371,7 +384,7 @@ export class FinaticServer {
       if (result.length < limit) break;
       offset += limit;
     }
-    
+
     return allData;
   }
 
@@ -383,7 +396,7 @@ export class FinaticServer {
     const allData: any[] = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       // Phase 2C: Use typed input object
       const response = await this.brokers.getPositions({
@@ -394,12 +407,12 @@ export class FinaticServer {
         limit,
         offset,
       });
-      
+
       // Phase 2C: Check for errors first
       if (response.Error) {
         throw new Error(response.Error.message || 'Failed to get positions');
       }
-      
+
       // Phase 2C: Unwrap standard response structure
       const result = response.success?.data || [];
       if (!result || result.length === 0) break;
@@ -407,7 +420,7 @@ export class FinaticServer {
       if (result.length < limit) break;
       offset += limit;
     }
-    
+
     return allData;
   }
 
@@ -419,7 +432,7 @@ export class FinaticServer {
     const allData: any[] = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       // Phase 2C: Use typed input object
       const response = await this.brokers.getBalances({
@@ -427,12 +440,12 @@ export class FinaticServer {
         limit,
         offset,
       });
-      
+
       // Phase 2C: Check for errors first
       if (response.Error) {
         throw new Error(response.Error.message || 'Failed to get balances');
       }
-      
+
       // Phase 2C: Unwrap standard response structure
       const result = response.success?.data || [];
       if (!result || result.length === 0) break;
@@ -440,7 +453,7 @@ export class FinaticServer {
       if (result.length < limit) break;
       offset += limit;
     }
-    
+
     return allData;
   }
 
@@ -589,7 +602,7 @@ export class FinaticServer {
     const allData: any[] = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       const response = await this.brokers.getOrderGroups({
         brokerId: filter?.brokerId,
@@ -599,19 +612,19 @@ export class FinaticServer {
         createdAfter: filter?.createdAfter,
         createdBefore: filter?.createdBefore,
       });
-      
+
       // Phase 2C: Check for errors first
       if (response.Error) {
         throw new Error(response.Error.message || 'Failed to get order groups');
       }
-      
+
       const result = response.success?.data || [];
       if (!result || result.length === 0) break;
       allData.push(...result);
       if (result.length < limit) break;
       offset += limit;
     }
-    
+
     return allData;
   }
 
@@ -640,7 +653,7 @@ export class FinaticServer {
     const allData: any[] = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       const response = await this.brokers.getPositionLots({
         brokerId: filter?.brokerId,
@@ -651,19 +664,19 @@ export class FinaticServer {
         limit,
         offset,
       });
-      
+
       // Phase 2C: Check for errors first
       if (response.Error) {
         throw new Error(response.Error.message || 'Failed to get position lots');
       }
-      
+
       const result = response.success?.data || [];
       if (!result || result.length === 0) break;
       allData.push(...result);
       if (result.length < limit) break;
       offset += limit;
     }
-    
+
     return allData;
   }
 
@@ -701,7 +714,12 @@ export class FinaticServer {
    * Get order fills for a specific order.
    * Phase 2C: Uses typed input objects and handles standard response structure.
    */
-  async getOrderFills(orderId: string, page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+  async getOrderFills(
+    orderId: string,
+    page: number = 1,
+    perPage: number = 100,
+    filter?: any
+  ): Promise<any> {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
@@ -719,7 +737,12 @@ export class FinaticServer {
    * Get order events for a specific order.
    * Phase 2C: Uses typed input objects and handles standard response structure.
    */
-  async getOrderEvents(orderId: string, page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+  async getOrderEvents(
+    orderId: string,
+    page: number = 1,
+    perPage: number = 100,
+    filter?: any
+  ): Promise<any> {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
@@ -737,7 +760,12 @@ export class FinaticServer {
    * Get position lot fills for a specific lot.
    * Phase 2C: Uses typed input objects and handles standard response structure.
    */
-  async getPositionLotFills(lotId: string, page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
+  async getPositionLotFills(
+    lotId: string,
+    page: number = 1,
+    perPage: number = 100,
+    filter?: any
+  ): Promise<any> {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
@@ -750,8 +778,6 @@ export class FinaticServer {
     });
     return response.success?.data || [];
   }
-
-
 
   /**
    * Place a stock market order.
@@ -993,7 +1019,10 @@ export class FinaticServer {
    * Cancel an existing order.
    */
   async cancelOrder(orderId: string, accountNumber?: string, connectionId?: string): Promise<any> {
-    return await this.brokers.cancelOrder({ orderId, ...(accountNumber ? { accountNumber } : {}), ...(connectionId ? { connectionId } : {}) });
+    return await this.brokers.cancelOrder({
+      orderId,
+      ...(accountNumber ? { accountNumber } : {}),
+      ...(connectionId ? { connectionId } : {}),
+    });
   }
-
 }

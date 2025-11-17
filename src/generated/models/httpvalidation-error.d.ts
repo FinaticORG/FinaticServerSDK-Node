@@ -11,6 +11,6 @@
  */
 import type { ValidationError } from './validation-error';
 export interface HTTPValidationError {
-    'detail'?: Array<ValidationError>;
+  detail?: Array<ValidationError>;
 }
 //# sourceMappingURL=httpvalidation-error.d.ts.map

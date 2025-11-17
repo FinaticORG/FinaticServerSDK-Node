@@ -13,24 +13,24 @@ import type { Accountnumber } from './accountnumber';
 import type { PublicAssetTypeEnum } from './public-asset-type-enum';
 import type { Timeinforce } from './timeinforce';
 export interface RobinhoodMarketOrderPlaceQueryParams {
-    'accountId'?: string | null;
-    'accountNumber': Accountnumber;
-    'orderType': RobinhoodMarketOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': RobinhoodMarketOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
+  accountId?: string | null;
+  accountNumber: Accountnumber;
+  orderType: RobinhoodMarketOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: RobinhoodMarketOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
 }
 export declare enum RobinhoodMarketOrderPlaceQueryParamsOrderTypeEnum {
-    Market = "Market"
+  Market = 'Market',
 }
 export declare enum RobinhoodMarketOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=robinhood-market-order-place-query-params.d.ts.map

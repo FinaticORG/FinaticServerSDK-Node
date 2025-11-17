@@ -15,17 +15,17 @@ import type { Timeinforce } from './timeinforce';
  * Market order modification – no price fields allowed.
  */
 export interface MarketOrderModifyQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': MarketOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: MarketOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
 }
 export declare enum MarketOrderModifyQueryParamsOrderTypeEnum {
-    Market = "Market"
+  Market = 'Market',
 }
 //# sourceMappingURL=market-order-modify-query-params.d.ts.map

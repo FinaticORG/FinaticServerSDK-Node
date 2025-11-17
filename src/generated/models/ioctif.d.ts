@@ -13,9 +13,9 @@
  * Immediate-or-cancel - execute instantly or cancel remaining.
  */
 export interface IOCTIF {
-    'timeInForce': IOCTIFTimeInForceEnum;
+  timeInForce: IOCTIFTimeInForceEnum;
 }
 export declare enum IOCTIFTimeInForceEnum {
-    Ioc = "ioc"
+  Ioc = 'ioc',
 }
 //# sourceMappingURL=ioctif.d.ts.map

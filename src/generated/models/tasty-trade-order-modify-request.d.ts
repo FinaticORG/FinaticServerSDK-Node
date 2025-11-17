@@ -11,11 +11,11 @@
  */
 import type { Order4 } from './order4';
 export interface TastyTradeOrderModifyRequest {
-    [key: string]: any;
-    'broker': TastyTradeOrderModifyRequestBrokerEnum;
-    'order': Order4;
+  [key: string]: any;
+  broker: TastyTradeOrderModifyRequestBrokerEnum;
+  order: Order4;
 }
 export declare enum TastyTradeOrderModifyRequestBrokerEnum {
-    TastyTrade = "tasty_trade"
+  TastyTrade = 'tasty_trade',
 }
 //# sourceMappingURL=tasty-trade-order-modify-request.d.ts.map

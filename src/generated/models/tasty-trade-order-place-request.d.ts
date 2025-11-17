@@ -14,11 +14,11 @@ import type { Order2 } from './order2';
  * Wrapper model for TastyTrade **place order** requests (generic payload).
  */
 export interface TastyTradeOrderPlaceRequest {
-    [key: string]: any;
-    'broker': TastyTradeOrderPlaceRequestBrokerEnum;
-    'order': Order2;
+  [key: string]: any;
+  broker: TastyTradeOrderPlaceRequestBrokerEnum;
+  order: Order2;
 }
 export declare enum TastyTradeOrderPlaceRequestBrokerEnum {
-    TastyTrade = "tasty_trade"
+  TastyTrade = 'tasty_trade',
 }
 //# sourceMappingURL=tasty-trade-order-place-request.d.ts.map

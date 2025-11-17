@@ -13,10 +13,10 @@
  * Minimal, broker-agnostic cancel-order payload.  Attributes ---------- order_id:     The *broker-assigned* order identifier or UUID.  The exact format varies     between brokers but is always treated as opaque by Finatic.
  */
 export interface OrderCancelQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
 }
 //# sourceMappingURL=order-cancel-query-params.d.ts.map

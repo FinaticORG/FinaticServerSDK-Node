@@ -9,6 +9,5 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-export interface Accountnumber {
-}
+export interface Accountnumber {}
 //# sourceMappingURL=accountnumber.d.ts.map

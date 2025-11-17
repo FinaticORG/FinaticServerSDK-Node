@@ -14,11 +14,11 @@ import type { Order1 } from './order1';
  * Wrapper model for Robinhood **place order** requests.
  */
 export interface RobinhoodOrderPlaceRequest {
-    [key: string]: any;
-    'broker': RobinhoodOrderPlaceRequestBrokerEnum;
-    'order': Order1;
+  [key: string]: any;
+  broker: RobinhoodOrderPlaceRequestBrokerEnum;
+  order: Order1;
 }
 export declare enum RobinhoodOrderPlaceRequestBrokerEnum {
-    Robinhood = "robinhood"
+  Robinhood = 'robinhood',
 }
 //# sourceMappingURL=robinhood-order-place-request.d.ts.map

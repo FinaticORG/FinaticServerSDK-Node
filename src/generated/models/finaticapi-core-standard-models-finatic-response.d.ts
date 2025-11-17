@@ -13,8 +13,8 @@
  * Standard API response model.  Attributes ----------     success: Whether the request was successful     message: Optional message to provide context     data: Optional data payload of type T
  */
 export interface FinaticapiCoreStandardModelsFinaticResponse {
-    'success'?: boolean;
-    'message'?: string | null;
-    'data'?: null;
+  success?: boolean;
+  message?: string | null;
+  data?: null;
 }
 //# sourceMappingURL=finaticapi-core-standard-models-finatic-response.d.ts.map

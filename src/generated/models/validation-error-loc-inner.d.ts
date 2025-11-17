@@ -9,6 +9,5 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-export interface ValidationErrorLocInner {
-}
+export interface ValidationErrorLocInner {}
 //# sourceMappingURL=validation-error-loc-inner.d.ts.map

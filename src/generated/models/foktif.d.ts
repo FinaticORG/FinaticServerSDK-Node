@@ -13,9 +13,9 @@
  * Fill-or-kill - entire quantity must execute instantly or cancel.
  */
 export interface FOKTIF {
-    'timeInForce': FOKTIFTimeInForceEnum;
+  timeInForce: FOKTIFTimeInForceEnum;
 }
 export declare enum FOKTIFTimeInForceEnum {
-    Fok = "fok"
+  Fok = 'fok',
 }
 //# sourceMappingURL=foktif.d.ts.map

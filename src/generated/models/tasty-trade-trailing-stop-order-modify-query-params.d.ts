@@ -15,24 +15,24 @@ import type { Timeinforce } from './timeinforce';
  * Trailing-stop modification payload.
  */
 export interface TastyTradeTrailingStopOrderModifyQueryParams {
-    [key: string]: any;
-    'accountNumber': number;
-    'automated-source'?: boolean;
-    'external-identifier'?: string | null;
-    'partition-key'?: string | null;
-    'preflight-id'?: string | null;
-    'source'?: string | null;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': TastyTradeTrailingStopOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'stopPrice': number;
+  [key: string]: any;
+  accountNumber: number;
+  'automated-source'?: boolean;
+  'external-identifier'?: string | null;
+  'partition-key'?: string | null;
+  'preflight-id'?: string | null;
+  source?: string | null;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: TastyTradeTrailingStopOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  stopPrice: number;
 }
 export declare enum TastyTradeTrailingStopOrderModifyQueryParamsOrderTypeEnum {
-    TrailingStop = "TrailingStop"
+  TrailingStop = 'TrailingStop',
 }
 //# sourceMappingURL=tasty-trade-trailing-stop-order-modify-query-params.d.ts.map

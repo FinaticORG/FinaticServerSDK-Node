@@ -16,40 +16,40 @@ import type { Timeinforce } from './timeinforce';
  * Parameters for a TastyTrade *trailing stop* order.
  */
 export interface TastyTradeTrailingStopOrderPlaceQueryParams {
-    'automated-source'?: boolean;
-    'price-effect'?: TastyTradeTrailingStopOrderPlaceQueryParamsPriceEffectEnum | null;
-    'external-identifier'?: string | null;
-    'partition-key'?: string | null;
-    'preflight-id'?: string | null;
-    'source'?: string | null;
-    'value-effect'?: TastyTradeTrailingStopOrderPlaceQueryParamsValueEffectEnum | null;
-    'legs'?: Array<object> | null;
-    'accountNumber': Accountnumber;
-    'orderType': TastyTradeTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': TastyTradeTrailingStopOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
-    'stopPrice': number;
+  'automated-source'?: boolean;
+  'price-effect'?: TastyTradeTrailingStopOrderPlaceQueryParamsPriceEffectEnum | null;
+  'external-identifier'?: string | null;
+  'partition-key'?: string | null;
+  'preflight-id'?: string | null;
+  source?: string | null;
+  'value-effect'?: TastyTradeTrailingStopOrderPlaceQueryParamsValueEffectEnum | null;
+  legs?: Array<object> | null;
+  accountNumber: Accountnumber;
+  orderType: TastyTradeTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: TastyTradeTrailingStopOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
+  stopPrice: number;
 }
 export declare enum TastyTradeTrailingStopOrderPlaceQueryParamsPriceEffectEnum {
-    Debit = "Debit",
-    Credit = "Credit"
+  Debit = 'Debit',
+  Credit = 'Credit',
 }
 export declare enum TastyTradeTrailingStopOrderPlaceQueryParamsValueEffectEnum {
-    Debit = "Debit",
-    Credit = "Credit"
+  Debit = 'Debit',
+  Credit = 'Credit',
 }
 export declare enum TastyTradeTrailingStopOrderPlaceQueryParamsOrderTypeEnum {
-    TrailingStop = "TrailingStop"
+  TrailingStop = 'TrailingStop',
 }
 export declare enum TastyTradeTrailingStopOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=tasty-trade-trailing-stop-order-place-query-params.d.ts.map

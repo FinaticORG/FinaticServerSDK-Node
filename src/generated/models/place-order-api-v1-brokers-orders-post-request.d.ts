@@ -16,11 +16,14 @@ import type { TastyTradeOrderPlaceRequest } from './tasty-trade-order-place-requ
  * @type PlaceOrderApiV1BrokersOrdersPostRequest
  * Broker-specific parameters object (varies by broker)
  */
-export type PlaceOrderApiV1BrokersOrdersPostRequest = {
-    broker: 'ninja_trader';
-} & NinjaTraderOrderPlaceRequest | {
-    broker: 'robinhood';
-} & RobinhoodOrderPlaceRequest | {
-    broker: 'tasty_trade';
-} & TastyTradeOrderPlaceRequest;
+export type PlaceOrderApiV1BrokersOrdersPostRequest =
+  | ({
+      broker: 'ninja_trader';
+    } & NinjaTraderOrderPlaceRequest)
+  | ({
+      broker: 'robinhood';
+    } & RobinhoodOrderPlaceRequest)
+  | ({
+      broker: 'tasty_trade';
+    } & TastyTradeOrderPlaceRequest);
 //# sourceMappingURL=place-order-api-v1-brokers-orders-post-request.d.ts.map

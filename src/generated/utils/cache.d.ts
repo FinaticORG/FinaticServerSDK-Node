@@ -12,5 +12,10 @@ export declare function getCache(config?: SdkConfig): NodeCache | null;
 /**
  * Generate cache key from method and parameters.
  */
-export declare function generateCacheKey(method: string, path: string, params: Record<string, any>, config?: SdkConfig): string;
+export declare function generateCacheKey(
+  method: string,
+  path: string,
+  params: Record<string, any>,
+  config?: SdkConfig
+): string;
 //# sourceMappingURL=cache.d.ts.map

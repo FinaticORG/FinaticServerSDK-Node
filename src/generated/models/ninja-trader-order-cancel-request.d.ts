@@ -11,11 +11,11 @@
  */
 import type { NinjaTraderOrderCancelQueryParams } from './ninja-trader-order-cancel-query-params';
 export interface NinjaTraderOrderCancelRequest {
-    [key: string]: any;
-    'broker': NinjaTraderOrderCancelRequestBrokerEnum;
-    'order': NinjaTraderOrderCancelQueryParams;
+  [key: string]: any;
+  broker: NinjaTraderOrderCancelRequestBrokerEnum;
+  order: NinjaTraderOrderCancelQueryParams;
 }
 export declare enum NinjaTraderOrderCancelRequestBrokerEnum {
-    NinjaTrader = "ninja_trader"
+  NinjaTrader = 'ninja_trader',
 }
 //# sourceMappingURL=ninja-trader-order-cancel-request.d.ts.map

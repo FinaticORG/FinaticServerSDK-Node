@@ -10,8 +10,8 @@
  * Do not edit the class manually.
  */
 export declare enum PublicAccountTypeEnum {
-    Margin = "margin",
-    Cash = "cash",
-    Crypto = "crypto"
+  Margin = 'margin',
+  Cash = 'cash',
+  Crypto = 'crypto',
 }
 //# sourceMappingURL=public-account-type-enum.d.ts.map

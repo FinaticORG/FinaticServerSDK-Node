@@ -15,24 +15,24 @@ import type { Timeinforce } from './timeinforce';
  * Limit-order modification payload for NinjaTrader.
  */
 export interface NinjaTraderLimitOrderModifyQueryParams {
-    [key: string]: any;
-    'orderQty'?: number | null;
-    'clOrdId'?: string | null;
-    'maxShow'?: number | null;
-    'pegDifference'?: number | null;
-    'activationTime'?: string | null;
-    'text'?: string | null;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': NinjaTraderLimitOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'price': number;
+  [key: string]: any;
+  orderQty?: number | null;
+  clOrdId?: string | null;
+  maxShow?: number | null;
+  pegDifference?: number | null;
+  activationTime?: string | null;
+  text?: string | null;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: NinjaTraderLimitOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  price: number;
 }
 export declare enum NinjaTraderLimitOrderModifyQueryParamsOrderTypeEnum {
-    Limit = "Limit"
+  Limit = 'Limit',
 }
 //# sourceMappingURL=ninja-trader-limit-order-modify-query-params.d.ts.map

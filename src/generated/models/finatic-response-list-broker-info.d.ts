@@ -12,23 +12,23 @@
 import type { BrokerInfo } from './broker-info';
 import type { FinaticAPIWarning } from './finatic-apiwarning';
 export interface FinaticResponseListBrokerInfo {
-    '_id'?: string;
-    /**
-     * Whether the request was successful
-     */
-    'success': boolean;
-    'response_data'?: Array<BrokerInfo> | null;
-    'message'?: string | null;
-    /**
-     * HTTP status code
-     */
-    'status_code'?: number;
-    'warnings'?: Array<FinaticAPIWarning> | null;
-    'errors'?: Array<{
-        [key: string]: any;
-    }> | null;
-    'pagination'?: {
-        [key: string]: any;
-    } | null;
+  _id?: string;
+  /**
+   * Whether the request was successful
+   */
+  success: boolean;
+  response_data?: Array<BrokerInfo> | null;
+  message?: string | null;
+  /**
+   * HTTP status code
+   */
+  status_code?: number;
+  warnings?: Array<FinaticAPIWarning> | null;
+  errors?: Array<{
+    [key: string]: any;
+  }> | null;
+  pagination?: {
+    [key: string]: any;
+  } | null;
 }
 //# sourceMappingURL=finatic-response-list-broker-info.d.ts.map

@@ -15,24 +15,24 @@ import type { Timeinforce } from './timeinforce';
  * Stop-order modification payload for NinjaTrader.
  */
 export interface NinjaTraderStopOrderModifyQueryParams {
-    [key: string]: any;
-    'orderQty'?: number | null;
-    'clOrdId'?: string | null;
-    'maxShow'?: number | null;
-    'pegDifference'?: number | null;
-    'activationTime'?: string | null;
-    'text'?: string | null;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': NinjaTraderStopOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'stopPrice': number;
+  [key: string]: any;
+  orderQty?: number | null;
+  clOrdId?: string | null;
+  maxShow?: number | null;
+  pegDifference?: number | null;
+  activationTime?: string | null;
+  text?: string | null;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: NinjaTraderStopOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  stopPrice: number;
 }
 export declare enum NinjaTraderStopOrderModifyQueryParamsOrderTypeEnum {
-    Stop = "Stop"
+  Stop = 'Stop',
 }
 //# sourceMappingURL=ninja-trader-stop-order-modify-query-params.d.ts.map

@@ -13,17 +13,17 @@
  * Model for broker information.
  */
 export interface BrokerInfo {
-    'id': string;
-    'name': string;
-    'display_name': string;
-    'description': string;
-    'website': string;
-    'features': Array<string>;
-    'auth_type': string;
-    'logo_path': string;
-    'is_active': boolean;
-    'is_alias'?: boolean;
-    'base_broker_id'?: string | null;
-    'supports_trading'?: boolean;
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  website: string;
+  features: Array<string>;
+  auth_type: string;
+  logo_path: string;
+  is_active: boolean;
+  is_alias?: boolean;
+  base_broker_id?: string | null;
+  supports_trading?: boolean;
 }
 //# sourceMappingURL=broker-info.d.ts.map

@@ -12,23 +12,23 @@
 import type { FinaticAPIWarning } from './finatic-apiwarning';
 import type { PositionResponse } from './position-response';
 export interface FinaticResponseListPositionResponse {
-    '_id'?: string;
-    /**
-     * Whether the request was successful
-     */
-    'success': boolean;
-    'response_data'?: Array<PositionResponse> | null;
-    'message'?: string | null;
-    /**
-     * HTTP status code
-     */
-    'status_code'?: number;
-    'warnings'?: Array<FinaticAPIWarning> | null;
-    'errors'?: Array<{
-        [key: string]: any;
-    }> | null;
-    'pagination'?: {
-        [key: string]: any;
-    } | null;
+  _id?: string;
+  /**
+   * Whether the request was successful
+   */
+  success: boolean;
+  response_data?: Array<PositionResponse> | null;
+  message?: string | null;
+  /**
+   * HTTP status code
+   */
+  status_code?: number;
+  warnings?: Array<FinaticAPIWarning> | null;
+  errors?: Array<{
+    [key: string]: any;
+  }> | null;
+  pagination?: {
+    [key: string]: any;
+  } | null;
 }
 //# sourceMappingURL=finatic-response-list-position-response.d.ts.map

@@ -10,11 +10,11 @@
  * Do not edit the class manually.
  */
 export declare enum PublicConnectionStatusEnum {
-    Active = "active",
-    NeedsReauth = "needs_reauth",
-    Revoked = "revoked",
-    PendingInitialAuth = "pending_initial_auth",
-    Failed = "failed",
-    RateLimited = "rate_limited"
+  Active = 'active',
+  NeedsReauth = 'needs_reauth',
+  Revoked = 'revoked',
+  PendingInitialAuth = 'pending_initial_auth',
+  Failed = 'failed',
+  RateLimited = 'rate_limited',
 }
 //# sourceMappingURL=public-connection-status-enum.d.ts.map

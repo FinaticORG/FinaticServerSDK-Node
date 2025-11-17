@@ -10,11 +10,11 @@
  * Do not edit the class manually.
  */
 export declare enum PublicAssetTypeEnum {
-    Equity = "equity",
-    EquityOption = "equity_option",
-    Crypto = "crypto",
-    Forex = "forex",
-    Future = "future",
-    FutureOption = "future_option"
+  Equity = 'equity',
+  EquityOption = 'equity_option',
+  Crypto = 'crypto',
+  Forex = 'forex',
+  Future = 'future',
+  FutureOption = 'future_option',
 }
 //# sourceMappingURL=public-asset-type-enum.d.ts.map

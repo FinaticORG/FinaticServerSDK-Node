@@ -16,13 +16,17 @@ import type { NinjaTraderTrailingStopOrderPlaceQueryParams } from './ninja-trade
 /**
  * @type Order
  */
-export type Order = {
-    orderType: 'Limit';
-} & NinjaTraderLimitOrderPlaceQueryParams | {
-    orderType: 'Market';
-} & NinjaTraderMarketOrderPlaceQueryParams | {
-    orderType: 'Stop';
-} & NinjaTraderStopOrderPlaceQueryParams | {
-    orderType: 'TrailingStop';
-} & NinjaTraderTrailingStopOrderPlaceQueryParams;
+export type Order =
+  | ({
+      orderType: 'Limit';
+    } & NinjaTraderLimitOrderPlaceQueryParams)
+  | ({
+      orderType: 'Market';
+    } & NinjaTraderMarketOrderPlaceQueryParams)
+  | ({
+      orderType: 'Stop';
+    } & NinjaTraderStopOrderPlaceQueryParams)
+  | ({
+      orderType: 'TrailingStop';
+    } & NinjaTraderTrailingStopOrderPlaceQueryParams);
 //# sourceMappingURL=order.d.ts.map

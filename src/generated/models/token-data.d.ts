@@ -13,33 +13,33 @@
  * Token data model.
  */
 export interface TokenData {
-    /**
-     * JWT access token
-     */
-    'access_token': string;
-    /**
-     * JWT refresh token
-     */
-    'refresh_token': string;
-    /**
-     * Session token for API access
-     */
-    'session_token': string;
-    /**
-     * Token type
-     */
-    'token_type'?: string;
-    /**
-     * Token expiration in seconds
-     */
-    'expires_in': number;
-    /**
-     * Token scope
-     */
-    'scope': string;
-    /**
-     * User ID
-     */
-    'user_id': string;
+  /**
+   * JWT access token
+   */
+  access_token: string;
+  /**
+   * JWT refresh token
+   */
+  refresh_token: string;
+  /**
+   * Session token for API access
+   */
+  session_token: string;
+  /**
+   * Token type
+   */
+  token_type?: string;
+  /**
+   * Token expiration in seconds
+   */
+  expires_in: number;
+  /**
+   * Token scope
+   */
+  scope: string;
+  /**
+   * User ID
+   */
+  user_id: string;
 }
 //# sourceMappingURL=token-data.d.ts.map

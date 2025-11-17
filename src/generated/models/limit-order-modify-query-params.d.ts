@@ -15,18 +15,18 @@ import type { Timeinforce } from './timeinforce';
  * Limit order modification – requires *price*.
  */
 export interface LimitOrderModifyQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': LimitOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'price': number;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: LimitOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  price: number;
 }
 export declare enum LimitOrderModifyQueryParamsOrderTypeEnum {
-    Limit = "Limit"
+  Limit = 'Limit',
 }
 //# sourceMappingURL=limit-order-modify-query-params.d.ts.map

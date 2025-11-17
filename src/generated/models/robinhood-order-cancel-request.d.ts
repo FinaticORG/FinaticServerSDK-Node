@@ -11,11 +11,11 @@
  */
 import type { OrderCancelQueryParams } from './order-cancel-query-params';
 export interface RobinhoodOrderCancelRequest {
-    [key: string]: any;
-    'broker': RobinhoodOrderCancelRequestBrokerEnum;
-    'order': OrderCancelQueryParams;
+  [key: string]: any;
+  broker: RobinhoodOrderCancelRequestBrokerEnum;
+  order: OrderCancelQueryParams;
 }
 export declare enum RobinhoodOrderCancelRequestBrokerEnum {
-    Robinhood = "robinhood"
+  Robinhood = 'robinhood',
 }
 //# sourceMappingURL=robinhood-order-cancel-request.d.ts.map

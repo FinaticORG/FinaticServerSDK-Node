@@ -15,18 +15,18 @@ import type { Timeinforce } from './timeinforce';
  * Stop order modification – requires *stop_price*.
  */
 export interface StopOrderModifyQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': StopOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'stopPrice': number;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: StopOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  stopPrice: number;
 }
 export declare enum StopOrderModifyQueryParamsOrderTypeEnum {
-    Stop = "Stop"
+  Stop = 'Stop',
 }
 //# sourceMappingURL=stop-order-modify-query-params.d.ts.map

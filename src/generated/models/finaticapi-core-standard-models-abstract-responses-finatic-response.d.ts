@@ -14,23 +14,23 @@ import type { FinaticAPIWarning } from './finatic-apiwarning';
  * A generic response model for Finatic API.  Attributes ----------     response_data (T | None): The response data. Defaults to None.     message (str | None): The response message. Defaults to None.     status_code (int): The HTTP status code. Defaults to 200.     success (bool): Whether the request was successful. Required.
  */
 export interface FinaticapiCoreStandardModelsAbstractResponsesFinaticResponse {
-    '_id'?: string;
-    /**
-     * Whether the request was successful
-     */
-    'success': boolean;
-    'response_data'?: null;
-    'message'?: string | null;
-    /**
-     * HTTP status code
-     */
-    'status_code'?: number;
-    'warnings'?: Array<FinaticAPIWarning> | null;
-    'errors'?: Array<{
-        [key: string]: any;
-    }> | null;
-    'pagination'?: {
-        [key: string]: any;
-    } | null;
+  _id?: string;
+  /**
+   * Whether the request was successful
+   */
+  success: boolean;
+  response_data?: null;
+  message?: string | null;
+  /**
+   * HTTP status code
+   */
+  status_code?: number;
+  warnings?: Array<FinaticAPIWarning> | null;
+  errors?: Array<{
+    [key: string]: any;
+  }> | null;
+  pagination?: {
+    [key: string]: any;
+  } | null;
 }
 //# sourceMappingURL=finaticapi-core-standard-models-abstract-responses-finatic-response.d.ts.map

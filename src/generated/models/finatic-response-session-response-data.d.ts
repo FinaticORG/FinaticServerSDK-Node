@@ -11,8 +11,8 @@
  */
 import type { SessionResponseData } from './session-response-data';
 export interface FinaticResponseSessionResponseData {
-    'success'?: boolean;
-    'message'?: string | null;
-    'data'?: SessionResponseData | null;
+  success?: boolean;
+  message?: string | null;
+  data?: SessionResponseData | null;
 }
 //# sourceMappingURL=finatic-response-session-response-data.d.ts.map

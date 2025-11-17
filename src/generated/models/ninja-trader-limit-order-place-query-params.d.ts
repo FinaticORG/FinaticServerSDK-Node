@@ -16,29 +16,29 @@ import type { Timeinforce } from './timeinforce';
  * Parameters for a NinjaTrader limit order.
  */
 export interface NinjaTraderLimitOrderPlaceQueryParams {
-    'accountSpec'?: string | null;
-    'isAutomated'?: boolean;
-    'activationTime'?: string | null;
-    'text'?: string | null;
-    'pegDifference'?: number | null;
-    'accountNumber': Accountnumber;
-    'orderType': NinjaTraderLimitOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': NinjaTraderLimitOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
-    'price': number;
+  accountSpec?: string | null;
+  isAutomated?: boolean;
+  activationTime?: string | null;
+  text?: string | null;
+  pegDifference?: number | null;
+  accountNumber: Accountnumber;
+  orderType: NinjaTraderLimitOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: NinjaTraderLimitOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
+  price: number;
 }
 export declare enum NinjaTraderLimitOrderPlaceQueryParamsOrderTypeEnum {
-    Limit = "Limit"
+  Limit = 'Limit',
 }
 export declare enum NinjaTraderLimitOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=ninja-trader-limit-order-place-query-params.d.ts.map

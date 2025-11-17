@@ -11,11 +11,11 @@
  */
 import type { TastyTradeOrderCancelQueryParams } from './tasty-trade-order-cancel-query-params';
 export interface TastyTradeOrderCancelRequest {
-    [key: string]: any;
-    'broker': TastyTradeOrderCancelRequestBrokerEnum;
-    'order': TastyTradeOrderCancelQueryParams;
+  [key: string]: any;
+  broker: TastyTradeOrderCancelRequestBrokerEnum;
+  order: TastyTradeOrderCancelQueryParams;
 }
 export declare enum TastyTradeOrderCancelRequestBrokerEnum {
-    TastyTrade = "tasty_trade"
+  TastyTrade = 'tasty_trade',
 }
 //# sourceMappingURL=tasty-trade-order-cancel-request.d.ts.map

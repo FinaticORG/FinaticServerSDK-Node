@@ -16,28 +16,28 @@ import type { Timeinforce } from './timeinforce';
  * Parameters for a NinjaTrader market order.
  */
 export interface NinjaTraderMarketOrderPlaceQueryParams {
-    'accountSpec'?: string | null;
-    'isAutomated'?: boolean;
-    'activationTime'?: string | null;
-    'text'?: string | null;
-    'pegDifference'?: number | null;
-    'accountNumber': Accountnumber;
-    'orderType': NinjaTraderMarketOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': NinjaTraderMarketOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
+  accountSpec?: string | null;
+  isAutomated?: boolean;
+  activationTime?: string | null;
+  text?: string | null;
+  pegDifference?: number | null;
+  accountNumber: Accountnumber;
+  orderType: NinjaTraderMarketOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: NinjaTraderMarketOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
 }
 export declare enum NinjaTraderMarketOrderPlaceQueryParamsOrderTypeEnum {
-    Market = "Market"
+  Market = 'Market',
 }
 export declare enum NinjaTraderMarketOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=ninja-trader-market-order-place-query-params.d.ts.map

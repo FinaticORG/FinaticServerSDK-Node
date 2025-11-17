@@ -15,18 +15,18 @@ import type { Timeinforce } from './timeinforce';
  * Trailing stop order modification – requires both *price* and *stop_price*.
  */
 export interface TrailingStopOrderModifyQueryParams {
-    [key: string]: any;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': TrailingStopOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
-    'stopPrice': number;
+  [key: string]: any;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: TrailingStopOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
+  stopPrice: number;
 }
 export declare enum TrailingStopOrderModifyQueryParamsOrderTypeEnum {
-    TrailingStop = "TrailingStop"
+  TrailingStop = 'TrailingStop',
 }
 //# sourceMappingURL=trailing-stop-order-modify-query-params.d.ts.map

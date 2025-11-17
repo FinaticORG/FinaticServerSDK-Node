@@ -14,11 +14,11 @@ import type { Order } from './order';
  * Wrapper model for NinjaTrader **place order** requests including NT-specific fields.
  */
 export interface NinjaTraderOrderPlaceRequest {
-    [key: string]: any;
-    'broker': NinjaTraderOrderPlaceRequestBrokerEnum;
-    'order': Order;
+  [key: string]: any;
+  broker: NinjaTraderOrderPlaceRequestBrokerEnum;
+  order: Order;
 }
 export declare enum NinjaTraderOrderPlaceRequestBrokerEnum {
-    NinjaTrader = "ninja_trader"
+  NinjaTrader = 'ninja_trader',
 }
 //# sourceMappingURL=ninja-trader-order-place-request.d.ts.map

@@ -11,11 +11,11 @@
  */
 import type { Order5 } from './order5';
 export interface RobinhoodOrderModifyRequest {
-    [key: string]: any;
-    'broker': RobinhoodOrderModifyRequestBrokerEnum;
-    'order': Order5;
+  [key: string]: any;
+  broker: RobinhoodOrderModifyRequestBrokerEnum;
+  order: Order5;
 }
 export declare enum RobinhoodOrderModifyRequestBrokerEnum {
-    Robinhood = "robinhood"
+  Robinhood = 'robinhood',
 }
 //# sourceMappingURL=robinhood-order-modify-request.d.ts.map

@@ -16,13 +16,17 @@ import type { TrailingStopOrderModifyQueryParams } from './trailing-stop-order-m
 /**
  * @type Order5
  */
-export type Order5 = {
-    orderType: 'Limit';
-} & LimitOrderModifyQueryParams | {
-    orderType: 'Market';
-} & MarketOrderModifyQueryParams | {
-    orderType: 'Stop';
-} & StopOrderModifyQueryParams | {
-    orderType: 'TrailingStop';
-} & TrailingStopOrderModifyQueryParams;
+export type Order5 =
+  | ({
+      orderType: 'Limit';
+    } & LimitOrderModifyQueryParams)
+  | ({
+      orderType: 'Market';
+    } & MarketOrderModifyQueryParams)
+  | ({
+      orderType: 'Stop';
+    } & StopOrderModifyQueryParams)
+  | ({
+      orderType: 'TrailingStop';
+    } & TrailingStopOrderModifyQueryParams);
 //# sourceMappingURL=order5.d.ts.map

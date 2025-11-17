@@ -12,23 +12,23 @@
 import type { Balances } from './balances';
 import type { FinaticAPIWarning } from './finatic-apiwarning';
 export interface FinaticResponseListBalances {
-    '_id'?: string;
-    /**
-     * Whether the request was successful
-     */
-    'success': boolean;
-    'response_data'?: Array<Balances> | null;
-    'message'?: string | null;
-    /**
-     * HTTP status code
-     */
-    'status_code'?: number;
-    'warnings'?: Array<FinaticAPIWarning> | null;
-    'errors'?: Array<{
-        [key: string]: any;
-    }> | null;
-    'pagination'?: {
-        [key: string]: any;
-    } | null;
+  _id?: string;
+  /**
+   * Whether the request was successful
+   */
+  success: boolean;
+  response_data?: Array<Balances> | null;
+  message?: string | null;
+  /**
+   * HTTP status code
+   */
+  status_code?: number;
+  warnings?: Array<FinaticAPIWarning> | null;
+  errors?: Array<{
+    [key: string]: any;
+  }> | null;
+  pagination?: {
+    [key: string]: any;
+  } | null;
 }
 //# sourceMappingURL=finatic-response-list-balances.d.ts.map

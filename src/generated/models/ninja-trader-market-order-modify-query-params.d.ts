@@ -15,23 +15,23 @@ import type { Timeinforce } from './timeinforce';
  * Market-order modification payload for NinjaTrader.
  */
 export interface NinjaTraderMarketOrderModifyQueryParams {
-    [key: string]: any;
-    'orderQty'?: number | null;
-    'clOrdId'?: string | null;
-    'maxShow'?: number | null;
-    'pegDifference'?: number | null;
-    'activationTime'?: string | null;
-    'text'?: string | null;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': NinjaTraderMarketOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
+  [key: string]: any;
+  orderQty?: number | null;
+  clOrdId?: string | null;
+  maxShow?: number | null;
+  pegDifference?: number | null;
+  activationTime?: string | null;
+  text?: string | null;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: NinjaTraderMarketOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
 }
 export declare enum NinjaTraderMarketOrderModifyQueryParamsOrderTypeEnum {
-    Market = "Market"
+  Market = 'Market',
 }
 //# sourceMappingURL=ninja-trader-market-order-modify-query-params.d.ts.map

@@ -16,11 +16,14 @@ import type { TastyTradeOrderCancelRequest } from './tasty-trade-order-cancel-re
  * @type CancelOrderApiV1BrokersOrdersOrderIdDeleteRequest
  * Broker-specific parameters object for *cancel order* operations
  */
-export type CancelOrderApiV1BrokersOrdersOrderIdDeleteRequest = {
-    broker: 'ninja_trader';
-} & NinjaTraderOrderCancelRequest | {
-    broker: 'robinhood';
-} & RobinhoodOrderCancelRequest | {
-    broker: 'tasty_trade';
-} & TastyTradeOrderCancelRequest;
+export type CancelOrderApiV1BrokersOrdersOrderIdDeleteRequest =
+  | ({
+      broker: 'ninja_trader';
+    } & NinjaTraderOrderCancelRequest)
+  | ({
+      broker: 'robinhood';
+    } & RobinhoodOrderCancelRequest)
+  | ({
+      broker: 'tasty_trade';
+    } & TastyTradeOrderCancelRequest);
 //# sourceMappingURL=cancel-order-api-v1-brokers-orders-order-id-delete-request.d.ts.map

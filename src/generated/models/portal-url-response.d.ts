@@ -13,9 +13,9 @@
  * Response model for portal URL.
  */
 export interface PortalUrlResponse {
-    /**
-     * Portal URL with token
-     */
-    'portal_url': string;
+  /**
+   * Portal URL with token
+   */
+  portal_url: string;
 }
 //# sourceMappingURL=portal-url-response.d.ts.map

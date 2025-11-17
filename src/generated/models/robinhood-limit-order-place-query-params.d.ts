@@ -13,25 +13,25 @@ import type { Accountnumber } from './accountnumber';
 import type { PublicAssetTypeEnum } from './public-asset-type-enum';
 import type { Timeinforce } from './timeinforce';
 export interface RobinhoodLimitOrderPlaceQueryParams {
-    'accountId'?: string | null;
-    'accountNumber': Accountnumber;
-    'orderType': RobinhoodLimitOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': RobinhoodLimitOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
-    'price': number;
+  accountId?: string | null;
+  accountNumber: Accountnumber;
+  orderType: RobinhoodLimitOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: RobinhoodLimitOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
+  price: number;
 }
 export declare enum RobinhoodLimitOrderPlaceQueryParamsOrderTypeEnum {
-    Limit = "Limit"
+  Limit = 'Limit',
 }
 export declare enum RobinhoodLimitOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=robinhood-limit-order-place-query-params.d.ts.map

@@ -14,11 +14,11 @@ import type { BrokerPermissions } from './broker-permissions';
  * Request model for creating a broker connection.
  */
 export interface BrokerConnectionRequest {
-    'broker_id': string;
-    'credentials': {
-        [key: string]: any;
-    };
-    'permissions'?: BrokerPermissions | null;
-    'connection_id'?: string | null;
+  broker_id: string;
+  credentials: {
+    [key: string]: any;
+  };
+  permissions?: BrokerPermissions | null;
+  connection_id?: string | null;
 }
 //# sourceMappingURL=broker-connection-request.d.ts.map

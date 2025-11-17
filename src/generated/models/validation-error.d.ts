@@ -11,8 +11,8 @@
  */
 import type { ValidationErrorLocInner } from './validation-error-loc-inner';
 export interface ValidationError {
-    'loc': Array<ValidationErrorLocInner>;
-    'msg': string;
-    'type': string;
+  loc: Array<ValidationErrorLocInner>;
+  msg: string;
+  type: string;
 }
 //# sourceMappingURL=validation-error.d.ts.map

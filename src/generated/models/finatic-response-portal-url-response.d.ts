@@ -11,8 +11,8 @@
  */
 import type { PortalUrlResponse } from './portal-url-response';
 export interface FinaticResponsePortalUrlResponse {
-    'success'?: boolean;
-    'message'?: string | null;
-    'data'?: PortalUrlResponse | null;
+  success?: boolean;
+  message?: string | null;
+  data?: PortalUrlResponse | null;
 }
 //# sourceMappingURL=finatic-response-portal-url-response.d.ts.map

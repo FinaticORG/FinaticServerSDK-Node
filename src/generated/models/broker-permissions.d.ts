@@ -13,13 +13,13 @@
  * Broker permissions model.
  */
 export interface BrokerPermissions {
-    /**
-     * Access to read data (positions, orders, accounts)
-     */
-    'read'?: boolean;
-    /**
-     * Access to place trades
-     */
-    'write'?: boolean;
+  /**
+   * Access to read data (positions, orders, accounts)
+   */
+  read?: boolean;
+  /**
+   * Access to place trades
+   */
+  write?: boolean;
 }
 //# sourceMappingURL=broker-permissions.d.ts.map

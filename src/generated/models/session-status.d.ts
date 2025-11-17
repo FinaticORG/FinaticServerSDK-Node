@@ -13,10 +13,10 @@
  * Status of a session.
  */
 export declare enum SessionStatus {
-    Pending = "pending",
-    Authenticating = "authenticating",
-    Active = "active",
-    Completed = "completed",
-    Expired = "expired"
+  Pending = 'pending',
+  Authenticating = 'authenticating',
+  Active = 'active',
+  Completed = 'completed',
+  Expired = 'expired',
 }
 //# sourceMappingURL=session-status.d.ts.map

@@ -14,9 +14,9 @@ import type { BrokerPermissions } from './broker-permissions';
  * Request model for updating a broker connection.
  */
 export interface BrokerConnectionUpdateRequest {
-    'permissions'?: BrokerPermissions | null;
-    'metadata'?: {
-        [key: string]: string;
-    } | null;
+  permissions?: BrokerPermissions | null;
+  metadata?: {
+    [key: string]: string;
+  } | null;
 }
 //# sourceMappingURL=broker-connection-update-request.d.ts.map

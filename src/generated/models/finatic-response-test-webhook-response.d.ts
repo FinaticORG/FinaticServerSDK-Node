@@ -11,8 +11,8 @@
  */
 import type { TestWebhookResponse } from './test-webhook-response';
 export interface FinaticResponseTestWebhookResponse {
-    'success'?: boolean;
-    'message'?: string | null;
-    'data'?: TestWebhookResponse | null;
+  success?: boolean;
+  message?: string | null;
+  data?: TestWebhookResponse | null;
 }
 //# sourceMappingURL=finatic-response-test-webhook-response.d.ts.map

@@ -13,13 +13,13 @@
  * Response data for token operations.
  */
 export interface TokenResponseData {
-    /**
-     * One-time use token
-     */
-    'one_time_token': string;
-    /**
-     * Token expiration time
-     */
-    'expires_at': string;
+  /**
+   * One-time use token
+   */
+  one_time_token: string;
+  /**
+   * Token expiration time
+   */
+  expires_at: string;
 }
 //# sourceMappingURL=token-response-data.d.ts.map

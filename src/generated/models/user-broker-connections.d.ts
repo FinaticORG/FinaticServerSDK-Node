@@ -11,18 +11,18 @@
  */
 import type { PublicConnectionStatusEnum } from './public-connection-status-enum';
 export interface UserBrokerConnections {
-    'id'?: string;
-    'broker_id': string;
-    'circuit_open'?: boolean | null;
-    'circuit_open_until'?: string | null;
-    'company_access'?: null;
-    'connection_metadata'?: null;
-    'consecutive_failures'?: number | null;
-    'created_at': string | null;
-    'error_message'?: string | null;
-    'last_synced_at'?: string | null;
-    'status'?: PublicConnectionStatusEnum | null;
-    'updated_at': string | null;
-    'user_id': string;
+  id?: string;
+  broker_id: string;
+  circuit_open?: boolean | null;
+  circuit_open_until?: string | null;
+  company_access?: null;
+  connection_metadata?: null;
+  consecutive_failures?: number | null;
+  created_at: string | null;
+  error_message?: string | null;
+  last_synced_at?: string | null;
+  status?: PublicConnectionStatusEnum | null;
+  updated_at: string | null;
+  user_id: string;
 }
 //# sourceMappingURL=user-broker-connections.d.ts.map

@@ -16,40 +16,40 @@ import type { Timeinforce } from './timeinforce';
  * Parameters for a TastyTrade *stop* order.
  */
 export interface TastyTradeStopOrderPlaceQueryParams {
-    'automated-source'?: boolean;
-    'price-effect'?: TastyTradeStopOrderPlaceQueryParamsPriceEffectEnum | null;
-    'external-identifier'?: string | null;
-    'partition-key'?: string | null;
-    'preflight-id'?: string | null;
-    'source'?: string | null;
-    'value-effect'?: TastyTradeStopOrderPlaceQueryParamsValueEffectEnum | null;
-    'legs'?: Array<object> | null;
-    'accountNumber': Accountnumber;
-    'orderType': TastyTradeStopOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': TastyTradeStopOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
-    'stopPrice': number;
+  'automated-source'?: boolean;
+  'price-effect'?: TastyTradeStopOrderPlaceQueryParamsPriceEffectEnum | null;
+  'external-identifier'?: string | null;
+  'partition-key'?: string | null;
+  'preflight-id'?: string | null;
+  source?: string | null;
+  'value-effect'?: TastyTradeStopOrderPlaceQueryParamsValueEffectEnum | null;
+  legs?: Array<object> | null;
+  accountNumber: Accountnumber;
+  orderType: TastyTradeStopOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: TastyTradeStopOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
+  stopPrice: number;
 }
 export declare enum TastyTradeStopOrderPlaceQueryParamsPriceEffectEnum {
-    Debit = "Debit",
-    Credit = "Credit"
+  Debit = 'Debit',
+  Credit = 'Credit',
 }
 export declare enum TastyTradeStopOrderPlaceQueryParamsValueEffectEnum {
-    Debit = "Debit",
-    Credit = "Credit"
+  Debit = 'Debit',
+  Credit = 'Credit',
 }
 export declare enum TastyTradeStopOrderPlaceQueryParamsOrderTypeEnum {
-    Stop = "Stop"
+  Stop = 'Stop',
 }
 export declare enum TastyTradeStopOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=tasty-trade-stop-order-place-query-params.d.ts.map

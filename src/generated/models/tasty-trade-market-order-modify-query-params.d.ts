@@ -15,23 +15,23 @@ import type { Timeinforce } from './timeinforce';
  * Market-order modification payload.
  */
 export interface TastyTradeMarketOrderModifyQueryParams {
-    [key: string]: any;
-    'accountNumber': number;
-    'automated-source'?: boolean;
-    'external-identifier'?: string | null;
-    'partition-key'?: string | null;
-    'preflight-id'?: string | null;
-    'source'?: string | null;
-    /**
-     * Broker-assigned order identifier
-     */
-    'orderId': string;
-    'orderType': TastyTradeMarketOrderModifyQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'timeInForce': Timeinforce;
-    'isAutomated'?: boolean | null;
+  [key: string]: any;
+  accountNumber: number;
+  'automated-source'?: boolean;
+  'external-identifier'?: string | null;
+  'partition-key'?: string | null;
+  'preflight-id'?: string | null;
+  source?: string | null;
+  /**
+   * Broker-assigned order identifier
+   */
+  orderId: string;
+  orderType: TastyTradeMarketOrderModifyQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  timeInForce: Timeinforce;
+  isAutomated?: boolean | null;
 }
 export declare enum TastyTradeMarketOrderModifyQueryParamsOrderTypeEnum {
-    Market = "Market"
+  Market = 'Market',
 }
 //# sourceMappingURL=tasty-trade-market-order-modify-query-params.d.ts.map

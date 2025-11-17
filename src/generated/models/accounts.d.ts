@@ -11,24 +11,24 @@
  */
 import type { PublicAccountTypeEnum } from './public-account-type-enum';
 export interface Accounts {
-    'id'?: string;
-    'account_created_at'?: string | null;
-    'account_first_trade_at'?: string | null;
-    'account_name'?: string | null;
-    'account_number'?: string | null;
-    'account_type'?: PublicAccountTypeEnum | null;
-    'account_updated_at'?: string | null;
-    'balances_synced_at'?: string | null;
-    'broker_provided_account_id': string;
-    'connection_metadata'?: null;
-    'created_at': string | null;
-    'currency'?: string | null;
-    'is_simulation_account'?: boolean | null;
-    'last_synced_at'?: string | null;
-    'orders_synced_at'?: string | null;
-    'positions_synced_at'?: string | null;
-    'status'?: string | null;
-    'updated_at': string | null;
-    'user_broker_connection_id': string;
+  id?: string;
+  account_created_at?: string | null;
+  account_first_trade_at?: string | null;
+  account_name?: string | null;
+  account_number?: string | null;
+  account_type?: PublicAccountTypeEnum | null;
+  account_updated_at?: string | null;
+  balances_synced_at?: string | null;
+  broker_provided_account_id: string;
+  connection_metadata?: null;
+  created_at: string | null;
+  currency?: string | null;
+  is_simulation_account?: boolean | null;
+  last_synced_at?: string | null;
+  orders_synced_at?: string | null;
+  positions_synced_at?: string | null;
+  status?: string | null;
+  updated_at: string | null;
+  user_broker_connection_id: string;
 }
 //# sourceMappingURL=accounts.d.ts.map

@@ -13,23 +13,23 @@
  * Test webhook response model.
  */
 export interface TestWebhookResponse {
-    /**
-     * Whether the test webhook was sent successfully
-     */
-    'success': boolean;
-    /**
-     * Status message
-     */
-    'message': string;
-    /**
-     * List of endpoint URLs that received the test webhook
-     */
-    'sent_to_endpoints': Array<string>;
-    /**
-     * The actual webhook payload that was sent
-     */
-    'webhook_payload': {
-        [key: string]: any;
-    };
+  /**
+   * Whether the test webhook was sent successfully
+   */
+  success: boolean;
+  /**
+   * Status message
+   */
+  message: string;
+  /**
+   * List of endpoint URLs that received the test webhook
+   */
+  sent_to_endpoints: Array<string>;
+  /**
+   * The actual webhook payload that was sent
+   */
+  webhook_payload: {
+    [key: string]: any;
+  };
 }
 //# sourceMappingURL=test-webhook-response.d.ts.map

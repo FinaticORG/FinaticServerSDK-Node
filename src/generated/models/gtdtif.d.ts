@@ -13,13 +13,13 @@
  * Good till *date* - requires an explicit expiry timestamp.
  */
 export interface GTDTIF {
-    'timeInForce': GTDTIFTimeInForceEnum;
-    /**
-     * ISO-8601 expiry timestamp
-     */
-    'expireTime': string;
+  timeInForce: GTDTIFTimeInForceEnum;
+  /**
+   * ISO-8601 expiry timestamp
+   */
+  expireTime: string;
 }
 export declare enum GTDTIFTimeInForceEnum {
-    Gtd = "gtd"
+  Gtd = 'gtd',
 }
 //# sourceMappingURL=gtdtif.d.ts.map

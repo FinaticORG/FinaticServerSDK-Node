@@ -13,25 +13,25 @@ import type { Accountnumber } from './accountnumber';
 import type { PublicAssetTypeEnum } from './public-asset-type-enum';
 import type { Timeinforce } from './timeinforce';
 export interface RobinhoodTrailingStopOrderPlaceQueryParams {
-    'accountId'?: string | null;
-    'accountNumber': Accountnumber;
-    'orderType': RobinhoodTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
-    'assetType': PublicAssetTypeEnum;
-    'action': RobinhoodTrailingStopOrderPlaceQueryParamsActionEnum;
-    'timeInForce': Timeinforce;
-    'symbol': string;
-    'orderQty': number;
-    'stopPrice': number;
+  accountId?: string | null;
+  accountNumber: Accountnumber;
+  orderType: RobinhoodTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: PublicAssetTypeEnum;
+  action: RobinhoodTrailingStopOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: number;
+  stopPrice: number;
 }
 export declare enum RobinhoodTrailingStopOrderPlaceQueryParamsOrderTypeEnum {
-    TrailingStop = "TrailingStop"
+  TrailingStop = 'TrailingStop',
 }
 export declare enum RobinhoodTrailingStopOrderPlaceQueryParamsActionEnum {
-    Buy = "Buy",
-    Sell = "Sell",
-    BuyToOpen = "Buy to Open",
-    SellToOpen = "Sell to Open",
-    BuyToClose = "Buy to Close",
-    SellToClose = "Sell to Close"
+  Buy = 'Buy',
+  Sell = 'Sell',
+  BuyToOpen = 'Buy to Open',
+  SellToOpen = 'Sell to Open',
+  BuyToClose = 'Buy to Close',
+  SellToClose = 'Sell to Close',
 }
 //# sourceMappingURL=robinhood-trailing-stop-order-place-query-params.d.ts.map
