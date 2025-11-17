@@ -75,7 +75,7 @@ export function getLogger(config?: SdkConfig): Logger {
         },
       },
       timestamp: true,
-    };
+  };
   }
   
   _loggerInstance = pino(pinoConfig);

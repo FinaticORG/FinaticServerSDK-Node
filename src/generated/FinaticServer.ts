@@ -8,6 +8,7 @@
 import { Configuration } from './configuration';
 import { SdkConfig, defaultConfig } from './config';
 import { appendThemeToURL, appendBrokerFilterToURL } from './utils/url-utils';
+import { getLogger } from './utils/logger';
 import type { SessionStartRequest } from './models';
 import { BrokersApi } from './api/brokers-api';
 import { SessionApi } from './api/session-api';
@@ -18,6 +19,7 @@ export interface PortalOptions {
   theme?: string | { preset?: string; custom?: Record<string, unknown> };
   brokers?: string[];
   email?: string;
+  mode?: 'light' | 'dark';
 }
 
 export class FinaticServer {
@@ -27,6 +29,7 @@ export class FinaticServer {
   private companyId?: string;
   private csrfToken?: string;
   private userId?: string;
+  private logger: any;
 
   public readonly brokers: BrokersWrapper;
   public readonly session: SessionWrapper;
@@ -40,6 +43,9 @@ export class FinaticServer {
       apiKey: apiKey,
     });
     this.sdkConfig = { ...defaultConfig, ...sdkConfig };
+
+    // Initialize logger
+    this.logger = getLogger(this.sdkConfig);
 
     this.brokers = new BrokersWrapper(new BrokersApi(this.config), this.config, this.sdkConfig);
     this.session = new SessionWrapper(new SessionApi(this.config), this.config, this.sdkConfig);
@@ -173,6 +179,14 @@ export class FinaticServer {
     }
     
     let portalUrl = response.success.data.portal_url || '';
+    
+    // Validate URL before manipulation
+    try {
+      new URL(portalUrl);
+    } catch (error) {
+      this.logger.error?.('Invalid portal URL from API', error, { portalUrl });
+      throw new Error(`Invalid portal URL received from API: ${portalUrl}`);
+    }
 
     // Append theme if provided
     if (options?.theme) {
@@ -182,6 +196,13 @@ export class FinaticServer {
     // Append broker filter if provided
     if (options?.brokers) {
       portalUrl = appendBrokerFilterToURL(portalUrl, options.brokers);
+    }
+
+    // Append mode if provided (light or dark)
+    if (options?.mode) {
+      const url = new URL(portalUrl);
+      url.searchParams.set('mode', options.mode);
+      portalUrl = url.toString();
     }
 
     // Append email if provided
