@@ -1,6 +1,6 @@
 /**
  * Structured logger utility with pino package (Phase 2B).
- *
+ * 
  * Generated - do not edit directly.
  */
 
@@ -26,16 +26,15 @@ export function getLogger(config?: SdkConfig): Logger {
   if (_loggerInstance) {
     return _loggerInstance as unknown as Logger;
   }
-
+  
   const logLevel = (config?.logLevel || process.env['FINATIC_LOG_LEVEL'] || 'error') as LogLevel;
-  const isDevelopment =
-    process.env['NODE_ENV'] !== 'production' && process.env['NODE_ENV'] !== 'prod';
+  const isDevelopment = process.env['NODE_ENV'] !== 'production' && process.env['NODE_ENV'] !== 'prod';
   const usePrettyPrint = isDevelopment && config?.structuredLogging !== true;
-
+  
   let pinoConfig: pino.LoggerOptions = {
     level: logLevel === 'silent' ? 'silent' : logLevel,
   };
-
+  
   // Try to use pino-pretty in development for cleaner logs
   if (usePrettyPrint) {
     try {
@@ -76,10 +75,10 @@ export function getLogger(config?: SdkConfig): Logger {
         },
       },
       timestamp: true,
-    };
+  };
   }
-
+  
   _loggerInstance = pino(pinoConfig);
-
+  
   return _loggerInstance as unknown as Logger;
 }

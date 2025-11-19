@@ -1,6 +1,6 @@
 /**
  * Main client class for Finatic Server SDK (Node.js).
- *
+ * 
  * This file is regenerated on each run - do not edit directly.
  * For custom logic, extend this class or use custom wrappers.
  */
@@ -10,17 +10,17 @@ import { SdkConfig, defaultConfig } from './config';
 import { appendThemeToURL, appendBrokerFilterToURL } from './utils/url-utils';
 import { getLogger, type Logger } from './utils/logger';
 import type { SessionStartRequest } from './models';
+import type { GetCompanyParams } from './wrappers/company';
+import type { DisconnectCompanyFromBrokerParams, FinaticResponse, GetAccountsParams, GetBalancesParams, GetBrokerConnectionsParams, GetBrokersParams, GetOrderEventsParams, GetOrderFillsParams, GetOrderGroupsParams, GetOrdersParams, GetPositionLotFillsParams, GetPositionLotsParams, GetPositionsParams } from './wrappers/brokers';
+import type { Accounts, Balances, OrderEventResponse, OrderFillResponse, OrderGroupResponse, OrderResponse, PositionLotFillResponse, PositionLotResponse, PositionResponse } from './models';
 import { BrokersApi } from './api/brokers-api';
+import { CompanyApi } from './api/company-api';
 import { SessionApi } from './api/session-api';
 import { BrokersWrapper } from './wrappers/brokers';
+import { CompanyWrapper } from './wrappers/company';
 import { SessionWrapper } from './wrappers/session';
 
-export interface PortalOptions {
-  theme?: string | { preset?: string; custom?: Record<string, unknown> };
-  brokers?: string[];
-  email?: string;
-  mode?: 'light' | 'dark';
-}
+// PortalOptions removed - portal methods now use individual parameters
 
 export class FinaticServer {
   private config: Configuration;
@@ -31,23 +31,27 @@ export class FinaticServer {
   private userId?: string;
   private logger: Logger;
 
-  public readonly brokers: BrokersWrapper;
-  public readonly session: SessionWrapper;
+  private readonly brokers: BrokersWrapper;
+  private readonly company: CompanyWrapper;
+  private readonly session: SessionWrapper;
 
   private apiKey: string;
 
   constructor(apiKey: string, baseUrl?: string, sdkConfig?: Partial<SdkConfig>) {
     this.apiKey = apiKey;
+    this.sdkConfig = { ...defaultConfig, ...sdkConfig };
+    // If baseUrl provided as parameter, use it; otherwise use sdkConfig.baseUrl
+    const finalBaseUrl = baseUrl || this.sdkConfig.baseUrl || 'https://api.finatic.dev';
     this.config = new Configuration({
-      basePath: baseUrl || 'https://api.finatic.dev',
+      basePath: finalBaseUrl,
       apiKey: apiKey,
     });
-    this.sdkConfig = { ...defaultConfig, ...sdkConfig };
 
     // Initialize logger
     this.logger = getLogger(this.sdkConfig);
 
     this.brokers = new BrokersWrapper(new BrokersApi(this.config), this.config, this.sdkConfig);
+    this.company = new CompanyWrapper(new CompanyApi(this.config), this.config, this.sdkConfig);
     this.session = new SessionWrapper(new SessionApi(this.config), this.config, this.sdkConfig);
   }
 
@@ -69,77 +73,73 @@ export class FinaticServer {
    * Initialize a session by getting a one-time token (internal/private).
    */
   private async _initSession(xApiKey: string): Promise<string> {
-    const response = await this.session.initSession({ xApiKey });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to initialize session');
+    const response = await this.session.initSession(xApiKey);
+    if (response.error) {
+      throw new Error(response.error.message || 'Failed to initialize session');
     }
     return response.success?.data?.one_time_token || '';
   }
 
   /**
-   * Start a session with a one-time token.
+   * Get a one-time token from an API key.
+   * 
+   * This method only retrieves the token and returns it - it does NOT start a session
+   * or set any session context. Useful for generating tokens to pass to clients.
+   * 
+   * @param apiKey - Company API key (uses instance API key if not provided)
+   * @returns One-time token string
    */
-  async startSession(
-    oneTimeToken: string,
-    userId?: string
-  ): Promise<{ session_id: string; company_id: string }> {
-    const requestBody: SessionStartRequest = userId !== undefined ? { user_id: userId } : {};
-    const response = await this.session.startSession({
-      OneTimeToken: oneTimeToken,
-      body: requestBody,
-    });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to start session');
+  async getToken(apiKey?: string): Promise<string> {
+    const keyToUse = apiKey || this.apiKey;
+    if (!keyToUse) {
+      throw new Error('API key is required. Provide it as a parameter or in the constructor.');
     }
-    const sessionId = response.success?.data?.session_id || '';
-    const companyId = response.success?.data?.company_id || '';
-    // csrf_token is not in SessionResponseData, get from response headers if available
-    const csrfToken = (response.success?.data as any)?.csrf_token || '';
-
-    if (sessionId && companyId) {
-      this.setSessionContext(sessionId, companyId, csrfToken);
-    }
-
-    return { session_id: sessionId, company_id: companyId };
+    return await this._initSession(keyToUse);
   }
 
   /**
-   * Convenience method that combines initSession and startSession (Phase 2C).
-   *
-   * This method:
-   * 1. Gets a one-time token using the API key
-   * 2. Starts a session with that token
-   * 3. Sets the session context automatically
-   * 4. Returns success/error information
-   *
-   * @param apiKey - Company API key (uses instance API key if not provided)
+   * Start a session.
+   * 
+   * If oneTimeToken is provided, uses it directly.
+   * If not provided, gets a one-time token using the API key from constructor, then starts session.
+   * 
+   * @param oneTimeToken - Optional one-time token. If not provided, will get one using API key.
    * @param userId - Optional user ID for direct authentication
-   * @returns Object with success, session_id, company_id, and error fields
+   * @returns Object with success, session_id, company_id, and error fields (if no token) or session_id/company_id (if token provided)
    */
-  async initSession(
-    apiKey?: string,
-    userId?: string
-  ): Promise<{
-    success: boolean;
-    session_id: string | null;
-    company_id: string | null;
-    error: string | null;
-  }> {
+  async startSession(oneTimeToken?: string, userId?: string): Promise<{ success: boolean; session_id: string | null; company_id: string | null; error: string | null } | { session_id: string; company_id: string }> {
+    // If token provided, use it directly
+    if (oneTimeToken) {
+    const requestBody: SessionStartRequest = userId !== undefined ? { user_id: userId } : {};
+    const response = await this.session.startSession(oneTimeToken, requestBody);
+    if (response.error) {
+      throw new Error(response.error.message || 'Failed to start session');
+    }
+    const sessionId = response.success?.data?.session_id || '';
+    const companyId = response.success?.data?.company_id || '';
+    const csrfToken = (response.success?.data as any)?.csrf_token || '';
+    
+    if (sessionId && companyId) {
+      this.setSessionContext(sessionId, companyId, csrfToken);
+    }
+    
+    return { session_id: sessionId, company_id: companyId };
+  }
+
+    // No token provided - get one using API key
     try {
-      // Use provided API key or fall back to instance API key
-      const keyToUse = apiKey || this.apiKey || '';
-      if (!keyToUse) {
+      if (!this.apiKey) {
         return {
           success: false,
           session_id: null,
           company_id: null,
-          error: 'API key is required',
+          error: 'API key is required. Provide it in the constructor.',
         };
       }
 
       // Step 1: Get one-time token
-      const oneTimeToken = await this._initSession(keyToUse);
-
+      const oneTimeToken = await this._initSession(this.apiKey);
+      
       if (!oneTimeToken || typeof oneTimeToken !== 'string') {
         return {
           success: false,
@@ -151,7 +151,7 @@ export class FinaticServer {
 
       // Step 2: Start session with the token
       const sessionResult = await this.startSession(oneTimeToken, userId);
-
+      
       const sessionId = sessionResult.session_id || null;
       const companyId = sessionResult.company_id || null;
 
@@ -176,24 +176,29 @@ export class FinaticServer {
    * This is where URL manipulation happens (not in session wrapper).
    * Returns the URL - app can use it as needed.
    */
-  async getPortalUrl(options?: PortalOptions): Promise<string> {
+  async getPortalUrl(
+    theme?: string | { preset?: string; custom?: Record<string, unknown> },
+    brokers?: string[],
+    email?: string,
+    mode?: 'light' | 'dark'
+  ): Promise<string> {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
 
     // Get raw portal URL from session wrapper
-    const response = await this.session.getPortalUrl({});
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get portal URL');
+    const response = await this.session.getPortalUrl();
+    if (response.error) {
+      throw new Error(response.error.message || 'Failed to get portal URL');
     }
-
+    
     // Validate response structure
     if (!response.success?.data) {
       throw new Error('Invalid portal URL response: missing data');
     }
-
+    
     let portalUrl = response.success.data.portal_url || '';
-
+    
     // Validate URL before manipulation
     try {
       new URL(portalUrl);
@@ -203,26 +208,26 @@ export class FinaticServer {
     }
 
     // Append theme if provided
-    if (options?.theme) {
-      portalUrl = appendThemeToURL(portalUrl, options.theme);
+    if (theme) {
+      portalUrl = appendThemeToURL(portalUrl, theme);
     }
 
     // Append broker filter if provided
-    if (options?.brokers) {
-      portalUrl = appendBrokerFilterToURL(portalUrl, options.brokers);
-    }
-
-    // Append mode if provided (light or dark)
-    if (options?.mode) {
-      const url = new URL(portalUrl);
-      url.searchParams.set('mode', options.mode);
-      portalUrl = url.toString();
+    if (brokers) {
+      portalUrl = appendBrokerFilterToURL(portalUrl, brokers);
     }
 
     // Append email if provided
-    if (options?.email) {
+    if (email) {
       const url = new URL(portalUrl);
-      url.searchParams.set('email', options.email);
+      url.searchParams.set('email', email);
+      portalUrl = url.toString();
+    }
+
+    // Append mode if provided (light or dark)
+    if (mode) {
+      const url = new URL(portalUrl);
+      url.searchParams.set('mode', mode);
       portalUrl = url.toString();
     }
 
@@ -238,27 +243,26 @@ export class FinaticServer {
   /**
    * Get session user information after portal authentication.
    */
-  async getSessionUser(): Promise<{ user_id: string; company_id: string; token_type: string }> {
+  async getSessionUser(): Promise<{ user_id: string; company_id: string }> {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
-
-    const response = await this.session.getSessionUser({ sessionId: this.sessionId });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get session user');
+    
+    const response = await this.session.getSessionUser(this.sessionId!);
+    if (response.error) {
+      throw new Error(response.error.message || 'Failed to get session user');
     }
     const userId = response.success?.data?.user_id || '';
     const companyId = response.success?.data?.company_id || this.companyId || '';
-
+    
     // Store userId for getUserId() method
     if (userId) {
       this.userId = userId;
     }
-
+    
     return {
       user_id: userId,
       company_id: companyId,
-      token_type: (response.success?.data as any)?.token_type || 'Bearer',
     };
   }
 
@@ -269,9 +273,10 @@ export class FinaticServer {
     this.sessionId = sessionId;
     this.companyId = companyId;
     this.csrfToken = csrfToken;
-
+    
     // Update all wrappers with session context
     this.brokers.setSessionContext(sessionId, companyId, csrfToken);
+    this.company.setSessionContext(sessionId, companyId, csrfToken);
     this.session.setSessionContext(sessionId, companyId, csrfToken);
   }
 
@@ -297,732 +302,765 @@ export class FinaticServer {
   }
 
   /**
-   * Get list of supported brokers.
-   * Phase 2C: Handles standard response structure.
+   * Check if user is authenticated (has userId).
    */
-  async getBrokerList(): Promise<any[]> {
-    const response = await this.brokers.getBrokers({});
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get broker list');
-    }
-    return response.success?.data || [];
+  isAuthed(): boolean {
+    return !!this.userId;
+  }
+
+
+  /**
+   * Get Company
+   * 
+   * Get public company details by ID (no user check, no sensitive data).
+   * 
+   * Convenience method that delegates to company wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
+   */
+  async getCompany(params?: Partial<GetCompanyParams>): Promise<Awaited<ReturnType<typeof this.company.getCompany>>> {
+    return await this.company.getCompany((params?.companyId as any));
   }
 
   /**
-   * Get user's broker connections.
-   * Phase 2C: Handles standard response structure.
+   * Get Brokers
+   * 
+   * Get all available brokers.
+   * 
+   * This is a fast operation that returns a cached list of available brokers.
+   * The list is loaded once at startup and never changes during runtime.
+   * 
+   * Returns
+   * -------
+   * FinaticResponse[list[BrokerInfo]]
+   *     list of available brokers with their metadata.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getBrokerConnections(): Promise<any[]> {
-    const response = await this.brokers.listBrokerConnections({});
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get broker connections');
-    }
-    return response.success?.data || [];
+  async getBrokers(params?: {}): Promise<Awaited<ReturnType<typeof this.brokers.getBrokers>>> {
+    return await this.brokers.getBrokers();
   }
 
   /**
-   * Get all accounts across all pages.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * List Broker Connections
+   * 
+   * List all broker connections for the current user.
+   * 
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns connections that the user has any permissions for.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getAllAccounts(filter?: any): Promise<any[]> {
-    const allData: any[] = [];
-    let offset = 0;
-    const limit = 100;
-
-    while (true) {
-      // Phase 2C: Use typed input object
-      const response = await this.brokers.getAccounts({
-        limit,
-        offset,
-      });
-
-      // Phase 2C: Check for errors first
-      if (response.Error) {
-        throw new Error(response.Error.message || 'Failed to get accounts');
-      }
-
-      // Phase 2C: Unwrap standard response structure
-      const result = response.success?.data || [];
-      if (!result || result.length === 0) break;
-      allData.push(...result);
-      if (result.length < limit) break;
-      offset += limit;
-    }
-
-    return allData;
+  async getBrokerConnections(params?: {}): Promise<Awaited<ReturnType<typeof this.brokers.getBrokerConnections>>> {
+    return await this.brokers.getBrokerConnections();
   }
 
   /**
-   * Get all orders across all pages.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * Disconnect Company From Broker
+   * 
+   * Remove a company's access to a broker connection.
+   * 
+   * If the company is the only one with access, the entire connection is deleted.
+   * If other companies have access, only the company's access is removed.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getAllOrders(filter?: any): Promise<any[]> {
-    const allData: any[] = [];
-    let offset = 0;
-    const limit = 100;
-
-    while (true) {
-      // Phase 2C: Use typed input object
-      const response = await this.brokers.getOrders({
-        symbol: filter?.symbol,
-        orderStatus: filter?.orderStatus, // Will be coerced to enum
-        side: filter?.side, // Will be coerced to enum
-        assetType: filter?.assetType, // Will be coerced to enum
-        limit,
-        offset,
-      });
-
-      // Phase 2C: Check for errors first
-      if (response.Error) {
-        throw new Error(response.Error.message || 'Failed to get orders');
-      }
-
-      // Phase 2C: Unwrap standard response structure
-      const result = response.success?.data || [];
-      if (!result || result.length === 0) break;
-      allData.push(...result);
-      if (result.length < limit) break;
-      offset += limit;
-    }
-
-    return allData;
+  async disconnectCompanyFromBroker(params?: Partial<DisconnectCompanyFromBrokerParams>): Promise<Awaited<ReturnType<typeof this.brokers.disconnectCompanyFromBroker>>> {
+    return await this.brokers.disconnectCompanyFromBroker((params?.connectionId as any));
   }
 
   /**
-   * Get all positions across all pages.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * Get Orders
+   * 
+   * Get orders for all authorized broker connections.
+   * 
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns orders from connections the company has read access to.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getAllPositions(filter?: any): Promise<any[]> {
-    const allData: any[] = [];
-    let offset = 0;
-    const limit = 100;
-
-    while (true) {
-      // Phase 2C: Use typed input object
-      const response = await this.brokers.getPositions({
-        symbol: filter?.symbol,
-        side: filter?.side, // Will be coerced to enum
-        assetType: filter?.assetType, // Will be coerced to enum
-        positionStatus: filter?.positionStatus, // Will be coerced to enum
-        limit,
-        offset,
-      });
-
-      // Phase 2C: Check for errors first
-      if (response.Error) {
-        throw new Error(response.Error.message || 'Failed to get positions');
-      }
-
-      // Phase 2C: Unwrap standard response structure
-      const result = response.success?.data || [];
-      if (!result || result.length === 0) break;
-      allData.push(...result);
-      if (result.length < limit) break;
-      offset += limit;
-    }
-
-    return allData;
+  async getOrders(params?: Partial<GetOrdersParams>): Promise<Awaited<ReturnType<typeof this.brokers.getOrders>>> {
+    return await this.brokers.getOrders(params?.brokerId, params?.connectionId, params?.accountId, params?.symbol, params?.orderStatus, params?.side, params?.assetType, params?.limit, params?.offset, params?.createdAfter, params?.createdBefore, params?.withMetadata);
   }
 
   /**
-   * Get all balances across all pages.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * Get Positions
+   * 
+   * Get positions for all authorized broker connections.
+   * 
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns positions from connections the company has read access to.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getAllBalances(filter?: any): Promise<any[]> {
-    const allData: any[] = [];
-    let offset = 0;
-    const limit = 100;
-
-    while (true) {
-      // Phase 2C: Use typed input object
-      const response = await this.brokers.getBalances({
-        isEndOfDaySnapshot: filter?.isEndOfDaySnapshot,
-        limit,
-        offset,
-      });
-
-      // Phase 2C: Check for errors first
-      if (response.Error) {
-        throw new Error(response.Error.message || 'Failed to get balances');
-      }
-
-      // Phase 2C: Unwrap standard response structure
-      const result = response.success?.data || [];
-      if (!result || result.length === 0) break;
-      allData.push(...result);
-      if (result.length < limit) break;
-      offset += limit;
-    }
-
-    return allData;
+  async getPositions(params?: Partial<GetPositionsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getPositions>>> {
+    return await this.brokers.getPositions(params?.brokerId, params?.connectionId, params?.accountId, params?.symbol, params?.side, params?.assetType, params?.positionStatus, params?.limit, params?.offset, params?.updatedAfter, params?.updatedBefore, params?.withMetadata);
   }
 
   /**
-   * Get paginated accounts.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * Get Balances
+   * 
+   * Get balances for all authorized broker connections.
+   * 
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns balances from connections the company has read access to.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getAccounts(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getAccounts({
-      limit: perPage,
-      offset,
-    });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get accounts');
-    }
-    return response.success?.data || [];
+  async getBalances(params?: Partial<GetBalancesParams>): Promise<Awaited<ReturnType<typeof this.brokers.getBalances>>> {
+    return await this.brokers.getBalances(params?.brokerId, params?.connectionId, params?.accountId, params?.isEndOfDaySnapshot, params?.limit, params?.offset, params?.balanceCreatedAfter, params?.balanceCreatedBefore, params?.withMetadata);
   }
 
   /**
-   * Get paginated orders.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * Get Accounts
+   * 
+   * Get accounts for all authorized broker connections.
+   * 
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns accounts from connections the company has read access to.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getOrders(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getOrders({
-      symbol: filter?.symbol,
-      orderStatus: filter?.orderStatus, // Will be coerced to enum
-      side: filter?.side, // Will be coerced to enum
-      assetType: filter?.assetType, // Will be coerced to enum
-      limit: perPage,
-      offset,
-    });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get orders');
-    }
-    return response.success?.data || [];
+  async getAccounts(params?: Partial<GetAccountsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getAccounts>>> {
+    return await this.brokers.getAccounts(params?.brokerId, params?.connectionId, params?.accountType, params?.status, params?.currency, params?.limit, params?.offset, params?.withMetadata);
   }
 
   /**
-   * Get paginated positions.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async getPositions(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getPositions({
-      symbol: filter?.symbol,
-      side: filter?.side, // Will be coerced to enum
-      assetType: filter?.assetType, // Will be coerced to enum
-      positionStatus: filter?.positionStatus, // Will be coerced to enum
-      limit: perPage,
-      offset,
-    });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get positions');
-    }
-    return response.success?.data || [];
-  }
-
-  /**
-   * Get paginated balances.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async getBalances(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getBalances({
-      isEndOfDaySnapshot: filter?.isEndOfDaySnapshot,
-      limit: perPage,
-      offset,
-    });
-    if (response.Error) {
-      throw new Error(response.Error.message || 'Failed to get balances');
-    }
-    return response.success?.data || [];
-  }
-
-  /**
-   * Get only open positions.
-   * Phase 2C: Uses enum coercion (case-insensitive string matching).
-   */
-  async getOpenPositions(filter?: any): Promise<any[]> {
-    // Phase 2C: Enum coercion happens in getAllPositions via typed input object
-    return await this.getAllPositions({ ...filter, positionStatus: 'active' });
-  }
-
-  /**
-   * Get only filled orders.
-   * Phase 2C: Uses enum coercion (case-insensitive string matching).
-   */
-  async getFilledOrders(filter?: any): Promise<any[]> {
-    // Phase 2C: Enum coercion happens in getAllOrders via typed input object
-    return await this.getAllOrders({ ...filter, orderStatus: 'filled' });
-  }
-
-  /**
-   * Get only pending orders.
-   * Phase 2C: Uses enum coercion (case-insensitive string matching).
-   */
-  async getPendingOrders(filter?: any): Promise<any[]> {
-    // Phase 2C: Enum coercion happens in getAllOrders via typed input object
-    return await this.getAllOrders({ ...filter, orderStatus: 'new' });
-  }
-
-  /**
-   * Get only active accounts.
-   * Phase 2C: Uses enum coercion (case-insensitive string matching).
-   */
-  async getActiveAccounts(filter?: any): Promise<any[]> {
-    // Phase 2C: Enum coercion happens in getAllAccounts via typed input object
-    return await this.getAllAccounts({ ...filter, status: 'active' });
-  }
-
-  /**
-   * Get orders filtered by symbol.
-   */
-  async getOrdersBySymbol(symbol: string, filter?: any): Promise<any[]> {
-    return await this.getAllOrders({ ...filter, symbol });
-  }
-
-  /**
-   * Get positions filtered by symbol.
-   */
-  async getPositionsBySymbol(symbol: string, filter?: any): Promise<any[]> {
-    return await this.getAllPositions({ ...filter, symbol });
-  }
-
-  /**
-   * Get orders filtered by broker.
-   */
-  async getOrdersByBroker(brokerId: string, filter?: any): Promise<any[]> {
-    return await this.getAllOrders({ ...filter, brokerId });
-  }
-
-  /**
-   * Get positions filtered by broker.
-   */
-  async getPositionsByBroker(brokerId: string, filter?: any): Promise<any[]> {
-    return await this.getAllPositions({ ...filter, brokerId });
-  }
-
-  /**
-   * Get all order groups across all pages.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async getAllOrderGroups(filter?: any): Promise<any[]> {
-    const allData: any[] = [];
-    let offset = 0;
-    const limit = 100;
-
-    while (true) {
-      const response = await this.brokers.getOrderGroups({
-        brokerId: filter?.brokerId,
-        connectionId: filter?.connectionId,
-        limit,
-        offset,
-        createdAfter: filter?.createdAfter,
-        createdBefore: filter?.createdBefore,
-      });
-
-      // Phase 2C: Check for errors first
-      if (response.Error) {
-        throw new Error(response.Error.message || 'Failed to get order groups');
-      }
-
-      const result = response.success?.data || [];
-      if (!result || result.length === 0) break;
-      allData.push(...result);
-      if (result.length < limit) break;
-      offset += limit;
-    }
-
-    return allData;
-  }
-
-  /**
-   * Get paginated order groups.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async getOrderGroups(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getOrderGroups({
-      brokerId: filter?.brokerId,
-      connectionId: filter?.connectionId,
-      limit: perPage,
-      offset,
-      createdAfter: filter?.createdAfter,
-      createdBefore: filter?.createdBefore,
-    });
-    return response.success?.data || [];
-  }
-
-  /**
-   * Get all position lots across all pages.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async getAllPositionLots(filter?: any): Promise<any[]> {
-    const allData: any[] = [];
-    let offset = 0;
-    const limit = 100;
-
-    while (true) {
-      const response = await this.brokers.getPositionLots({
-        brokerId: filter?.brokerId,
-        connectionId: filter?.connectionId,
-        accountId: filter?.accountId,
-        symbol: filter?.symbol,
-        positionId: filter?.positionId,
-        limit,
-        offset,
-      });
-
-      // Phase 2C: Check for errors first
-      if (response.Error) {
-        throw new Error(response.Error.message || 'Failed to get position lots');
-      }
-
-      const result = response.success?.data || [];
-      if (!result || result.length === 0) break;
-      allData.push(...result);
-      if (result.length < limit) break;
-      offset += limit;
-    }
-
-    return allData;
-  }
-
-  /**
-   * Get paginated position lots.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async getPositionLots(page: number = 1, perPage: number = 100, filter?: any): Promise<any> {
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getPositionLots({
-      brokerId: filter?.brokerId,
-      connectionId: filter?.connectionId,
-      accountId: filter?.accountId,
-      symbol: filter?.symbol,
-      positionId: filter?.positionId,
-      limit: perPage,
-      offset,
-    });
-    return response.success?.data || [];
-  }
-
-  /**
-   * Disconnect company from broker.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
-   */
-  async disconnectCompany(connectionId: string): Promise<any> {
-    if (!this.sessionId) {
-      throw new Error('Session not initialized. Call startSession() first.');
-    }
-    const response = await this.brokers.disconnectCompanyFromBroker({ connectionId });
-    return response.success?.data || null;
-  }
-
-  /**
+   * Get Order Fills
+   * 
    * Get order fills for a specific order.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * 
+   * This endpoint returns all execution fills for the specified order.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getOrderFills(
-    orderId: string,
-    page: number = 1,
-    perPage: number = 100,
-    filter?: any
-  ): Promise<any> {
-    if (!this.sessionId) {
-      throw new Error('Session not initialized. Call startSession() first.');
-    }
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getOrderFills({
-      orderId,
-      connectionId: filter?.connectionId,
-      limit: perPage,
-      offset,
-    });
-    return response.success?.data || [];
+  async getOrderFills(params?: Partial<GetOrderFillsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getOrderFills>>> {
+    return await this.brokers.getOrderFills((params?.orderId as any), params?.connectionId, params?.limit, params?.offset);
   }
 
   /**
+   * Get Order Events
+   * 
    * Get order events for a specific order.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * 
+   * This endpoint returns all lifecycle events for the specified order.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getOrderEvents(
-    orderId: string,
-    page: number = 1,
-    perPage: number = 100,
-    filter?: any
-  ): Promise<any> {
-    if (!this.sessionId) {
-      throw new Error('Session not initialized. Call startSession() first.');
-    }
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getOrderEvents({
-      orderId,
-      connectionId: filter?.connectionId,
-      limit: perPage,
-      offset,
-    });
-    return response.success?.data || [];
+  async getOrderEvents(params?: Partial<GetOrderEventsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getOrderEvents>>> {
+    return await this.brokers.getOrderEvents((params?.orderId as any), params?.connectionId, params?.limit, params?.offset);
   }
 
   /**
+   * Get Order Groups
+   * 
+   * Get order groups.
+   * 
+   * This endpoint returns order groups that contain multiple orders.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
+   */
+  async getOrderGroups(params?: Partial<GetOrderGroupsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getOrderGroups>>> {
+    return await this.brokers.getOrderGroups(params?.brokerId, params?.connectionId, params?.limit, params?.offset, params?.createdAfter, params?.createdBefore);
+  }
+
+  /**
+   * Get Position Lots
+   * 
+   * Get position lots (tax lots for positions).
+   * 
+   * This endpoint returns tax lots for positions, which are used for tax reporting.
+   * Each lot tracks when a position was opened/closed and at what prices.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
+   */
+  async getPositionLots(params?: Partial<GetPositionLotsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getPositionLots>>> {
+    return await this.brokers.getPositionLots(params?.brokerId, params?.connectionId, params?.accountId, params?.symbol, params?.positionId, params?.limit, params?.offset);
+  }
+
+  /**
+   * Get Position Lot Fills
+   * 
    * Get position lot fills for a specific lot.
-   * Phase 2C: Uses typed input objects and handles standard response structure.
+   * 
+   * This endpoint returns all fills associated with a specific position lot.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to use.
+   *                 Example: getOrders({ accountId: "123", symbol: "AAPL", limit: 10, offset: 0 })
+   * @returns FinaticResponse with success, error, and warning fields
    */
-  async getPositionLotFills(
-    lotId: string,
-    page: number = 1,
-    perPage: number = 100,
-    filter?: any
-  ): Promise<any> {
-    if (!this.sessionId) {
-      throw new Error('Session not initialized. Call startSession() first.');
+  async getPositionLotFills(params?: Partial<GetPositionLotFillsParams>): Promise<Awaited<ReturnType<typeof this.brokers.getPositionLotFills>>> {
+    return await this.brokers.getPositionLotFills((params?.lotId as any), params?.connectionId, params?.limit, params?.offset);
+  }
+
+
+  /**
+   * Get all Orders across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
+   */
+  async getAllOrders(params?: Partial<GetOrdersParams>): Promise<FinaticResponse<OrderResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetOrdersParams = (params || {}) as GetOrdersParams;
+    const allData: OrderResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getOrders(filterParams?.brokerId, filterParams?.connectionId, filterParams?.accountId, filterParams?.symbol, filterParams?.orderStatus, filterParams?.side, filterParams?.assetType, limit, offset, filterParams?.createdAfter, filterParams?.createdBefore, filterParams?.withMetadata);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
     }
-    const offset = (page - 1) * perPage;
-    const response = await this.brokers.getPositionLotFills({
-      lotId,
-      connectionId: filter?.connectionId,
-      limit: perPage,
-      offset,
-    });
-    return response.success?.data || [];
-  }
-
-  /**
-   * Place a stock market order.
-   */
-  async placeStockMarketOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Market',
-      asset_type: 'equity',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: 'day',
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as OrderResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place a stock limit order.
+   * Get all Positions across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeStockLimitOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    price: number,
-    timeInForce: 'day' | 'gtc' = 'gtc',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Limit',
-      asset_type: 'equity',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: timeInForce,
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
-      price,
+  async getAllPositions(params?: Partial<GetPositionsParams>): Promise<FinaticResponse<PositionResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetPositionsParams = (params || {}) as GetPositionsParams;
+    const allData: PositionResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getPositions(filterParams?.brokerId, filterParams?.connectionId, filterParams?.accountId, filterParams?.symbol, filterParams?.side, filterParams?.assetType, filterParams?.positionStatus, limit, offset, filterParams?.updatedAfter, filterParams?.updatedBefore, filterParams?.withMetadata);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as PositionResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place a stock stop order.
+   * Get all Balances across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeStockStopOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    stopPrice: number,
-    timeInForce: 'day' | 'gtc' = 'gtc',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Stop',
-      asset_type: 'equity',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: timeInForce,
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
-      stop_price: stopPrice,
+  async getAllBalances(params?: Partial<GetBalancesParams>): Promise<FinaticResponse<Balances[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetBalancesParams = (params || {}) as GetBalancesParams;
+    const allData: Balances[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getBalances(filterParams?.brokerId, filterParams?.connectionId, filterParams?.accountId, filterParams?.isEndOfDaySnapshot, limit, offset, filterParams?.balanceCreatedAfter, filterParams?.balanceCreatedBefore, filterParams?.withMetadata);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as Balances[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place a crypto market order.
+   * Get all Accounts across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeCryptoMarketOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Market',
-      asset_type: 'crypto',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: 'day',
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
+  async getAllAccounts(params?: Partial<GetAccountsParams>): Promise<FinaticResponse<Accounts[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetAccountsParams = (params || {}) as GetAccountsParams;
+    const allData: Accounts[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getAccounts(filterParams?.brokerId, filterParams?.connectionId, filterParams?.accountType, filterParams?.status, filterParams?.currency, limit, offset, filterParams?.withMetadata);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as Accounts[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place a crypto limit order.
+   * Get all OrderFills across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeCryptoLimitOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    price: number,
-    timeInForce: 'day' | 'gtc' = 'gtc',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Limit',
-      asset_type: 'crypto',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: timeInForce,
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
-      price,
+  async getAllOrderFills(params?: Partial<GetOrderFillsParams>): Promise<FinaticResponse<OrderFillResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetOrderFillsParams = (params || {}) as GetOrderFillsParams;
+    const allData: OrderFillResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getOrderFills(filterParams?.orderId, filterParams?.connectionId, limit, offset);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as OrderFillResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place an options market order.
+   * Get all OrderEvents across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeOptionsMarketOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Market',
-      asset_type: 'equity_option',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: 'day',
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
+  async getAllOrderEvents(params?: Partial<GetOrderEventsParams>): Promise<FinaticResponse<OrderEventResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetOrderEventsParams = (params || {}) as GetOrderEventsParams;
+    const allData: OrderEventResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getOrderEvents(filterParams?.orderId, filterParams?.connectionId, limit, offset);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as OrderEventResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place an options limit order.
+   * Get all OrderGroups across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeOptionsLimitOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    price: number,
-    timeInForce: 'day' | 'gtc' = 'gtc',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Limit',
-      asset_type: 'equity_option',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: timeInForce,
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
-      price,
+  async getAllOrderGroups(params?: Partial<GetOrderGroupsParams>): Promise<FinaticResponse<OrderGroupResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetOrderGroupsParams = (params || {}) as GetOrderGroupsParams;
+    const allData: OrderGroupResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getOrderGroups(filterParams?.brokerId, filterParams?.connectionId, limit, offset, filterParams?.createdAfter, filterParams?.createdBefore);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as OrderGroupResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place a futures market order.
+   * Get all PositionLots across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeFuturesMarketOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Market',
-      asset_type: 'future',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: 'day',
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
+  async getAllPositionLots(params?: Partial<GetPositionLotsParams>): Promise<FinaticResponse<PositionLotResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetPositionLotsParams = (params || {}) as GetPositionLotsParams;
+    const allData: PositionLotResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getPositionLots(filterParams?.brokerId, filterParams?.connectionId, filterParams?.accountId, filterParams?.symbol, filterParams?.positionId, limit, offset);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as PositionLotResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
   }
 
   /**
-   * Place a futures limit order.
+   * Get all PositionLotFills across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
    */
-  async placeFuturesLimitOrder(
-    symbol: string,
-    quantity: number,
-    side: 'buy' | 'sell',
-    price: number,
-    timeInForce: 'day' | 'gtc' = 'gtc',
-    broker?: string,
-    accountNumber?: string
-  ): Promise<any> {
-    const orderParams: any = {
-      broker: broker || 'robinhood',
-      order_type: 'Limit',
-      asset_type: 'future',
-      action: side === 'buy' ? 'Buy' : 'Sell',
-      time_in_force: timeInForce,
-      account_number: accountNumber !== undefined ? accountNumber : '',
-      symbol,
-      order_qty: quantity,
-      price,
+  async getAllPositionLotFills(params?: Partial<GetPositionLotFillsParams>): Promise<FinaticResponse<PositionLotFillResponse[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetPositionLotFillsParams = (params || {}) as GetPositionLotFillsParams;
+    const allData: PositionLotFillResponse[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getPositionLotFills(filterParams?.lotId, filterParams?.connectionId, limit, offset);
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      if (!result || result.length === 0) break;
+      allData.push(...(Array.isArray(result) ? result : [result]));
+      if (result.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as PositionLotFillResponse[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
     };
-    return await this.brokers.placeOrder({ body: orderParams });
-  }
-
-  /**
-   * Place a generic order.
-   */
-  async placeOrder(orderParams: any): Promise<any> {
-    return await this.brokers.placeOrder({ body: orderParams });
-  }
-
-  /**
-   * Modify an existing order.
-   */
-  async modifyOrder(orderId: string, orderParams: any): Promise<any> {
-    return await this.brokers.modifyOrder({ orderId, body: orderParams });
-  }
-
-  /**
-   * Cancel an existing order.
-   */
-  async cancelOrder(orderId: string, accountNumber?: string, connectionId?: string): Promise<any> {
-    return await this.brokers.cancelOrder({
-      orderId,
-      ...(accountNumber ? { accountNumber } : {}),
-      ...(connectionId ? { connectionId } : {}),
-    });
   }
 }

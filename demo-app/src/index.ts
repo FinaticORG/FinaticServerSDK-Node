@@ -72,10 +72,11 @@ class FinaticDemo {
       // Step 2: Initialize session (combined method)
       console.log(chalk.yellow('\nStep 2: Initializing session...'));
       try {
-        // Use the combined initSession method that handles everything
-        const sessionResult = await this.client.initSession(apiKey);
+        // Use startSession method that handles everything
+        const sessionResult = await this.client.startSession();
         
-        if (!sessionResult.success) {
+        // Handle union return type: can be { success, session_id, company_id, error } or { session_id, company_id }
+        if ('success' in sessionResult && !sessionResult.success) {
           console.log(chalk.red(`❌ Failed to initialize session: ${sessionResult.error}`));
           return;
         }
@@ -130,7 +131,6 @@ class FinaticDemo {
       console.log(chalk.green('✅ User authenticated successfully!'));
       console.log(chalk.gray(`User ID: ${userInfo.user_id}`));
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
-      console.log(chalk.gray(`Token Type: ${userInfo.token_type}`));
 
       // Test session/auth methods
       console.log(chalk.yellow('\nStep 5.1: Testing session/auth methods...'));
@@ -192,12 +192,22 @@ class FinaticDemo {
         }
       };
       
+      // Helper to extract data from FinaticResponse
+      const extractData = <T>(response: any): T => {
+        if (response?.success?.data !== undefined) {
+          return response.success.data as T;
+        }
+        // Fallback for direct data (backward compatibility)
+        return response as T;
+      };
+
       // Step 5.1: Fetch orders for a specific Finatic account id
       console.log(chalk.yellow('\nStep 5.1: Testing core methods...'));
       try {
-        const filteredOrders = await testCore('getAllOrders (filtered)', () => this.client.getAllOrders({
-          account_id: ACCOUNT_ID_FILTER,
+        const filteredOrdersResponse = await testCore('getAllOrders (filtered)', () => this.client.getAllOrders({
+          accountId: ACCOUNT_ID_FILTER
         }), false);
+        const filteredOrders = extractData<any[]>(filteredOrdersResponse);
         console.log(
           chalk.green(
             `✅ Retrieved ${filteredOrders.length} orders for account ${ACCOUNT_ID_FILTER}`
@@ -225,7 +235,8 @@ class FinaticDemo {
       try {
         console.log(chalk.gray(`  Session ID: ${this.client.getSessionId() || 'Not set'}`));
         console.log(chalk.gray(`  Company ID: ${this.client.getCompanyId() || 'Not set'}`));
-        connections = await testCore('getBrokerConnections', () => this.client.getBrokerConnections(), false);
+        const connectionsResponse = await testCore('getBrokerConnections', () => this.client.getBrokerConnections(), false);
+        connections = extractData<any[]>(connectionsResponse);
         console.log(chalk.green(`✅ Successfully retrieved ${connections.length} broker connections`));
         if (connections.length > 0) {
           console.log(chalk.gray('Connection details:'));
@@ -238,15 +249,15 @@ class FinaticDemo {
       }
       
       // Step 7: Test get_accounts
-      console.log(chalk.yellow('\nStep 7: Testing getAccounts...'));
-      let accountsResult: any;
+      console.log(chalk.yellow('\nStep 7: Testing getAllAccounts...'));
+      let accountsResult: any[] = [];
       try {
-        accountsResult = await testCore('getAccounts (paginated)', () => this.client.getAccounts(1, 10), false);
-        const hasMore = accountsResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.data.length} accounts${hasMore}`));
-        if (accountsResult.data.length > 0) {
+        const accountsResponse = await testCore('getAllAccounts', () => this.client.getAllAccounts(), false);
+        accountsResult = extractData<any[]>(accountsResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.length} accounts`));
+        if (accountsResult.length > 0) {
           console.log(chalk.gray('Account details:'));
-          accountsResult.data.slice(0, 3).forEach((account: any, index: number) => {
+          accountsResult.slice(0, 3).forEach((account: any, index: number) => {
             console.log(chalk.gray(`  ${index + 1}. Account: ${account.account_number || account.id || 'Unknown'} - Broker: ${account.broker_id || 'Unknown'}`));
           });
         }
@@ -255,15 +266,15 @@ class FinaticDemo {
       }
 
       // Step 8: Test get_orders
-      console.log(chalk.yellow('\nStep 8: Testing getOrders...'));
-      let ordersResult: any;
+      console.log(chalk.yellow('\nStep 8: Testing getAllOrders...'));
+      let ordersResult: any[] = [];
       try {
-        ordersResult = await testCore('getOrders (paginated)', () => this.client.getOrders(1, 10), false);
-        const hasMore = ordersResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.data.length} orders${hasMore}`));
-        if (ordersResult.data.length > 0) {
+        const ordersResponse = await testCore('getAllOrders', () => this.client.getAllOrders(), false);
+        ordersResult = extractData<any[]>(ordersResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.length} orders`));
+        if (ordersResult.length > 0) {
           console.log(chalk.gray('Order details:'));
-          ordersResult.data.slice(0, 3).forEach((order: any, index: number) => {
+          ordersResult.slice(0, 3).forEach((order: any, index: number) => {
             console.log(chalk.gray(`  ${index + 1}. Symbol: ${order.symbol || 'Unknown'} - Status: ${order.status || 'Unknown'} - Quantity: ${order.quantity || order.order_qty || 'Unknown'}`));
           });
         }
@@ -272,14 +283,15 @@ class FinaticDemo {
       }
 
       // Step 9: Test get_balances
-      console.log(chalk.yellow('\nStep 9: Testing getBalances...'));
+      console.log(chalk.yellow('\nStep 9: Testing getAllBalances...'));
+      let balancesResult: any[] = [];
       try {
-        const balancesResult = await testCore('getBalances (paginated)', () => this.client.getBalances(1, 10), false);
-        const hasMore = balancesResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.data.length} balances${hasMore}`));
-        if (balancesResult.data.length > 0) {
+        const balancesResponse = await testCore('getAllBalances', () => this.client.getAllBalances(), false);
+        balancesResult = extractData<any[]>(balancesResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.length} balances`));
+        if (balancesResult.length > 0) {
           console.log(chalk.gray('Balance details:'));
-          balancesResult.data.slice(0, 3).forEach((balance: any, index: number) => {
+          balancesResult.slice(0, 3).forEach((balance: any, index: number) => {
             const cashBalance = balance.cash || balance.buying_power || balance.account_value || 'Unknown';
             console.log(chalk.gray(`  ${index + 1}. Account: ${balance.account_number || balance.account_id || 'Unknown'} - Balance: ${cashBalance}`));
           });
@@ -289,14 +301,15 @@ class FinaticDemo {
       }
 
       // Step 10: Test get_positions
-      console.log(chalk.yellow('\nStep 10: Testing getPositions...'));
+      console.log(chalk.yellow('\nStep 10: Testing getAllPositions...'));
+      let positionsResult: any[] = [];
       try {
-        const positionsResult = await testCore('getPositions (paginated)', () => this.client.getPositions(1, 10), false);
-        const hasMore = positionsResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.data.length} positions${hasMore}`));
-        if (positionsResult.data.length > 0) {
+        const positionsResponse = await testCore('getAllPositions', () => this.client.getAllPositions(), false);
+        positionsResult = extractData<any[]>(positionsResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.length} positions`));
+        if (positionsResult.length > 0) {
           console.log(chalk.gray('Position details:'));
-          positionsResult.data.slice(0, 3).forEach((position: any, index: number) => {
+          positionsResult.slice(0, 3).forEach((position: any, index: number) => {
             console.log(chalk.gray(`  ${index + 1}. Symbol: ${position.symbol || 'Unknown'} - Quantity: ${position.quantity || position.qty || 'Unknown'} - Side: ${position.side || 'Unknown'}`));
           });
         }
@@ -324,7 +337,9 @@ class FinaticDemo {
       const testHelper = async (name: string, fn: () => Promise<any>, expectedType: 'array' | 'object' = 'array'): Promise<void> => {
         helperResults.total++;
         try {
-          const result = await fn();
+          const response = await fn();
+          // Extract data from FinaticResponse if present
+          const result = extractData(response);
           const isValid = expectedType === 'array' 
             ? Array.isArray(result) 
             : (result && typeof result === 'object');
@@ -342,80 +357,43 @@ class FinaticDemo {
         }
       };
 
-      // Test broker list (getBrokerConnections is already tested in core methods)
-      await testHelper('getBrokerList', () => this.client.getBrokerList());
+      // Test broker list
+      await testHelper('getBrokers', () => this.client.getBrokers());
 
       // Test getAll* methods (fetch all data across pages)
+      // These return FinaticResponse<...[]>, testHelper will extract data
       await testHelper('getAllAccounts', () => this.client.getAllAccounts());
-      // Capture getAllOrders result for use in detail methods (tested via testHelper)
-      let allOrdersResult: any[] = [];
-      try {
-        allOrdersResult = await this.client.getAllOrders();
-      } catch (error: any) {
-        // Error will be logged by testHelper below
-      }
-      // Test getAllOrders (this will also be counted in test results)
       await testHelper('getAllOrders', () => this.client.getAllOrders());
       await testHelper('getAllPositions', () => this.client.getAllPositions());
       await testHelper('getAllBalances', () => this.client.getAllBalances());
       await testHelper('getAllOrderGroups', () => this.client.getAllOrderGroups());
-      // Capture getAllPositionLots result for use in detail methods
-      let allPositionLotsResult: any[] = [];
-      try {
-        allPositionLotsResult = await this.client.getAllPositionLots();
-      } catch (error: any) {
-        // Error will be logged by testHelper below
-      }
-      // Test getAllPositionLots (this will also be counted in test results)
-      await testHelper('getAllPositionLots', () => this.client.getAllPositionLots());
-
-      // Test filtered helper methods (use symbols/statuses from earlier results if available)
-      // Use allOrdersResult if available, otherwise fall back to ordersResult
-      const ordersForSymbol = allOrdersResult.length > 0 ? allOrdersResult : (ordersResult?.data || []);
-      const sampleSymbol = ordersForSymbol.length > 0 ? ordersForSymbol[0].symbol : 'AAPL';
-      const sampleBrokerId = connections?.length > 0 ? connections[0].broker_id : undefined;
-
-      await testHelper('getOpenPositions', () => this.client.getOpenPositions());
-      await testHelper('getFilledOrders', () => this.client.getFilledOrders());
-      await testHelper('getPendingOrders', () => this.client.getPendingOrders());
-      await testHelper('getActiveAccounts', () => this.client.getActiveAccounts());
-      
-      if (sampleSymbol) {
-        await testHelper(`getOrdersBySymbol("${sampleSymbol}")`, () => this.client.getOrdersBySymbol(sampleSymbol));
-        await testHelper(`getPositionsBySymbol("${sampleSymbol}")`, () => this.client.getPositionsBySymbol(sampleSymbol));
-      }
-      
-      if (sampleBrokerId) {
-        await testHelper(`getOrdersByBroker("${sampleBrokerId}")`, () => this.client.getOrdersByBroker(sampleBrokerId));
-        await testHelper(`getPositionsByBroker("${sampleBrokerId}")`, () => this.client.getPositionsByBroker(sampleBrokerId));
-      }
-
-      // Test paginated methods
-      await testHelper('getAccounts', () => this.client.getAccounts(1, 10), 'object');
-      await testHelper('getOrders', () => this.client.getOrders(1, 10), 'object');
-      await testHelper('getPositions', () => this.client.getPositions(1, 10), 'object');
-      await testHelper('getBalances', () => this.client.getBalances(1, 10), 'object');
-      await testHelper('getOrderGroups', () => this.client.getOrderGroups(1, 10), 'object');
-      await testHelper('getPositionLots', () => this.client.getPositionLots(1, 10), 'object');
 
       // Test order/position detail methods (require IDs from earlier results)
-      // Use allOrdersResult if available (list), otherwise fall back to ordersResult (paginated object)
-      const ordersForDetails = allOrdersResult.length > 0 ? allOrdersResult : (ordersResult?.data || []);
-      if (ordersForDetails.length > 0) {
-        const sampleOrderId = ordersForDetails[0].id || ordersForDetails[0].order_id;
+      if (ordersResult.length > 0) {
+        const sampleOrderId = ordersResult[0].id || ordersResult[0].order_id;
         if (sampleOrderId) {
           await testHelper(
-            `getOrderFills("${sampleOrderId}")`,
-            () => this.client.getOrderFills(sampleOrderId, 1, 10),
-            'object'
+            `getAllOrderFills("${sampleOrderId}")`,
+            () => this.client.getAllOrderFills({ orderId: sampleOrderId }),
+            'array'
           );
           await testHelper(
-            `getOrderEvents("${sampleOrderId}")`,
-            () => this.client.getOrderEvents(sampleOrderId, 1, 10),
-            'object'
+            `getAllOrderEvents("${sampleOrderId}")`,
+            () => this.client.getAllOrderEvents({ orderId: sampleOrderId }),
+            'array'
           );
         }
       }
+
+      // Test getAllPositionLots
+      let allPositionLotsResult: any[] = [];
+      try {
+        const allPositionLotsResponse = await this.client.getAllPositionLots();
+        allPositionLotsResult = extractData<any[]>(allPositionLotsResponse);
+      } catch (error: any) {
+        // Error will be logged by testHelper below
+      }
+      await testHelper('getAllPositionLots', () => this.client.getAllPositionLots());
 
       // Test getPositionLotFills (use allPositionLotsResult if available)
       if (allPositionLotsResult.length > 0) {
@@ -425,51 +403,14 @@ class FinaticDemo {
           allPositionLotsResult[0].position_lot_id;
         if (sampleLotId) {
           await testHelper(
-            `getPositionLotFills("${sampleLotId}")`,
-            () => this.client.getPositionLotFills(sampleLotId, 1, 10),
-            'object'
+            `getAllPositionLotFills("${sampleLotId}")`,
+            () => this.client.getAllPositionLotFills({ lotId: sampleLotId }),
+            'array'
           );
-        }
-      } else {
-        // Fallback: try to get position lots from paginated call
-        try {
-          const positionLotsResult = await this.client.getPositionLots(1, 10);
-          if (positionLotsResult?.data && positionLotsResult.data.length > 0) {
-            const sampleLotId =
-              positionLotsResult.data[0].id ||
-              positionLotsResult.data[0].lot_id ||
-              positionLotsResult.data[0].position_lot_id;
-            if (sampleLotId) {
-              await testHelper(
-                `getPositionLotFills("${sampleLotId}")`,
-                () => this.client.getPositionLotFills(sampleLotId, 1, 10),
-                'object'
-              );
-            }
-          }
-        } catch (error: any) {
-          // If getPositionLots fails, skip getPositionLotFills test
         }
       }
 
-      // Test disconnect (if enabled)
-      if (ENABLE_DISCONNECT && connections && connections.length > 0) {
-        console.log(chalk.yellow('\nStep 11.1: Testing disconnectCompany...'));
-        try {
-          const firstConnection = connections[0];
-          const connectionId = firstConnection.id || firstConnection.connection_id;
-          if (connectionId) {
-            await testHelper('disconnectCompany', () => this.client.disconnectCompany(connectionId));
-            console.log(chalk.green('✅ Disconnect test completed'));
-          } else {
-            console.log(chalk.yellow('⚠️  No connection ID available for disconnect test'));
-          }
-        } catch (error: any) {
-          console.log(chalk.red(`❌ Disconnect test failed: ${error.message?.substring(0, 50) || 'error'}`));
-        }
-      } else if (ENABLE_DISCONNECT) {
-        console.log(chalk.yellow('⚠️  ENABLE_DISCONNECT is true but no connections available'));
-      }
+      // Note: disconnectCompany is not available in server SDK (portal-only)
 
       // Summary
       console.log(chalk.gray(`\n  Helper Methods Summary: ${helperResults.passed}/${helperResults.total} passed`));
