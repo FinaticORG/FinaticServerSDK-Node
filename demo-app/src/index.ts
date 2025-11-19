@@ -200,7 +200,7 @@ class FinaticDemo {
         // Fallback for direct data (backward compatibility)
         return response as T;
       };
-
+      
       // Step 5.1: Fetch orders for a specific Finatic account id
       console.log(chalk.yellow('\nStep 5.1: Testing core methods...'));
       try {
