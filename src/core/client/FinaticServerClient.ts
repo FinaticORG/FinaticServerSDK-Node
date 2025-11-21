@@ -28,6 +28,7 @@ import {
 export class FinaticServerClient {
   private apiClient: ApiClient;
   private apiKey: string;
+  private initialized: boolean = false;
 
   // Session state
   private sessionId?: string;
@@ -36,15 +37,17 @@ export class FinaticServerClient {
 
   constructor(apiKey: string, baseUrl?: string) {
     this.apiKey = apiKey;
-    this.apiClient = new ApiClient(baseUrl || 'https://api.finatic.com');
+    this.apiClient = new ApiClient(baseUrl || 'https://api.finatic.dev', apiKey);
   }
 
   async initialize(): Promise<void> {
     // Initialize the API client if needed
+    this.initialized = true;
   }
 
   async close(): Promise<void> {
-    // Cleanup any resources if needed
+    /** Close the API client and cleanup connections. */
+    await this.apiClient.close();
   }
 
   async start_session(userId?: string): Promise<any> {
@@ -52,18 +55,29 @@ export class FinaticServerClient {
     try {
       const response = await this.apiClient.startSession(this.apiKey, userId);
       
-      // Store session info
-      if (response.data?.session_id) {
-        this.sessionId = response.data.session_id;
+      // Store session info - check both top-level and nested data
+      const sessionId = response.session_id || response.data?.session_id;
+      const companyId = response.company_id || response.data?.company_id;
+      
+      if (sessionId) {
+        this.sessionId = sessionId;
       }
-      if (response.data?.company_id) {
-        this.companyId = response.data.company_id;
+      if (companyId) {
+        this.companyId = companyId;
       }
 
       return response;
     } catch (error) {
       throw new AuthenticationError(`Failed to start session: ${error}`);
     }
+  }
+
+  async getToken(apiKey?: string): Promise<string> {
+    if (!this.initialized) {
+      throw new AuthenticationError('Client not initialized. Call initialize() first.');
+    }
+    // This does not mutate current session/company state; it only returns a fresh one-time token
+    return await this.apiClient.getToken(apiKey || this.apiKey);
   }
 
 
@@ -101,10 +115,45 @@ export class FinaticServerClient {
     return this.companyId;
   }
 
+  async get_session_user(): Promise<{ user_id: string; company_id: string; token_type: string }> {
+    /** Get user information from the current session after portal authentication. */
+    try {
+      if (!this.sessionId) {
+        throw new AuthenticationError('Session not initialized. Call start_session() first.');
+      }
+      
+      const response = await this.apiClient.getSessionUser(this.sessionId, this.companyId);
+      
+      // Update internal state with token info if available
+      if (response.data?.access_token) {
+        this.userToken = {
+          access_token: response.data.access_token,
+          refresh_token: response.data.refresh_token || '',
+          expires_in: response.data.expires_in || 3600,
+          user_id: response.data.user_id || '',
+          token_type: response.data.token_type || 'Bearer',
+          scope: response.data.scope || 'api:access',
+        };
+      }
+      
+      if (response.data?.company_id) {
+        this.companyId = response.data.company_id;
+      }
+      
+      return {
+        user_id: response.data?.user_id || this.userToken?.user_id || '',
+        company_id: response.data?.company_id || this.companyId || '',
+        token_type: response.data?.token_type || this.userToken?.token_type || 'Bearer',
+      };
+    } catch (error) {
+      throw new AuthenticationError(`Failed to get session user: ${error}`);
+    }
+  }
+
   // Broker methods - make real API calls
   async get_brokers(): Promise<BrokerInfo[]> {
     /** Get available brokers. */
-    return await this.apiClient.getBrokers();
+    return await this.apiClient.getBrokers(this.sessionId, this.companyId);
   }
 
   async get_accounts(
@@ -154,28 +203,43 @@ export class FinaticServerClient {
 
   async get_connections(): Promise<BrokerConnection[]> {
     /** Get broker connections. */
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
     return await this.apiClient.getBrokerConnections(this.sessionId, this.companyId);
   }
 
   async disconnect_company(connectionId: string): Promise<any> {
     /** Disconnect a company from a broker connection. */
-    return await this.apiClient.disconnectCompany(connectionId);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.disconnectCompany(connectionId, this.sessionId, this.companyId);
   }
 
   // Trading methods
   async place_order(orderParams: BrokerOrderParams, extras?: BrokerExtras): Promise<OrderResponse> {
     /** Place a broker order. */
-    return await this.apiClient.placeOrder(orderParams, extras);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.placeOrder(orderParams, this.sessionId, this.companyId, extras);
   }
 
   async modify_order(orderId: string, orderParams: BrokerOrderParams, extras?: BrokerExtras): Promise<OrderResponse> {
     /** Modify an existing order. */
-    return await this.apiClient.modifyOrder(orderId, orderParams, extras);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.modifyOrder(orderId, orderParams, this.sessionId, this.companyId, extras);
   }
 
-  async cancel_order(orderId: string, broker?: string, connectionId?: string): Promise<OrderResponse> {
+  async cancel_order(orderId: string, _broker?: string, _connectionId?: string): Promise<OrderResponse> {
     /** Cancel an existing order. */
-    return await this.apiClient.cancelOrder(orderId);
+    if (!this.sessionId) {
+      throw new AuthenticationError('Session not initialized. Call start_session() first.');
+    }
+    return await this.apiClient.cancelOrder(orderId, this.sessionId, this.companyId);
   }
 
   // Asset-specific order methods (convenience)
@@ -409,56 +473,56 @@ export class FinaticServerClient {
   }
 
   // Convenience filter methods
-  async get_open_positions(options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+  async get_open_positions(_options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
     /** Get only open positions. */
     const openFilters = { ...(filters || {}), position_status: 'open' };
     const result = await this.get_all_positions(openFilters);
     return result;
   }
 
-  async get_filled_orders(options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_filled_orders(_options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get only filled orders. */
     const filledFilters = { ...(filters || {}), status: 'filled' };
     const result = await this.get_all_orders(filledFilters);
     return result;
   }
 
-  async get_pending_orders(options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_pending_orders(_options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get only pending orders. */
     const pendingFilters = { ...(filters || {}), status: 'pending' };
     const result = await this.get_all_orders(pendingFilters);
     return result;
   }
 
-  async get_active_accounts(options?: BrokerDataOptions, filters?: AccountsFilter): Promise<BrokerAccount[]> {
+  async get_active_accounts(_options?: BrokerDataOptions, filters?: AccountsFilter): Promise<BrokerAccount[]> {
     /** Get only active accounts. */
     const activeFilters = { ...(filters || {}), status: 'active' };
     const result = await this.get_all_accounts(activeFilters);
     return result;
   }
 
-  async get_orders_by_symbol(symbol: string, options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_orders_by_symbol(symbol: string, _options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get orders filtered by symbol. */
     const symbolFilters = { ...(filters || {}), symbol };
     const result = await this.get_all_orders(symbolFilters);
     return result;
   }
 
-  async get_positions_by_symbol(symbol: string, options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+  async get_positions_by_symbol(symbol: string, _options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
     /** Get positions filtered by symbol. */
     const symbolFilters = { ...(filters || {}), symbol };
     const result = await this.get_all_positions(symbolFilters);
     return result;
   }
 
-  async get_orders_by_broker(brokerId: string, options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
+  async get_orders_by_broker(brokerId: string, _options?: BrokerDataOptions, filters?: OrdersFilter): Promise<BrokerOrder[]> {
     /** Get orders filtered by broker. */
     const brokerFilters = { ...(filters || {}), broker_id: brokerId };
     const result = await this.get_all_orders(brokerFilters);
     return result;
   }
 
-  async get_positions_by_broker(brokerId: string, options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
+  async get_positions_by_broker(brokerId: string, _options?: BrokerDataOptions, filters?: PositionsFilter): Promise<BrokerPosition[]> {
     /** Get positions filtered by broker. */
     const brokerFilters = { ...(filters || {}), broker_id: brokerId };
     const result = await this.get_all_positions(brokerFilters);

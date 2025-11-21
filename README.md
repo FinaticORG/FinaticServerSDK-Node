@@ -71,6 +71,25 @@ const portalUrl = await client.get_portal_url();
 // User is now authenticated
 ```
 
+### Server: Get one-time token for Client SDK (additive helper)
+
+```typescript
+const client = new FinaticServerClient('your-api-key');
+await client.initialize();
+
+// Fetch a fresh one-time token without modifying the current server session
+const oneTimeToken = await client.getToken();
+
+// Pass this token to the Client SDK on the frontend to start its session
+// e.g., window.FinaticClient.init({ token: oneTimeToken })
+```
+
+Notes:
+
+- Requires `initialize()` first; otherwise an error is thrown.
+- Does not call `/session/start` and does not change `session_id`/`company_id` state.
+- Safe to call multiple times; each call returns a new short-lived token.
+
 ### 2. Direct Authentication
 
 ```typescript

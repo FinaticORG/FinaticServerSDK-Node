@@ -2,6 +2,9 @@
  * API client for making requests to the Finatic API.
  */
 
+// undici is built into Node.js 18+
+// @ts-ignore - undici types may not be available, but it exists at runtime
+import { Client } from 'undici';
 import {
   SessionResponse,
   BrokerAccount,
@@ -15,6 +18,16 @@ import {
   OrderResponse,
   BrokerOrderParams,
   PaginatedResult,
+  OrderFill,
+  OrderEvent,
+  OrderGroup,
+  PositionLot,
+  PositionLotFill,
+  OrderFillsFilter,
+  OrderEventsFilter,
+  OrderGroupsFilter,
+  PositionLotsFilter,
+  PositionLotFillsFilter,
 } from '../../types';
 
 // Error classes
@@ -97,41 +110,179 @@ export class TradingNotEnabledError extends Error {
 
 export class ApiClient {
   private baseUrl: string;
-  private apiKey: string;
+  public apiKey: string;
+  private deviceHeaders: Record<string, string>;
+  private httpClient: Client | null = null;
 
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || 'http://localhost:8000';
-    this.apiKey = '';
+  constructor(baseUrl?: string, apiKey?: string) {
+    this.baseUrl = baseUrl || 'https://api.finatic.dev';
+    this.apiKey = apiKey || '';
+    
+    // Create persistent HTTP client with connection pooling
+    // This ensures requests maintain connections to the same backend,
+    // preventing device fingerprint mismatches from load balancer routing
+    const urlObj = new URL(this.baseUrl);
+    this.httpClient = new Client(urlObj.origin);
+    console.log(`🔧 Created undici Client for ${urlObj.origin}`);
+    
+    // Generate consistent device headers for all requests
+    // These will help the server generate a consistent device fingerprint
+    this.deviceHeaders = this._generateDeviceHeaders();
+  }
+
+  async close(): Promise<void> {
+    /** Close the HTTP client and cleanup connections. */
+    if (this.httpClient) {
+      await this.httpClient.close();
+      this.httpClient = null;
+    }
+  }
+
+  private _generateDeviceHeaders(): Record<string, string> {
+    // Generate consistent device headers that will produce the same fingerprint
+    // across all requests from this client instance
+    // Note: We don't set Accept-Encoding - let the underlying client handle it
+    // to avoid fingerprint mismatches from proxies/load balancers modifying it
+    const headers: Record<string, string> = {
+      'User-Agent': 'Finatic-NodeSDK/1.0.0',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Sec-CH-UA': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+    };
+    
+    // Try to get platform info if available
+    if (typeof process !== 'undefined' && process.platform) {
+      headers['Sec-CH-UA-Platform'] = `"${process.platform}"`;
+    }
+    
+    return headers;
   }
 
   private async makeRequest(method: string, path: string, headers: Record<string, string> = {}, data?: any): Promise<any> {
     const url = `${this.baseUrl}${path}`;
     
-    const requestOptions: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      }
+    // Build headers with device headers first
+    const finalHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...this.deviceHeaders,
+      ...headers
     };
 
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      requestOptions.body = JSON.stringify(data);
-    }
+    // Build request body
+    const body = data && (method === 'POST' || method === 'PUT' || method === 'PATCH') 
+      ? JSON.stringify(data) 
+      : undefined;
 
-    try {
-      const response = await fetch(url, requestOptions);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Debug logging for session requests and connection operations
+      if (path.includes('/session/') || path.includes('/brokers/connections') || path.includes('/brokers/disconnect-company')) {
+        console.log(`🔄 Making ${path} request:`);
+        console.log(`   URL: ${url}`);
+        console.log(`   Method: ${method}`);
+        console.log(`   Headers:`, JSON.stringify(finalHeaders, null, 2));
+        if (data) {
+          console.log(`   Body:`, data);
+        }
       }
 
-      const result = await response.json();
-      return result;
+    try {
+      if (!this.httpClient) {
+        console.log('⚠️  Warning: httpClient not initialized, using fetch fallback');
+        // Fallback to fetch if client not initialized
+        const fetchOptions: RequestInit = {
+          method,
+          headers: finalHeaders,
+        };
+        if (body) {
+          fetchOptions.body = body;
+        }
+        const response = await fetch(url, fetchOptions);
+        
+        if (!response.ok) {
+          const errorMessage = await this._extractErrorMessage(response);
+          throw new Error(errorMessage);
+        }
+        return await response.json();
+      }
+
+      // Use persistent client for connection pooling
+      const requestOptions: any = {
+        method,
+        path,
+        headers: finalHeaders,
+      };
+      if (body) {
+        requestOptions.body = body;
+      }
+      const response = await this.httpClient.request(requestOptions);
+
+      // Debug logging for session responses and connection operations
+      if (path.includes('/session/') || path.includes('/brokers/connections') || path.includes('/brokers/disconnect-company')) {
+        console.log(`📥 ${path} response: ${response.statusCode}`);
+      }
+
+      if (response.statusCode !== 200) {
+        const errorMessage = await this._extractErrorMessage(response);
+        throw new Error(errorMessage);
+      }
+
+      // Handle gzipped responses
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const bodyText = await response.body.text();
+        try {
+          return JSON.parse(bodyText);
+        } catch {
+          throw new Error(`Failed to parse JSON response: ${bodyText.substring(0, 100)}`);
+        }
+      }
+      
+      // For non-JSON responses, return as text
+      const bodyText = await response.body.text();
+      return bodyText;
     } catch (error) {
       console.error(`API request failed: ${method} ${url}`, error);
       throw error;
     }
+  }
+
+  private async _extractErrorMessage(response: any): Promise<string> {
+    /** Extract error message from response. */
+    const status = response.status || response.statusCode || 500;
+    const statusText = response.statusText || '';
+    let errorMessage = `HTTP ${status}: ${statusText}`;
+    
+    try {
+      // Handle both fetch Response and undici response
+      let errorBody: any;
+      if (response.json) {
+        errorBody = await response.json();
+      } else if (response.body) {
+        // For undici, read the body as text first
+        const bodyText = await response.body.text();
+        try {
+          errorBody = JSON.parse(bodyText);
+        } catch {
+          // If not JSON, use the text as the error message
+          if (bodyText && bodyText.trim()) {
+            errorMessage = bodyText.trim();
+            console.log(`   Error details: ${bodyText}`);
+          }
+        }
+      }
+      
+      if (errorBody && typeof errorBody === 'object') {
+        if (errorBody.message) {
+          errorMessage = errorBody.message;
+        } else if (errorBody.error) {
+          errorMessage = errorBody.error;
+        } else if (errorBody.detail) {
+          errorMessage = typeof errorBody.detail === 'string' ? errorBody.detail : JSON.stringify(errorBody.detail);
+        }
+      }
+    } catch (e) {
+      // If JSON parsing fails, use the default message
+      console.log(`   Error extracting message: ${e}`);
+    }
+    return errorMessage;
   }
 
   async startSession(apiKey: string, userId?: string): Promise<SessionResponse> {
@@ -145,12 +296,28 @@ export class ApiClient {
       const startData = userId ? { user_id: userId } : {};
       const startResponse = await this.makeRequest('POST', '/api/v1/session/start', {
         'One-Time-Token': initResponse.data.one_time_token,
-        'X-API-Key': apiKey
       }, startData);
       
       return startResponse;
     } catch (error) {
       console.error('Failed to start session:', error);
+      throw error;
+    }
+  }
+
+  async getToken(apiKey?: string): Promise<string> {
+    try {
+      const response = await this.makeRequest('POST', '/api/v1/session/init', {
+        'X-API-Key': apiKey || this.apiKey
+      });
+      // Prefer nested data shape
+      const token = response?.data?.one_time_token || response?.one_time_token;
+      if (!token) {
+        throw new Error('Missing one_time_token in response');
+      }
+      return token;
+    } catch (error) {
+      console.error('Failed to get one-time token:', error);
       throw error;
     }
   }
@@ -203,8 +370,7 @@ export class ApiClient {
       const url = `/api/v1/session/portal${queryString ? `?${queryString}` : ''}`;
       
       const response = await this.makeRequest('GET', url, {
-        'Session-ID': sessionId,
-        'X-API-Key': this.apiKey
+        'Session-ID': sessionId
       });
       return response;
     } catch (error) {
@@ -213,11 +379,31 @@ export class ApiClient {
     }
   }
 
-  async getBrokers(): Promise<any[]> {
+  async getSessionUser(sessionId: string, companyId?: string): Promise<any> {
+    /** Get user information from the session after portal authentication. */
     try {
-      const response = await this.makeRequest('GET', '/api/v1/brokers/', {
-        'X-API-Key': this.apiKey
-      });
+      const headers: Record<string, string> = {
+        'Session-ID': sessionId
+      };
+      if (companyId) {
+        headers['Company-ID'] = companyId;
+      }
+      
+      const response = await this.makeRequest('GET', `/api/v1/session/${sessionId}/user`, headers);
+      return response;
+    } catch (error) {
+      console.error('Failed to get session user:', error);
+      throw error;
+    }
+  }
+
+  async getBrokers(sessionId?: string, companyId?: string): Promise<any[]> {
+    try {
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', '/api/v1/brokers/', headers);
       
       // Convert object with numeric keys to array
       const brokersData = response.response_data || response.data || {};
@@ -269,12 +455,30 @@ export class ApiClient {
       const params = new URLSearchParams();
       if (filter?.limit) params.append('limit', filter.limit.toString());
       if (filter?.offset) params.append('offset', filter.offset.toString());
+      if (filter?.broker_id) params.append('broker_id', filter.broker_id);
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.account_id) params.append('account_id', filter.account_id);
+      if (filter?.broker_provided_account_id) {
+        params.append('broker_provided_account_id', filter.broker_provided_account_id);
+      }
+      if (filter?.symbol) params.append('symbol', filter.symbol);
+      if (filter?.status) params.append('status', filter.status);
+      if (filter?.side) params.append('side', filter.side);
+      if (filter?.asset_type) params.append('asset_type', filter.asset_type);
+      if (filter?.created_after) params.append('created_after', filter.created_after);
+      if (filter?.created_before) params.append('created_before', filter.created_before);
+      if (filter?.with_metadata !== undefined) {
+        params.append('with_metadata', String(filter.with_metadata));
+      }
       
       const headers: Record<string, string> = {};
       if (sessionId) headers['Session-ID'] = sessionId;
       if (companyId) headers['Company-ID'] = companyId;
-      
-      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders?${params.toString()}`, headers);
+      const query = params.toString();
+      const url = query
+        ? `/api/v1/brokers/data/orders?${query}`
+        : '/api/v1/brokers/data/orders';
+      const response = await this.makeRequest('GET', url, headers);
       
       return {
         data: response.response_data || [],
@@ -376,11 +580,13 @@ export class ApiClient {
     }
   }
 
-  async disconnectCompany(connectionId: string): Promise<any> {
+  async disconnectCompany(connectionId: string, sessionId?: string, companyId?: string): Promise<any> {
     try {
-      const response = await this.makeRequest('DELETE', `/api/v1/brokers/connections/${connectionId}`, {
-        'X-API-Key': this.apiKey
-      });
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('DELETE', `/api/v1/brokers/disconnect-company/${connectionId}`, headers);
       return response;
     } catch (error) {
       console.error('Failed to disconnect company:', error);
@@ -388,11 +594,13 @@ export class ApiClient {
     }
   }
 
-  async placeOrder(orderParams: BrokerOrderParams, _extras?: any): Promise<OrderResponse> {
+  async placeOrder(orderParams: BrokerOrderParams, sessionId?: string, companyId?: string, _extras?: any): Promise<OrderResponse> {
     try {
-      const response = await this.makeRequest('POST', '/api/v1/brokers/orders', {
-        'X-API-Key': this.apiKey
-      }, orderParams);
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('POST', '/api/v1/brokers/orders', headers, orderParams);
       return response;
     } catch (error) {
       console.error('Failed to place order:', error);
@@ -400,11 +608,13 @@ export class ApiClient {
     }
   }
 
-  async modifyOrder(orderId: string, orderParams: BrokerOrderParams, _extras?: any): Promise<OrderResponse> {
+  async modifyOrder(orderId: string, orderParams: BrokerOrderParams, sessionId?: string, companyId?: string, _extras?: any): Promise<OrderResponse> {
     try {
-      const response = await this.makeRequest('PATCH', `/api/v1/brokers/orders/${orderId}`, {
-        'X-API-Key': this.apiKey
-      }, orderParams);
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('PATCH', `/api/v1/brokers/orders/${orderId}`, headers, orderParams);
       return response;
     } catch (error) {
       console.error('Failed to modify order:', error);
@@ -412,14 +622,118 @@ export class ApiClient {
     }
   }
 
-  async cancelOrder(orderId: string): Promise<OrderResponse> {
+  async cancelOrder(orderId: string, sessionId?: string, companyId?: string): Promise<OrderResponse> {
     try {
-      const response = await this.makeRequest('DELETE', `/api/v1/brokers/orders/${orderId}`, {
-        'X-API-Key': this.apiKey
-      });
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('DELETE', `/api/v1/brokers/orders/${orderId}`, headers);
       return response;
     } catch (error) {
       console.error('Failed to cancel order:', error);
+      throw error;
+    }
+  }
+
+  async getOrderFills(orderId: string, filter?: OrderFillsFilter, sessionId?: string, companyId?: string): Promise<OrderFill[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders/${orderId}/fills?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get order fills:', error);
+      throw error;
+    }
+  }
+
+  async getOrderEvents(orderId: string, filter?: OrderEventsFilter, sessionId?: string, companyId?: string): Promise<OrderEvent[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders/${orderId}/events?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get order events:', error);
+      throw error;
+    }
+  }
+
+  async getOrderGroups(filter?: OrderGroupsFilter, sessionId?: string, companyId?: string): Promise<OrderGroup[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.broker_id) params.append('broker_id', filter.broker_id);
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      if (filter?.created_after) params.append('created_after', filter.created_after);
+      if (filter?.created_before) params.append('created_before', filter.created_before);
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/orders/groups?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get order groups:', error);
+      throw error;
+    }
+  }
+
+  async getPositionLots(filter?: PositionLotsFilter, sessionId?: string, companyId?: string): Promise<PositionLot[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.broker_id) params.append('broker_id', filter.broker_id);
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.account_id) params.append('account_id', filter.account_id);
+      if (filter?.symbol) params.append('symbol', filter.symbol);
+      if (filter?.position_id) params.append('position_id', filter.position_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/positions/lots?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get position lots:', error);
+      throw error;
+    }
+  }
+
+  async getPositionLotFills(lotId: string, filter?: PositionLotFillsFilter, sessionId?: string, companyId?: string): Promise<PositionLotFill[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filter?.connection_id) params.append('connection_id', filter.connection_id);
+      if (filter?.limit) params.append('limit', filter.limit.toString());
+      if (filter?.offset) params.append('offset', filter.offset.toString());
+      
+      const headers: Record<string, string> = {};
+      if (sessionId) headers['Session-ID'] = sessionId;
+      if (companyId) headers['Company-ID'] = companyId;
+      
+      const response = await this.makeRequest('GET', `/api/v1/brokers/data/positions/lots/${lotId}/fills?${params.toString()}`, headers);
+      return response.response_data || [];
+    } catch (error) {
+      console.error('Failed to get position lot fills:', error);
       throw error;
     }
   }

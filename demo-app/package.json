@@ -17,14 +17,14 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "inquirer": "^12.9.6"
+    "inquirer": "^13.0.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
+    "@types/express": "^5.0.5",
     "@types/inquirer": "^9.0.0",
     "@types/node": "^24.5.0",
-    "rimraf": "^5.0.0",
+    "rimraf": "^6.1.0",
     "ts-node": "^10.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.0.0"
