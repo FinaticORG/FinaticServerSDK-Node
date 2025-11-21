@@ -11,7 +11,7 @@
  */
 
 import 'dotenv/config';
-import { FinaticServerClient } from '@finatic/server-node';
+import { FinaticServer } from '@finatic/server-node';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 
@@ -21,6 +21,9 @@ const API_KEY = process.env.FINATIC_API_KEY;
 const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@finatic.com';
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'demo_password_123';
 const ACCOUNT_ID_FILTER = '1c0e6a5e-f6d7-4af8-b69d-09aa17f73762';
+
+// Feature flags
+const ENABLE_DISCONNECT = process.env.ENABLE_DISCONNECT === 'true';
 
 // Check for required environment variables
 if (!API_KEY) {
@@ -37,13 +40,18 @@ if (!API_KEY) {
 const apiKey: string = API_KEY;
 
 class FinaticDemo {
-  private client: FinaticServerClient;
+  private client: FinaticServer;
 
   constructor() {
     // Initialize client like Python SDK - only API key required
     // baseUrl is optional and defaults to https://api.finatic.dev
     // For localhost testing, pass the API_URL as second parameter
-    this.client = new FinaticServerClient(apiKey, API_URL);
+    // Enable debug logging in dev mode
+    const isDev = process.env.NODE_ENV !== 'production' || API_URL.includes('localhost');
+    this.client = new FinaticServer(apiKey, API_URL, {
+      logLevel: isDev ? 'debug' : 'error',
+      structuredLogging: true,
+    });
   }
 
   async run() {
@@ -61,27 +69,27 @@ class FinaticDemo {
       await this.client.initialize();
       console.log(chalk.green('✅ SDK initialized successfully'));
 
-      // Quick check: fetch a one-time token for the Client SDK
-      console.log(chalk.yellow('\nStep 1.1: Getting one-time token (server ➜ client helper)...'));
+      // Step 2: Initialize session (combined method)
+      console.log(chalk.yellow('\nStep 2: Initializing session...'));
       try {
-        const oneTimeToken = await this.client.getToken();
-        console.log(chalk.green('✅ One-time token fetched successfully'));
-        console.log(chalk.gray(`Token (truncated): ${oneTimeToken.substring(0, 12)}...`));
-      } catch (e) {
-        console.log(chalk.red('❌ Failed to fetch one-time token'));
-        console.log(chalk.gray('This does not affect the server session flow; continuing...'));
-      }
-      
-      // Step 2: Start session
-      console.log(chalk.yellow('\nStep 2: Starting session...'));
-      try {
-        const sessionResponse = await this.client.start_session();
-        const sessionId = sessionResponse.session_id || sessionResponse.data?.session_id || this.client.get_session_id();
-        console.log(chalk.green(`✅ Session started: ${sessionId}`));
+        // Use startSession method that handles everything
+        const sessionResult = await this.client.startSession();
+        
+        // Handle union return type: can be { success, session_id, company_id, error } or { session_id, company_id }
+        if ('success' in sessionResult && !sessionResult.success) {
+          console.log(chalk.red(`❌ Failed to initialize session: ${sessionResult.error}`));
+          return;
+        }
+        
+        const sessionId = sessionResult.session_id || this.client.getSessionId();
+        const companyId = sessionResult.company_id;
+        console.log(chalk.green(`✅ Session initialized successfully`));
+        console.log(chalk.gray(`Session ID: ${sessionId}`));
+        console.log(chalk.gray(`Company ID: ${companyId}`));
         
         // Step 3: Get portal URL
         console.log(chalk.yellow('\nStep 3: Getting portal URL...'));
-        const portalUrl = await this.client.get_portal_url();
+        const portalUrl = await this.client.getPortalUrl();
         console.log(chalk.green('✅ Portal URL retrieved'));
         console.log(chalk.blue(`\n🌐 Please visit this URL to authenticate:`));
         console.log(chalk.cyan(portalUrl));
@@ -119,18 +127,87 @@ class FinaticDemo {
 
       // Step 5: Get session user (this completes authentication)
       console.log(chalk.yellow('\nStep 5: Getting authenticated user...'));
-      const userInfo = await this.client.get_session_user();
+      const userInfo = await this.client.getSessionUser();
       console.log(chalk.green('✅ User authenticated successfully!'));
       console.log(chalk.gray(`User ID: ${userInfo.user_id}`));
       console.log(chalk.gray(`Company ID: ${userInfo.company_id}`));
-      console.log(chalk.gray(`Token Type: ${userInfo.token_type}`));
+
+      // Test session/auth methods
+      console.log(chalk.yellow('\nStep 5.1: Testing session/auth methods...'));
+      const sessionResults = {
+        passed: 0,
+        failed: 0,
+        total: 0,
+      };
+
+      const testSession = async (name: string, fn: () => any | Promise<any>, expectedType: 'string' | 'object' = 'object'): Promise<void> => {
+        sessionResults.total++;
+        try {
+          const result = await (fn() instanceof Promise ? fn() : Promise.resolve(fn()));
+          const isValid = expectedType === 'string' 
+            ? typeof result === 'string'
+            : (result && typeof result === 'object');
+          
+          if (isValid) {
+            sessionResults.passed++;
+            console.log(chalk.gray(`  ✅ ${name}`));
+          } else {
+            sessionResults.failed++;
+            console.log(chalk.red(`  ❌ ${name} (invalid return type)`));
+          }
+        } catch (error: any) {
+          sessionResults.failed++;
+          console.log(chalk.red(`  ❌ ${name} (${error.message?.substring(0, 50) || 'error'})`));
+        }
+      };
+
+      await testSession('getSessionId', () => this.client.getSessionId(), 'string');
+      await testSession('getCompanyId', () => this.client.getCompanyId(), 'string');
+      await testSession('getUserId', () => this.client.getUserId(), 'string');
+      await testSession('getPortalUrl', () => this.client.getPortalUrl(), 'string');
+      
+      console.log(chalk.gray(`\n  Session Methods Summary: ${sessionResults.passed}/${sessionResults.total} passed`));
+      
+      // Track core method results
+      const coreResults = {
+        passed: 0,
+        failed: 0,
+        total: 0,
+      };
+
+      // Helper to test core methods and track results
+      const testCore = async (name: string, fn: () => Promise<any>, showDetails: boolean = true): Promise<any> => {
+        coreResults.total++;
+        try {
+          const result = await fn();
+          coreResults.passed++;
+          if (showDetails) {
+            console.log(chalk.gray(`  ✅ ${name}`));
+          }
+          return result;
+        } catch (error: any) {
+          coreResults.failed++;
+          console.log(chalk.red(`  ❌ ${name} (${error.message?.substring(0, 50) || 'error'})`));
+          throw error;
+        }
+      };
+      
+      // Helper to extract data from FinaticResponse
+      const extractData = <T>(response: any): T => {
+        if (response?.success?.data !== undefined) {
+          return response.success.data as T;
+        }
+        // Fallback for direct data (backward compatibility)
+        return response as T;
+      };
       
       // Step 5.1: Fetch orders for a specific Finatic account id
-      console.log(chalk.yellow('\nStep 5.1: Fetching orders for specific Finatic account...'));
+      console.log(chalk.yellow('\nStep 5.1: Testing core methods...'));
       try {
-        const filteredOrders = await this.client.get_all_orders(undefined, {
-          account_id: ACCOUNT_ID_FILTER,
-        });
+        const filteredOrdersResponse = await testCore('getAllOrders (filtered)', () => this.client.getAllOrders({
+          accountId: ACCOUNT_ID_FILTER
+        }), false);
+        const filteredOrders = extractData<any[]>(filteredOrdersResponse);
         console.log(
           chalk.green(
             `✅ Retrieved ${filteredOrders.length} orders for account ${ACCOUNT_ID_FILTER}`
@@ -149,21 +226,17 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(
-          chalk.red(
-            `❌ Failed to fetch orders for account ${ACCOUNT_ID_FILTER}: ${error.message || error}`
-          )
-        );
-        throw error;
+        // Error already logged by testCore
       }
       
       // Step 6: Test get_connections immediately after portal auth
-      console.log(chalk.yellow('\nStep 6: Testing get_connections after portal auth...'));
+      console.log(chalk.yellow('\nStep 6: Testing getBrokerConnections...'));
       let connections: any[] = [];
       try {
-        console.log(chalk.gray(`  Session ID: ${this.client.get_session_id() || 'Not set'}`));
-        console.log(chalk.gray(`  Company ID: ${this.client.get_company_id() || 'Not set'}`));
-        connections = await this.client.get_connections();
+        console.log(chalk.gray(`  Session ID: ${this.client.getSessionId() || 'Not set'}`));
+        console.log(chalk.gray(`  Company ID: ${this.client.getCompanyId() || 'Not set'}`));
+        const connectionsResponse = await testCore('getBrokerConnections', () => this.client.getBrokerConnections(), false);
+        connections = extractData<any[]>(connectionsResponse);
         console.log(chalk.green(`✅ Successfully retrieved ${connections.length} broker connections`));
         if (connections.length > 0) {
           console.log(chalk.gray('Connection details:'));
@@ -172,99 +245,193 @@ class FinaticDemo {
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get connections: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
       
       // Step 7: Test get_accounts
-      console.log(chalk.yellow('\nStep 7: Testing get_accounts...'));
+      console.log(chalk.yellow('\nStep 7: Testing getAllAccounts...'));
+      let accountsResult: any[] = [];
       try {
-        const accountsResult = await this.client.get_accounts(1, 10);
-        const hasMore = accountsResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.data.length} accounts${hasMore}`));
-        if (accountsResult.data.length > 0) {
+        const accountsResponse = await testCore('getAllAccounts', () => this.client.getAllAccounts(), false);
+        accountsResult = extractData<any[]>(accountsResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.length} accounts`));
+        if (accountsResult.length > 0) {
           console.log(chalk.gray('Account details:'));
-          accountsResult.data.slice(0, 3).forEach((account: any, index: number) => {
+          accountsResult.slice(0, 3).forEach((account: any, index: number) => {
             console.log(chalk.gray(`  ${index + 1}. Account: ${account.account_number || account.id || 'Unknown'} - Broker: ${account.broker_id || 'Unknown'}`));
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get accounts: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
       // Step 8: Test get_orders
-      console.log(chalk.yellow('\nStep 8: Testing get_orders...'));
+      console.log(chalk.yellow('\nStep 8: Testing getAllOrders...'));
+      let ordersResult: any[] = [];
       try {
-        const ordersResult = await this.client.get_orders(1, 10);
-        const hasMore = ordersResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.data.length} orders${hasMore}`));
-        if (ordersResult.data.length > 0) {
+        const ordersResponse = await testCore('getAllOrders', () => this.client.getAllOrders(), false);
+        ordersResult = extractData<any[]>(ordersResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.length} orders`));
+        if (ordersResult.length > 0) {
           console.log(chalk.gray('Order details:'));
-          ordersResult.data.slice(0, 3).forEach((order: any, index: number) => {
+          ordersResult.slice(0, 3).forEach((order: any, index: number) => {
             console.log(chalk.gray(`  ${index + 1}. Symbol: ${order.symbol || 'Unknown'} - Status: ${order.status || 'Unknown'} - Quantity: ${order.quantity || order.order_qty || 'Unknown'}`));
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get orders: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
       // Step 9: Test get_balances
-      console.log(chalk.yellow('\nStep 9: Testing get_balances...'));
+      console.log(chalk.yellow('\nStep 9: Testing getAllBalances...'));
+      let balancesResult: any[] = [];
       try {
-        const balancesResult = await this.client.get_balances(1, 10);
-        const hasMore = balancesResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.data.length} balances${hasMore}`));
-        if (balancesResult.data.length > 0) {
+        const balancesResponse = await testCore('getAllBalances', () => this.client.getAllBalances(), false);
+        balancesResult = extractData<any[]>(balancesResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.length} balances`));
+        if (balancesResult.length > 0) {
           console.log(chalk.gray('Balance details:'));
-          balancesResult.data.slice(0, 3).forEach((balance: any, index: number) => {
+          balancesResult.slice(0, 3).forEach((balance: any, index: number) => {
             const cashBalance = balance.cash || balance.buying_power || balance.account_value || 'Unknown';
             console.log(chalk.gray(`  ${index + 1}. Account: ${balance.account_number || balance.account_id || 'Unknown'} - Balance: ${cashBalance}`));
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get balances: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
       // Step 10: Test get_positions
-      console.log(chalk.yellow('\nStep 10: Testing get_positions...'));
+      console.log(chalk.yellow('\nStep 10: Testing getAllPositions...'));
+      let positionsResult: any[] = [];
       try {
-        const positionsResult = await this.client.get_positions(1, 10);
-        const hasMore = positionsResult.metadata?.has_more ? ' (has more pages)' : '';
-        console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.data.length} positions${hasMore}`));
-        if (positionsResult.data.length > 0) {
+        const positionsResponse = await testCore('getAllPositions', () => this.client.getAllPositions(), false);
+        positionsResult = extractData<any[]>(positionsResponse);
+        console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.length} positions`));
+        if (positionsResult.length > 0) {
           console.log(chalk.gray('Position details:'));
-          positionsResult.data.slice(0, 3).forEach((position: any, index: number) => {
+          positionsResult.slice(0, 3).forEach((position: any, index: number) => {
             console.log(chalk.gray(`  ${index + 1}. Symbol: ${position.symbol || 'Unknown'} - Quantity: ${position.quantity || position.qty || 'Unknown'} - Side: ${position.side || 'Unknown'}`));
           });
         }
       } catch (error: any) {
-        console.log(chalk.red(`❌ Failed to get positions: ${error.message}`));
-        throw error;
+        // Error already logged by testCore
       }
 
-      // Step 11: Disconnect the first connection
-      if (connections.length > 0) {
-        console.log(chalk.yellow('\nStep 11: Disconnecting first connection...'));
-        try {
-          const firstConnection = connections[0];
-          const connectionId = firstConnection.id;
-          console.log(chalk.gray(`  Disconnecting connection: ${connectionId}`));
-          console.log(chalk.gray(`  Broker: ${firstConnection.broker_id || 'Unknown'}`));
-          
-          await this.client.disconnect_company(connectionId);
-          console.log(chalk.green(`✅ Successfully disconnected connection ${connectionId}`));
-        } catch (error: any) {
-          console.log(chalk.red(`❌ Failed to disconnect connection: ${error.message}`));
-          throw error;
-        }
+      // Core methods summary
+      console.log(chalk.gray(`\n  Core Methods Summary: ${coreResults.passed}/${coreResults.total} passed`));
+      if (coreResults.failed > 0) {
+        console.log(chalk.yellow(`  ${coreResults.failed} core method(s) failed (see details above)`));
       } else {
-        console.log(chalk.yellow('\nStep 11: Skipping disconnect - no connections available'));
+        console.log(chalk.green('  ✅ All core methods passed!'));
       }
-      
+
+      // Step 11: Test helper methods
+      console.log(chalk.yellow('\nStep 11: Testing helper methods...'));
+      const helperResults = {
+        passed: 0,
+        failed: 0,
+        total: 0,
+      };
+
+      // Helper to test a method and track results
+      const testHelper = async (name: string, fn: () => Promise<any>, expectedType: 'array' | 'object' = 'array'): Promise<void> => {
+        helperResults.total++;
+        try {
+          const response = await fn();
+          // Extract data from FinaticResponse if present
+          const result = extractData(response);
+          const isValid = expectedType === 'array' 
+            ? Array.isArray(result) 
+            : (result && typeof result === 'object');
+          
+          if (isValid) {
+            helperResults.passed++;
+            console.log(chalk.gray(`  ✅ ${name}`));
+          } else {
+            helperResults.failed++;
+            console.log(chalk.red(`  ❌ ${name} (invalid return type)`));
+          }
+        } catch (error: any) {
+          helperResults.failed++;
+          console.log(chalk.red(`  ❌ ${name} (${error.message?.substring(0, 50) || 'error'})`));
+        }
+      };
+
+      // Test broker list
+      await testHelper('getBrokers', () => this.client.getBrokers());
+
+      // Test getAll* methods (fetch all data across pages)
+      // These return FinaticResponse<...[]>, testHelper will extract data
+      await testHelper('getAllAccounts', () => this.client.getAllAccounts());
+      await testHelper('getAllOrders', () => this.client.getAllOrders());
+      await testHelper('getAllPositions', () => this.client.getAllPositions());
+      await testHelper('getAllBalances', () => this.client.getAllBalances());
+      await testHelper('getAllOrderGroups', () => this.client.getAllOrderGroups());
+
+      // Test order/position detail methods (require IDs from earlier results)
+      if (ordersResult.length > 0) {
+        const sampleOrderId = ordersResult[0].id || ordersResult[0].order_id;
+        if (sampleOrderId) {
+          await testHelper(
+            `getAllOrderFills("${sampleOrderId}")`,
+            () => this.client.getAllOrderFills({ orderId: sampleOrderId }),
+            'array'
+          );
+          await testHelper(
+            `getAllOrderEvents("${sampleOrderId}")`,
+            () => this.client.getAllOrderEvents({ orderId: sampleOrderId }),
+            'array'
+          );
+        }
+      }
+
+      // Test getAllPositionLots
+      let allPositionLotsResult: any[] = [];
+      try {
+        const allPositionLotsResponse = await this.client.getAllPositionLots();
+        allPositionLotsResult = extractData<any[]>(allPositionLotsResponse);
+      } catch (error: any) {
+        // Error will be logged by testHelper below
+      }
+      await testHelper('getAllPositionLots', () => this.client.getAllPositionLots());
+
+      // Test getPositionLotFills (use allPositionLotsResult if available)
+      if (allPositionLotsResult.length > 0) {
+        const sampleLotId =
+          allPositionLotsResult[0].id ||
+          allPositionLotsResult[0].lot_id ||
+          allPositionLotsResult[0].position_lot_id;
+        if (sampleLotId) {
+          await testHelper(
+            `getAllPositionLotFills("${sampleLotId}")`,
+            () => this.client.getAllPositionLotFills({ lotId: sampleLotId }),
+            'array'
+          );
+        }
+      }
+
+      // Note: disconnectCompany is not available in server SDK (portal-only)
+
+      // Summary
+      console.log(chalk.gray(`\n  Helper Methods Summary: ${helperResults.passed}/${helperResults.total} passed`));
+      if (helperResults.failed > 0) {
+        console.log(chalk.yellow(`  ${helperResults.failed} helper method(s) failed (see details above)`));
+      } else {
+        console.log(chalk.green('  ✅ All helper methods passed!'));
+      }
+
       console.log(chalk.green('\n🎉 Demo completed successfully!'));
+      console.log(chalk.gray(`\n📊 Test Summary:`));
+      console.log(chalk.gray(`  Session methods: ${sessionResults.passed}/${sessionResults.total} passed`));
+      console.log(chalk.gray(`  Core methods: ${coreResults.passed}/${coreResults.total} passed`));
+      console.log(chalk.gray(`  Helper methods: ${helperResults.passed}/${helperResults.total} passed`));
+      const totalPassed = sessionResults.passed + coreResults.passed + helperResults.passed;
+      const totalTests = sessionResults.total + coreResults.total + helperResults.total;
+      if (totalPassed === totalTests) {
+        console.log(chalk.green(`  Total: ${totalPassed}/${totalTests} passed ✅`));
+      } else {
+        console.log(chalk.yellow(`  Total: ${totalPassed}/${totalTests} passed`));
+      }
       console.log(chalk.gray('\nYou are now authenticated and can use all SDK methods.'));
       
     } catch (error) {
