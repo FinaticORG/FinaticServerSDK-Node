@@ -1,0 +1,1 @@
+{"version":3,"file":"broker-connection-update-request.d.ts","sourceRoot":"","sources":["broker-connection-update-request.ts"],"names":[],"mappings":"AAEA;;;;;;;;;;GAUG;AAKH,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,sBAAsB,CAAC;AAE9D;;GAEG;AACH,MAAM,WAAW,6BAA6B;IAC1C,aAAa,CAAC,EAAE,iBAAiB,GAAG,IAAI,CAAC;IACzC,UAAU,CAAC,EAAE;QAAE,CAAC,GAAG,EAAE,MAAM,GAAG,MAAM,CAAC;KAAE,GAAG,IAAI,CAAC;CAClD"}
