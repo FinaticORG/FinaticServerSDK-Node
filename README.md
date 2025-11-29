@@ -1,6 +1,8 @@
-# Node
+# Finatic Node.js SDK
 
-Node.js SDK for Finatic Server API
+Node.js SDK for the Finatic Server API. Connect your Node.js applications to multiple brokerages through a unified, standardized interface.
+
+**Finatic is a brokerage first aggregator. We simplify, standardize and enhance broker data.**
 
 ## Installation
 
@@ -8,17 +10,33 @@ Node.js SDK for Finatic Server API
 npm install @finatic/server-node
 ```
 
+Or using yarn:
+
+```bash
+yarn add @finatic/server-node
+```
+
 ## Quick Start
 
 ```typescript
 import { FinaticServer } from '@finatic/server-node';
 
-// TODO: Add example usage
+// Initialize the client
+const client = new FinaticServer({
+  baseURL: 'https://api.finatic.dev',
+  apiKey: 'your-api-key',
+});
+
+// Use the client to interact with the API
+async function getOrders() {
+  const orders = await client.getOrders();
+  return orders;
+}
 ```
 
 ## Documentation
 
-Full documentation is available at [docs.finatic.com](/server/typescript).
+Full documentation is available at [docs.finatic.com/node](https://docs.finatic.com/node).
 
 ## Development
 
@@ -82,3 +100,11 @@ npm run build
 ## License
 
 MIT
+
+## Copyright
+
+© Copyright 2025 Finatic. All Rights Reserved.
+
+---
+
+**Finatic** - Fast. Secure. Standardized.

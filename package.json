@@ -42,11 +42,14 @@
     "nodejs",
     "typescript"
   ],
-  "author": "Finatic",
-  "license": "MIT",
+  "author": {
+    "name": "Finatic",
+    "email": "support@finatic.dev"
+  },
+  "license": "PROPRIETARY",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FinaticORG/Node.git"
+    "url": "https://github.com/FinaticORG/FinaticServerSDK-Node.git"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -77,6 +80,10 @@
     "typescript-eslint": "^8.44.0",
     "pino-pretty": "^10.0.0"
   },
+  "bugs": {
+    "url": "https://github.com/FinaticORG/FinaticServerSDK-Node/issues"
+  },
+  "homepage": "https://github.com/FinaticORG/FinaticServerSDK-Node#readme",
   "workspaces": [
     "demo-app"
   ]

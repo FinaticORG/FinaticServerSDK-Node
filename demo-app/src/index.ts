@@ -256,9 +256,15 @@ class FinaticDemo {
         accountsResult = extractData<any[]>(accountsResponse);
         console.log(chalk.green(`✅ Successfully retrieved ${accountsResult.length} accounts`));
         if (accountsResult.length > 0) {
+          // Show full response structure for first account
+          const firstAccount = accountsResult[0];
+          console.log(chalk.gray(`First account structure (keys): ${Object.keys(firstAccount).join(', ')}`));
+          console.log(chalk.gray('First account (full JSON):'));
+          console.log(chalk.dim(JSON.stringify(firstAccount, null, 2)));
+          
           console.log(chalk.gray('Account details:'));
           accountsResult.slice(0, 3).forEach((account: any, index: number) => {
-            console.log(chalk.gray(`  ${index + 1}. Account: ${account.account_number || account.id || 'Unknown'} - Broker: ${account.broker_id || 'Unknown'}`));
+            console.log(chalk.gray(`  ${index + 1}. Account: ${account.account_number || account.accountId || account.id || 'Unknown'} - Broker: ${account.broker_id || account.brokerId || 'Unknown'}`));
           });
         }
       } catch (error: any) {
@@ -273,9 +279,42 @@ class FinaticDemo {
         ordersResult = extractData<any[]>(ordersResponse);
         console.log(chalk.green(`✅ Successfully retrieved ${ordersResult.length} orders`));
         if (ordersResult.length > 0) {
+          // Show full response structure for first order
+          const firstOrder = ordersResult[0];
+          console.log(chalk.gray(`First order structure (keys): ${Object.keys(firstOrder).join(', ')}`));
+          console.log(chalk.gray('First order (full JSON):'));
+          console.log(chalk.dim(JSON.stringify(firstOrder, null, 2)));
+          
           console.log(chalk.gray('Order details:'));
           ordersResult.slice(0, 3).forEach((order: any, index: number) => {
-            console.log(chalk.gray(`  ${index + 1}. Symbol: ${order.symbol || 'Unknown'} - Status: ${order.status || 'Unknown'} - Quantity: ${order.quantity || order.order_qty || 'Unknown'}`));
+            // Extract symbol from legs[0].securityId if available
+            let symbol = 'Unknown';
+            if (order.legs && Array.isArray(order.legs) && order.legs.length > 0) {
+              symbol = order.legs[0].securityId || order.legs[0].security_id || 'Unknown';
+            } else {
+              symbol = order.symbol || order.securityId || 'Unknown';
+            }
+            
+            // Extract status
+            let status = 'Unknown';
+            if (order.status) {
+              status = typeof order.status === 'object' && order.status.actual_instance 
+                ? order.status.actual_instance 
+                : order.status;
+            }
+            
+            // Extract quantity from legs[0] if available
+            let quantity = 'Unknown';
+            if (order.legs && Array.isArray(order.legs) && order.legs.length > 0) {
+              const qtyVal = order.legs[0].quantity;
+              quantity = typeof qtyVal === 'object' && qtyVal && qtyVal.actual_instance 
+                ? qtyVal.actual_instance 
+                : qtyVal || 'Unknown';
+            } else {
+              quantity = order.quantity || order.order_qty || 'Unknown';
+            }
+            
+            console.log(chalk.gray(`  ${index + 1}. Symbol: ${symbol} - Status: ${status} - Quantity: ${quantity}`));
           });
         }
       } catch (error: any) {
@@ -290,10 +329,17 @@ class FinaticDemo {
         balancesResult = extractData<any[]>(balancesResponse);
         console.log(chalk.green(`✅ Successfully retrieved ${balancesResult.length} balances`));
         if (balancesResult.length > 0) {
+          // Show full response structure for first balance
+          const firstBalance = balancesResult[0];
+          console.log(chalk.gray(`First balance structure (keys): ${Object.keys(firstBalance).join(', ')}`));
+          console.log(chalk.gray('First balance (full JSON):'));
+          console.log(chalk.dim(JSON.stringify(firstBalance, null, 2)));
+          
           console.log(chalk.gray('Balance details:'));
           balancesResult.slice(0, 3).forEach((balance: any, index: number) => {
-            const cashBalance = balance.cash || balance.buying_power || balance.account_value || 'Unknown';
-            console.log(chalk.gray(`  ${index + 1}. Account: ${balance.account_number || balance.account_id || 'Unknown'} - Balance: ${cashBalance}`));
+            const cashBalance = balance.currentBalance || balance.current_balance || balance.cashBalance || balance.cash_balance || balance.cash || balance.buying_power || balance.account_value || 'Unknown';
+            const accountId = balance.accountId || balance.account_id || balance.account_number || 'Unknown';
+            console.log(chalk.gray(`  ${index + 1}. Account: ${accountId} - Balance: ${cashBalance}`));
           });
         }
       } catch (error: any) {
@@ -308,9 +354,31 @@ class FinaticDemo {
         positionsResult = extractData<any[]>(positionsResponse);
         console.log(chalk.green(`✅ Successfully retrieved ${positionsResult.length} positions`));
         if (positionsResult.length > 0) {
+          // Show full response structure for first position
+          const firstPosition = positionsResult[0];
+          console.log(chalk.gray(`First position structure (keys): ${Object.keys(firstPosition).join(', ')}`));
+          console.log(chalk.gray('First position (full JSON):'));
+          console.log(chalk.dim(JSON.stringify(firstPosition, null, 2)));
+          
           console.log(chalk.gray('Position details:'));
           positionsResult.slice(0, 3).forEach((position: any, index: number) => {
-            console.log(chalk.gray(`  ${index + 1}. Symbol: ${position.symbol || 'Unknown'} - Quantity: ${position.quantity || position.qty || 'Unknown'} - Side: ${position.side || 'Unknown'}`));
+            const symbol = position.securityId || position.security_id || position.symbol || 'Unknown';
+            
+            // Extract quantity (may be union type)
+            let quantity = 'Unknown';
+            const qtyVal = position.quantity || position.qty;
+            quantity = typeof qtyVal === 'object' && qtyVal && qtyVal.actual_instance 
+              ? qtyVal.actual_instance 
+              : qtyVal || 'Unknown';
+            
+            // Extract side (may be union type)
+            let side = 'Unknown';
+            const sideVal = position.side;
+            side = typeof sideVal === 'object' && sideVal && sideVal.actual_instance 
+              ? sideVal.actual_instance 
+              : sideVal || 'Unknown';
+            
+            console.log(chalk.gray(`  ${index + 1}. Symbol: ${symbol} - Quantity: ${quantity} - Side: ${side}`));
           });
         }
       } catch (error: any) {
