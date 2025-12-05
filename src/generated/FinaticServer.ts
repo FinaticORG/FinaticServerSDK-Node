@@ -37,11 +37,11 @@ export class FinaticServer {
 
   private apiKey: string;
 
-  constructor(apiKey: string, baseUrl?: string, sdkConfig?: Partial<SdkConfig>) {
+  constructor(apiKey: string, sdkConfig?: Partial<SdkConfig>) {
     this.apiKey = apiKey;
     this.sdkConfig = { ...defaultConfig, ...sdkConfig };
-    // If baseUrl provided as parameter, use it; otherwise use sdkConfig.baseUrl
-    const finalBaseUrl = baseUrl || this.sdkConfig.baseUrl || 'https://api.finatic.dev';
+    // Extract baseUrl from sdkConfig only
+    const finalBaseUrl = this.sdkConfig.baseUrl || 'https://api.finatic.dev';
     this.config = new Configuration({
       basePath: finalBaseUrl,
       apiKey: apiKey,
@@ -68,14 +68,14 @@ export class FinaticServer {
    *   baseUrl: 'https://api.finatic.dev',
    *   logLevel: 'debug'
    * });
+   * // Session is already started, ready to use
+   * const orders = await finatic.getAllOrders();
    * ```
    * 
    * @example
-   * ```typescript-client
-   * const finatic = await FinaticServer.init('your-api-key', 'optional-user-id', {
-   *   baseUrl: 'https://api.finatic.dev',
-   *   logLevel: 'debug'
-   * });
+   * ```typescript-server
+   * // Minimal example with just API key
+   * const finatic = await FinaticServer.init('your-api-key');
    * ```
    * 
    * @example
@@ -99,14 +99,12 @@ export class FinaticServer {
     userId?: string,
     sdkConfig?: Partial<SdkConfig>
   ): Promise<FinaticServer> {
-    // Extract baseUrl from sdkConfig if provided
-    const baseUrl = sdkConfig?.baseUrl;
-    
-    // Create instance
-    const instance = new FinaticServer(apiKey, baseUrl, sdkConfig);
+    // Create instance (baseUrl is extracted from sdkConfig in constructor)
+    const instance = new FinaticServer(apiKey, sdkConfig);
     
     // Start session automatically using the instance's startSession method
     // This will use the API key from constructor and get token internally
+    // Pass userId to startSession if provided
     try {
       const sessionResult = await instance.startSession(undefined, userId);
       
@@ -143,13 +141,6 @@ export class FinaticServer {
   }
 
   /**
-   * Initialize the client (no-op for now, can be extended).
-   */
-  async initialize(): Promise<void> {
-    // Can be extended for initialization logic
-  }
-
-  /**
    * Close the client and cleanup resources.
    */
   async close(): Promise<void> {
@@ -162,7 +153,7 @@ export class FinaticServer {
   private async _initSession(xApiKey: string): Promise<string> {
     const response = await this.session.initSession(xApiKey);
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to initialize session');
+      throw new Error(response.error['message'] || 'Failed to initialize session');
     }
     return response.success?.data?.one_time_token || '';
   }
@@ -228,7 +219,7 @@ export class FinaticServer {
     const requestBody: SessionStartRequest = userId !== undefined ? { user_id: userId } : {};
     const response = await this.session.startSession(oneTimeToken, requestBody);
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to start session');
+      throw new Error(response.error['message'] || 'Failed to start session');
     }
     const sessionId = response.success?.data?.session_id || '';
     const companyId = response.success?.data?.company_id || '';
@@ -324,7 +315,7 @@ export class FinaticServer {
     // Get raw portal URL from session wrapper
     const response = await this.session.getPortalUrl();
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to get portal URL');
+      throw new Error(response.error['message'] || 'Failed to get portal URL');
     }
     
     // Validate response structure
@@ -398,7 +389,7 @@ export class FinaticServer {
     
     const response = await this.session.getSessionUser(this.sessionId!);
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to get session user');
+      throw new Error(response.error['message'] || 'Failed to get session user');
     }
     const userId = response.success?.data?.user_id || '';
     const companyId = response.success?.data?.company_id || this.companyId || '';
