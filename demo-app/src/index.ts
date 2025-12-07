@@ -70,6 +70,7 @@ async function main() {
     console.log('We are in orders');
     const paginatedData = orders.success.data;
     console.log('orders length', paginatedData.length);
+    console.log('orders toJSON', paginatedData.toJSON());
     if (paginatedData.hasMore) {
       console.log('orders has more');
       const nextOrder = await paginatedData.nextPage();
