@@ -153,7 +153,7 @@ export class FinaticServer {
   private async _initSession(xApiKey: string): Promise<string> {
     const response = await this.session.initSession({ xApiKey });
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to initialize session');
+      throw new Error(response.error['message'] || 'Failed to initialize session');
     }
     return response.success?.data?.one_time_token || '';
   }
@@ -221,7 +221,7 @@ export class FinaticServer {
     const requestBody: SessionStartRequest = paramUserId !== undefined ? { user_id: paramUserId } : {};
     const response = await this.session.startSession({ OneTimeToken: oneTimeToken, body: requestBody });
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to start session');
+      throw new Error(response.error['message'] || 'Failed to start session');
     }
     const sessionId = response.success?.data?.session_id || '';
     const companyId = response.success?.data?.company_id || '';
@@ -266,7 +266,7 @@ export class FinaticServer {
       }
 
       // Step 2: Start session with the token
-      const sessionResult = await this.startSession({ oneTimeToken, userId: paramUserId });
+      const sessionResult = await this.startSession({ oneTimeToken, ...(paramUserId !== undefined ? { userId: paramUserId } : {}) });
       
       const sessionId = sessionResult.session_id || null;
       const companyId = sessionResult.company_id || null;
@@ -328,7 +328,7 @@ export class FinaticServer {
     // Get raw portal URL from session wrapper
     const response = await this.session.getPortalUrl();
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to get portal URL');
+      throw new Error(response.error['message'] || 'Failed to get portal URL');
     }
     
     // Validate response structure
@@ -402,7 +402,7 @@ export class FinaticServer {
     
     const response = await this.session.getSessionUser({ sessionId: this.sessionId! });
     if (response.error) {
-      throw new Error(response.error.message || 'Failed to get session user');
+      throw new Error(response.error['message'] || 'Failed to get session user');
     }
     const userId = response.success?.data?.user_id || '';
     const companyId = response.success?.data?.company_id || this.companyId || '';
