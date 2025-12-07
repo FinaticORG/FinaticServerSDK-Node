@@ -716,9 +716,9 @@ export class FinaticServer {
    * 
    * @param params.brokerId {string} (optional) Filter by broker ID
    * @param params.connectionId {string} (optional) Filter by connection ID
-   * @param params.accountId {string} (optional) Filter by broker provided account ID
+   * @param params.accountId {string} (optional) Filter by broker provided account ID or internal account UUID
    * @param params.symbol {string} (optional) Filter by symbol
-   * @param params.orderStatus {BrokerDataOrderStatusEnum} (optional) Filter by order status (e.g., 'filled', 'pending_new', 'cancelled')
+   * @param params.orderStatus {string} (optional) Filter by order status (e.g., 'filled', 'pending_new', 'cancelled')
    * @param params.side {BrokerDataOrderSideEnum} (optional) Filter by order side (e.g., 'buy', 'sell')
    * @param params.assetType {BrokerDataAssetTypeEnum} (optional) Filter by asset type (e.g., 'stock', 'option', 'crypto', 'future')
    * @param params.limit {number} (optional) Maximum number of orders to return
@@ -807,7 +807,7 @@ export class FinaticServer {
    * 
    * @param params.brokerId {string} (optional) Filter by broker ID
    * @param params.connectionId {string} (optional) Filter by connection ID
-   * @param params.accountId {string} (optional) Filter by broker provided account ID
+   * @param params.accountId {string} (optional) Filter by broker provided account ID or internal account UUID
    * @param params.symbol {string} (optional) Filter by symbol
    * @param params.side {BrokerDataOrderSideEnum} (optional) Filter by position side (e.g., 'long', 'short')
    * @param params.assetType {BrokerDataAssetTypeEnum} (optional) Filter by asset type (e.g., 'stock', 'option', 'crypto', 'future')
@@ -898,7 +898,7 @@ export class FinaticServer {
    * 
    * @param params.brokerId {string} (optional) Filter by broker ID
    * @param params.connectionId {string} (optional) Filter by connection ID
-   * @param params.accountId {string} (optional) Filter by broker provided account ID
+   * @param params.accountId {string} (optional) Filter by broker provided account ID or internal account UUID
    * @param params.isEndOfDaySnapshot {boolean} (optional) Filter by end-of-day snapshot status (true/false)
    * @param params.limit {number} (optional) Maximum number of balances to return
    * @param params.offset {number} (optional) Number of balances to skip for pagination
