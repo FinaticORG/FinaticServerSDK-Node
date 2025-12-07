@@ -15,3 +15,4 @@ export * from './url-utils';
 export * from './enum-coercion';
 export * from './plain-object';
 export * from './response-utils';
+export * from './pagination';

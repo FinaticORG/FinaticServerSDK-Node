@@ -2,7 +2,7 @@
 
 /**
  * Finatic Server SDK Node.js Usage Example
- * 
+ *
  * This file demonstrates all public methods of the Finatic Server SDK.
  */
 
@@ -25,12 +25,12 @@ async function waitForPortalAuthentication(portalUrl: string): Promise<boolean> 
       default: false,
     },
   ]);
-  
+
   if (!confirmed) {
     console.log('Authentication not completed. Exiting...');
     return false;
   }
-  
+
   return true;
 }
 
@@ -43,45 +43,56 @@ async function main() {
   });
 
   // Session methods
-  const token = await finatic.getToken(); // Optional: getToken('custom-api-key')
-  const sessionResult = await finatic.startSession(); // Optional: startSession('one-time-token', 'user-id')
-  const portalUrl = await finatic.getPortalUrl(); // Optional: getPortalUrl('theme', ['broker1'], 'email', 'mode')
-  
+  const token = await finatic.getToken();
+  const sessionResult = await finatic.startSession();
+  const portalUrl = await finatic.getPortalUrl();
+
   if (!(await waitForPortalAuthentication(portalUrl))) {
     return;
   }
-  
+
   const sessionUser = await finatic.getSessionUser();
 
   // Company methods
-  const company = await finatic.getCompany({ companyId: 'company-id' }); // Required: companyId
+  // const company = await finatic.getCompany({ companyId: 'company-id' }); // Required: companyId
 
   // Broker methods
-  const brokers = await finatic.getBrokers(); // Optional: getBrokers({})
-  const brokerConnections = await finatic.getBrokerConnections(); // Optional: getBrokerConnections({})
-  const disconnectResult = await finatic.disconnectCompanyFromBroker({ connectionId: 'connection-id' }); // Required: connectionId
-
-  // Data methods - getAll* (paginated, fetches all pages)
-  const allAccounts = await finatic.getAllAccounts(); // Optional: getAllAccounts({ accountId: 'id', brokerId: 'id' })
-  const allOrders = await finatic.getAllOrders(); // Optional: getAllOrders({ accountId: 'id', brokerId: 'id', status: 'status' })
-  const allPositions = await finatic.getAllPositions(); // Optional: getAllPositions({ accountId: 'id', brokerId: 'id' })
-  const allBalances = await finatic.getAllBalances(); // Optional: getAllBalances({ accountId: 'id', brokerId: 'id' })
-  const allOrderFills = await finatic.getAllOrderFills({ orderId: 'order-id' }); // Required: orderId
-  const allOrderEvents = await finatic.getAllOrderEvents({ orderId: 'order-id' }); // Required: orderId
-  const allOrderGroups = await finatic.getAllOrderGroups(); // Optional: getAllOrderGroups({ accountId: 'id', brokerId: 'id' })
-  const allPositionLots = await finatic.getAllPositionLots(); // Optional: getAllPositionLots({ accountId: 'id', brokerId: 'id' })
-  const allPositionLotFills = await finatic.getAllPositionLotFills({ lotId: 'lot-id' }); // Required: lotId
+  const brokers = await finatic.getBrokers();
+  const brokerConnections = await finatic.getBrokerConnections();
+  // const disconnectResult = await finatic.disconnectCompanyFromBroker({ connectionId: 'connection-id' }); // Required: connectionId
 
   // Data methods - get* (single page)
-  const accounts = await finatic.getAccounts(); // Optional: getAccounts({ accountId: 'id', brokerId: 'id', limit: 10, offset: 0 })
-  const orders = await finatic.getOrders(); // Optional: getOrders({ accountId: 'id', brokerId: 'id', status: 'status', limit: 10, offset: 0 })
-  const positions = await finatic.getPositions(); // Optional: getPositions({ accountId: 'id', brokerId: 'id', limit: 10, offset: 0 })
-  const balances = await finatic.getBalances(); // Optional: getBalances({ accountId: 'id', brokerId: 'id', limit: 10, offset: 0 })
-  const orderFills = await finatic.getOrderFills({ orderId: 'order-id' }); // Required: orderId, Optional: { limit: 10, offset: 0 }
-  const orderEvents = await finatic.getOrderEvents({ orderId: 'order-id' }); // Required: orderId, Optional: { limit: 10, offset: 0 }
-  const orderGroups = await finatic.getOrderGroups(); // Optional: getOrderGroups({ accountId: 'id', brokerId: 'id', limit: 10, offset: 0 })
-  const positionLots = await finatic.getPositionLots(); // Optional: getPositionLots({ accountId: 'id', brokerId: 'id', limit: 10, offset: 0 })
-  const positionLotFills = await finatic.getPositionLotFills({ lotId: 'lot-id' }); // Required: lotId, Optional: { limit: 10, offset: 0 }
+  const accounts = await finatic.getAccounts();
+  const orders = await finatic.getOrders();
+  const positions = await finatic.getPositions();
+  const balances = await finatic.getBalances();
+  if (orders.success && orders.success.data) {
+    console.log('We are in orders');
+    const paginatedData = orders.success.data;
+    console.log('orders length', paginatedData.length);
+    if (paginatedData.hasMore) {
+      console.log('orders has more');
+      const nextOrder = await paginatedData.nextPage();
+      const lastOrder = await paginatedData.lastPage();
+      const firstOrder = await paginatedData.firstPage();
+    }
+  }
+  // const orderFills = await finatic.getOrderFills({ orderId: 'order-id' }); // Required: orderId
+  // const orderEvents = await finatic.getOrderEvents({ orderId: 'order-id' }); // Required: orderId
+  const orderGroups = await finatic.getOrderGroups();
+  const positionLots = await finatic.getPositionLots();
+  // const positionLotFills = await finatic.getPositionLotFills({ lotId: 'lot-id' }); // Required: lotId
+
+  // Data methods - getAll* (paginated, fetches all pages)
+  const allAccounts = await finatic.getAllAccounts();
+  const allOrders = await finatic.getAllOrders();
+  const allPositions = await finatic.getAllPositions();
+  const allBalances = await finatic.getAllBalances();
+  // const allOrderFills = await finatic.getAllOrderFills({ orderId: 'order-id' }); // Required: orderId
+  // const allOrderEvents = await finatic.getAllOrderEvents({ orderId: 'order-id' }); // Required: orderId
+  const allOrderGroups = await finatic.getAllOrderGroups();
+  const allPositionLots = await finatic.getAllPositionLots();
+  // const allPositionLotFills = await finatic.getAllPositionLotFills({ lotId: 'lot-id' }); // Required: lotId
 }
 
 main().catch(console.error);
