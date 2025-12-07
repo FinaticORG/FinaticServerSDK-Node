@@ -1,9 +1,10 @@
 {
   "name": "@finatic/server-node",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Node.js SDK for Finatic Server API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "files": [
     "dist",
     "README.md",
@@ -21,7 +22,6 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "clean": "rimraf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "format:fix": "prettier --write \"src/**/*.ts\"",
     "type:check": "tsc --noEmit",
     "syntax:check": "eslint src/**/*.ts --max-warnings 0",
     "syntax:fix": "eslint src/**/*.ts --fix",
