@@ -8,7 +8,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^4.18.2",
-    "inquirer": "^12.9.6"
+    "inquirer": "^13.0.2"
   },
   "scripts": {
     "build": "tsc",
