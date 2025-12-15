@@ -146,7 +146,7 @@ export interface SdkConfig {
  */
 export const defaultConfig: SdkConfig = {
   // API Configuration
-  baseUrl: process.env['FINATIC_API_URL'] || 'https://api.finatic.com',
+  baseUrl: process.env['FINATIC_API_URL'] || 'https://api.finatic.dev',
   ...(process.env['FINATIC_API_KEY'] ? { apiKey: process.env['FINATIC_API_KEY'] } : {}),
   timeout: parseInt(process.env['FINATIC_TIMEOUT'] || '30000', 10),
   headers: {},
