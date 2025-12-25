@@ -811,7 +811,7 @@ export class FinaticServer {
    * @param params.symbol {string} (optional) Filter by symbol
    * @param params.side {BrokerDataOrderSideEnum} (optional) Filter by position side (e.g., 'long', 'short')
    * @param params.assetType {BrokerDataAssetTypeEnum} (optional) Filter by asset type (e.g., 'stock', 'option', 'crypto', 'future')
-   * @param params.positionStatus {BrokerDataPositionStatusEnum} (optional) Filter by position status: 'open' (quantity > 0) or 'closed' (quantity = 0)
+   * @param params.positionStatus {BrokerDataPositionStatusEnum} (optional) Filter by position status: 'active' (open positions) or 'closed' (closed positions). Use 'all' or omit to get both.
    * @param params.limit {number} (optional) Maximum number of positions to return
    * @param params.offset {number} (optional) Number of positions to skip for pagination
    * @param params.updatedAfter {string} (optional) Filter positions updated after this timestamp
@@ -987,7 +987,6 @@ export class FinaticServer {
    * @param params.brokerId {string} (optional) Filter by broker ID
    * @param params.connectionId {string} (optional) Filter by connection ID
    * @param params.accountType {BrokerDataAccountTypeEnum} (optional) Filter by account type (e.g., 'margin', 'cash', 'crypto_wallet', 'live', 'sim')
-   * @param params.status {AccountStatus} (optional) Filter by account status (e.g., 'active', 'inactive')
    * @param params.currency {string} (optional) Filter by currency (e.g., 'USD', 'EUR')
    * @param params.limit {number} (optional) Maximum number of accounts to return
    * @param params.offset {number} (optional) Number of accounts to skip for pagination
