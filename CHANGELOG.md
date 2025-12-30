@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Features and improvements in development
 
+## [0.9.8] - 2025-01-XX
+
+### Fixed
+
+- Fixed CommonJS compatibility issue by bundling `p-retry` dependency
+  - `p-retry` v7+ is ESM-only and cannot be `require()`'d in CommonJS builds
+  - Now bundled into the CommonJS output to support clients using `require()`
+  - Resolves `ERR_REQUIRE_ESM` error when using the SDK in CommonJS environments
+
 ## [0.9.0] - 2025-11-28
 
 ### Added

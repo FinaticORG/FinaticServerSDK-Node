@@ -405,7 +405,8 @@ export class FinaticServer {
       throw new Error(response.error['message'] || 'Failed to get session user');
     }
     const userId = response.success?.data?.user_id || '';
-    const companyId = response.success?.data?.company_id || this.companyId || '';
+    // company_id is not part of SessionUserResponse, use instance property
+    const companyId = this.companyId || '';
     
     // Store userId for getUserId() method
     if (userId) {
