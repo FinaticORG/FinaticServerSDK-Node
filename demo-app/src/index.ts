@@ -66,6 +66,7 @@ async function main() {
   // const orders = await finatic.getOrders();
   // const positions = await finatic.getPositions();
   // const balances = await finatic.getBalances();
+  // const transactions = await finatic.getTransactions();
   // if (orders.success && orders.success.data) {
   //   console.log('We are in orders');
   //   const paginatedData = orders.success.data;
@@ -99,6 +100,9 @@ async function main() {
 
   const allBalances = await finatic.getAllBalances({ accountId: oneAccount.accountId });
   console.log('sampleBalance', allBalances.success.data[0]);
+
+  const allTransactions = await finatic.getAllTransactions({ accountId: oneAccount.accountId });
+  console.log('sampleTransaction', allTransactions.success.data[0]);
   
   const allPositionLots = await finatic.getAllPositionLots({ accountId: oneAccount.accountId });
   const sampleLot = allPositionLots.success.data[0];
@@ -120,6 +124,28 @@ async function main() {
 
   const allOrderGroups = await finatic.getAllOrderGroups();
   console.log('sampleOrderGroup', allOrderGroups.success.data[0]);
+
+  // Trading methods
+  // const placeOrderResult = await finatic.placeOrder({
+  //   connectionId: oneAccount.connectionId,
+  //   orderType: 'market',
+  //   assetType: 'equity',
+  //   action: 'buy',
+  //   symbol: 'AAPL',
+  //   orderQty: 1,
+  // });
+  // console.log('placeOrderResult', placeOrderResult);
+
+  // const modifyOrderResult = await finatic.modifyOrder({
+  //   orderId: sampleOrder.orderId,
+  //   orderQty: 2,
+  // });
+  // console.log('modifyOrderResult', modifyOrderResult);
+
+  // const cancelOrderResult = await finatic.cancelOrder({
+  //   orderId: sampleOrder.orderId,
+  // });
+  // console.log('cancelOrderResult', cancelOrderResult);
 }
 
 main().catch(console.error);
