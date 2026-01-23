@@ -12,7 +12,7 @@ import { getLogger, type Logger } from './utils/logger';
 import type { SessionStartRequest } from './models';
 import type { GetCompanyParams } from './wrappers/company';
 import type { CancelOrderParams, DisconnectCompanyFromBrokerParams, FinaticResponse, GetAccountsParams, GetBalancesParams, GetBrokerConnectionsParams, GetBrokersParams, GetOrderEventsParams, GetOrderFillsParams, GetOrderGroupsParams, GetOrdersParams, GetPositionLotFillsParams, GetPositionLotsParams, GetPositionsParams, GetTransactionsParams, ModifyOrderParams, PlaceOrderParams } from './wrappers/brokers';
-import type { FDXBrokerAccount, FDXBrokerBalance, FDXBrokerOrder, FDXBrokerOrderEvent, FDXBrokerOrderFill, FDXBrokerOrderGroup, FDXBrokerPosition, FDXBrokerPositionLot, FDXBrokerPositionLotFill, FDXBrokerTransaction } from './models';
+import type { FDXBrokerOrder, FDXBrokerOrderEvent, FDXBrokerOrderFill, FDXBrokerOrderGroup, FDXBrokerPosition, FDXBrokerPositionLot, FDXBrokerPositionLotFill, FDXBrokerTransaction, LegacyBrokerAccount, LegacyBrokerBalance } from './models';
 import { BrokersApi } from './api/brokers-api';
 import { CompanyApi } from './api/company-api';
 import { SessionApi } from './api/session-api';
@@ -502,7 +502,7 @@ export class FinaticServer {
    * 
    * @param params.companyId {string} Company ID
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_company_api_v1_company__company_id__get
+   * @methodId get_company_api_beta_company__company_id__get
    * @category company
    * @example
    * ```typescript-server
@@ -547,6 +547,180 @@ export class FinaticServer {
   }
 
   /**
+   * Get Balances
+   * 
+   * Get current unit-based balances for all authorized broker connections.
+   * 
+   * Returns array of current balances (one per unit_code per account).
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns balances from connections the company has read access to.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params.brokerId {string} (optional) Filter by broker ID
+   * @param params.connectionId {string} (optional) Filter by connection ID
+   * @param params.accountId {string} (optional) Filter by broker provided account ID or internal account UUID
+   * @param params.unitCode {string} (optional) Filter by unit code (preferred, e.g., 'USD', 'BTC', 'ETH')
+   * @param params.currency {string} (optional) Filter by currency (for FDX fiat filtering only, e.g., 'USD', 'EUR')
+   * @param params.limit {number} (optional) Maximum number of balances to return
+   * @param params.offset {number} (optional) Number of balances to skip for pagination
+   * @param params.includeMetadata {boolean} (optional) Include balance metadata in response (excluded by default for FDX compliance)
+   * @returns FinaticResponse with success, error, and warning fields
+   * @methodId get_balances_api_beta_brokers_data_balances_get
+   * @category brokers
+   * @example
+   * ```typescript-server
+   * // Example with no parameters
+   * const result = await finatic.getBalances();
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   * }
+   * ```
+   * @example
+   * ```typescript-server
+   * // Full example with optional parameters
+   * const result = await finatic.getBalances({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountId: '123456789' });
+   * 
+   * // Handle response with warnings
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message, result.error.code);
+   * }
+   * ```
+   * @example
+   * ```typescript-client
+   * // Example with no parameters
+   * const result = await finatic.getBalances();
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   * }
+   * ```
+   * @example
+   * ```python
+   * # Example with no parameters
+   * result = await finatic.get_balances()
+   * 
+   * # Access the response data
+   * if result.success:
+   *     print('Data:', result.success['data'])
+   * ```
+   * @example
+   * ```python
+   * # Full example with optional parameters
+   * result = await finatic.get_balances(
+   *            broker_id='alpaca',
+            connection_id='00000000-0000-0000-0000-000000000000',
+            account_id='123456789'
+   * )
+   * 
+   * # Handle response with warnings
+   * if result.success:
+   *     print('Data:', result.success['data'])
+   *     if result.warning:
+   *         print('Warnings:', result.warning)
+   * elif result.error:
+   *     print('Error:', result.error['message'], result.error['code'])
+   * ```
+   */
+  async getBalances(params?: GetBalancesParams): Promise<Awaited<ReturnType<typeof this.brokers.getBalances>>> {
+    return await this.brokers.getBalances(params);
+  }
+
+  /**
+   * Get Accounts
+   * 
+   * Get accounts for all authorized broker connections.
+   * 
+   * This endpoint is accessible from the portal and uses session-only authentication.
+   * Returns accounts from connections the company has read access to.
+   * 
+   * Convenience method that delegates to brokers wrapper.
+   * 
+   * @param params.brokerId {string} (optional) Filter by broker ID
+   * @param params.connectionId {string} (optional) Filter by connection ID
+   * @param params.accountType {BrokerDataAccountTypeEnum} (optional) Filter by account type (e.g., 'margin', 'cash', 'crypto_wallet', 'live', 'sim')
+   * @param params.currency {string} (optional) Filter by currency (e.g., 'USD', 'EUR')
+   * @param params.limit {number} (optional) Maximum number of accounts to return
+   * @param params.offset {number} (optional) Number of accounts to skip for pagination
+   * @param params.includeMetadata {boolean} (optional) Include connection metadata in response (excluded by default for FDX compliance)
+   * @returns FinaticResponse with success, error, and warning fields
+   * @methodId get_accounts_api_beta_brokers_data_accounts_get
+   * @category brokers
+   * @example
+   * ```typescript-server
+   * // Example with no parameters
+   * const result = await finatic.getAccounts();
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   * }
+   * ```
+   * @example
+   * ```typescript-server
+   * // Full example with optional parameters
+   * const result = await finatic.getAccounts({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountType: 'margin' });
+   * 
+   * // Handle response with warnings
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message, result.error.code);
+   * }
+   * ```
+   * @example
+   * ```typescript-client
+   * // Example with no parameters
+   * const result = await finatic.getAccounts();
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   * }
+   * ```
+   * @example
+   * ```python
+   * # Example with no parameters
+   * result = await finatic.get_accounts()
+   * 
+   * # Access the response data
+   * if result.success:
+   *     print('Data:', result.success['data'])
+   * ```
+   * @example
+   * ```python
+   * # Full example with optional parameters
+   * result = await finatic.get_accounts(
+   *            broker_id='alpaca',
+            connection_id='00000000-0000-0000-0000-000000000000',
+            account_type='margin'
+   * )
+   * 
+   * # Handle response with warnings
+   * if result.success:
+   *     print('Data:', result.success['data'])
+   *     if result.warning:
+   *         print('Warnings:', result.warning)
+   * elif result.error:
+   *     print('Error:', result.error['message'], result.error['code'])
+   * ```
+   */
+  async getAccounts(params?: GetAccountsParams): Promise<Awaited<ReturnType<typeof this.brokers.getAccounts>>> {
+    return await this.brokers.getAccounts(params);
+  }
+
+  /**
    * Get Brokers
    * 
    * Get all available brokers.
@@ -563,7 +737,7 @@ export class FinaticServer {
    * 
    * @param params No parameters required for this method
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_brokers_api_v1_brokers__get
+   * @methodId get_brokers_api_beta_brokers__get
    * @category brokers
    * @example
    * ```typescript-server
@@ -612,7 +786,7 @@ export class FinaticServer {
    * 
    * @param params No parameters required for this method
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId list_broker_connections_api_v1_brokers_connections_get
+   * @methodId list_broker_connections_api_beta_brokers_connections_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -660,7 +834,7 @@ export class FinaticServer {
    * 
    * @param params.connectionId {string} Connection ID
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId disconnect_company_from_broker_api_v1_brokers_disconnect_company__connection_id__delete
+   * @methodId disconnect_company_from_broker_api_beta_brokers_disconnect_company__connection_id__delete
    * @category brokers
    * @example
    * ```typescript-server
@@ -727,7 +901,7 @@ export class FinaticServer {
    * @param params.createdBefore {string} (optional) Filter orders created before this timestamp
    * @param params.includeMetadata {boolean} (optional) Include order metadata in response (excluded by default for FDX compliance)
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_orders_api_v1_brokers_data_orders_get
+   * @methodId get_orders_api_beta_brokers_data_orders_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -818,7 +992,7 @@ export class FinaticServer {
    * @param params.updatedBefore {string} (optional) Filter positions updated before this timestamp
    * @param params.includeMetadata {boolean} (optional) Include position metadata in response (excluded by default for FDX compliance)
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_positions_api_v1_brokers_data_positions_get
+   * @methodId get_positions_api_beta_brokers_data_positions_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -887,94 +1061,6 @@ export class FinaticServer {
   }
 
   /**
-   * Get Balances
-   * 
-   * Get current unit-based balances for all authorized broker connections.
-   * 
-   * Returns array of current balances (one per unit_code per account).
-   * This endpoint is accessible from the portal and uses session-only authentication.
-   * Returns balances from connections the company has read access to.
-   * 
-   * Convenience method that delegates to brokers wrapper.
-   * 
-   * @param params.brokerId {string} (optional) Filter by broker ID
-   * @param params.connectionId {string} (optional) Filter by connection ID
-   * @param params.accountId {string} (optional) Filter by broker provided account ID or internal account UUID
-   * @param params.unitCode {string} (optional) Filter by unit code (preferred, e.g., 'USD', 'BTC', 'ETH')
-   * @param params.currency {string} (optional) Filter by currency (for FDX fiat filtering only, e.g., 'USD', 'EUR')
-   * @param params.limit {number} (optional) Maximum number of balances to return
-   * @param params.offset {number} (optional) Number of balances to skip for pagination
-   * @param params.includeMetadata {boolean} (optional) Include balance metadata in response (excluded by default for FDX compliance)
-   * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_balances_api_v1_brokers_data_balances_get
-   * @category brokers
-   * @example
-   * ```typescript-server
-   * // Example with no parameters
-   * const result = await finatic.getBalances();
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   * }
-   * ```
-   * @example
-   * ```typescript-server
-   * // Full example with optional parameters
-   * const result = await finatic.getBalances({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountId: '123456789' });
-   * 
-   * // Handle response with warnings
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message, result.error.code);
-   * }
-   * ```
-   * @example
-   * ```typescript-client
-   * // Example with no parameters
-   * const result = await finatic.getBalances();
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   * }
-   * ```
-   * @example
-   * ```python
-   * # Example with no parameters
-   * result = await finatic.get_balances()
-   * 
-   * # Access the response data
-   * if result.success:
-   *     print('Data:', result.success['data'])
-   * ```
-   * @example
-   * ```python
-   * # Full example with optional parameters
-   * result = await finatic.get_balances(
-   *            broker_id='alpaca',
-            connection_id='00000000-0000-0000-0000-000000000000',
-            account_id='123456789'
-   * )
-   * 
-   * # Handle response with warnings
-   * if result.success:
-   *     print('Data:', result.success['data'])
-   *     if result.warning:
-   *         print('Warnings:', result.warning)
-   * elif result.error:
-   *     print('Error:', result.error['message'], result.error['code'])
-   * ```
-   */
-  async getBalances(params?: GetBalancesParams): Promise<Awaited<ReturnType<typeof this.brokers.getBalances>>> {
-    return await this.brokers.getBalances(params);
-  }
-
-  /**
    * Get Transactions
    * 
    * Get transactions for all authorized broker connections.
@@ -995,7 +1081,7 @@ export class FinaticServer {
    * @param params.limit {number} (optional) Maximum number of transactions to return
    * @param params.offset {number} (optional) Number of transactions to skip for pagination
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_transactions_api_v1_brokers_data_transactions_get
+   * @methodId get_transactions_api_beta_brokers_data_transactions_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -1064,92 +1150,6 @@ export class FinaticServer {
   }
 
   /**
-   * Get Accounts
-   * 
-   * Get accounts for all authorized broker connections.
-   * 
-   * This endpoint is accessible from the portal and uses session-only authentication.
-   * Returns accounts from connections the company has read access to.
-   * 
-   * Convenience method that delegates to brokers wrapper.
-   * 
-   * @param params.brokerId {string} (optional) Filter by broker ID
-   * @param params.connectionId {string} (optional) Filter by connection ID
-   * @param params.accountType {BrokerDataAccountTypeEnum} (optional) Filter by account type (e.g., 'margin', 'cash', 'crypto_wallet', 'live', 'sim')
-   * @param params.currency {string} (optional) Filter by currency (e.g., 'USD', 'EUR')
-   * @param params.limit {number} (optional) Maximum number of accounts to return
-   * @param params.offset {number} (optional) Number of accounts to skip for pagination
-   * @param params.includeMetadata {boolean} (optional) Include connection metadata in response (excluded by default for FDX compliance)
-   * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_accounts_api_v1_brokers_data_accounts_get
-   * @category brokers
-   * @example
-   * ```typescript-server
-   * // Example with no parameters
-   * const result = await finatic.getAccounts();
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   * }
-   * ```
-   * @example
-   * ```typescript-server
-   * // Full example with optional parameters
-   * const result = await finatic.getAccounts({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountType: 'margin' });
-   * 
-   * // Handle response with warnings
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message, result.error.code);
-   * }
-   * ```
-   * @example
-   * ```typescript-client
-   * // Example with no parameters
-   * const result = await finatic.getAccounts();
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   * }
-   * ```
-   * @example
-   * ```python
-   * # Example with no parameters
-   * result = await finatic.get_accounts()
-   * 
-   * # Access the response data
-   * if result.success:
-   *     print('Data:', result.success['data'])
-   * ```
-   * @example
-   * ```python
-   * # Full example with optional parameters
-   * result = await finatic.get_accounts(
-   *            broker_id='alpaca',
-            connection_id='00000000-0000-0000-0000-000000000000',
-            account_type='margin'
-   * )
-   * 
-   * # Handle response with warnings
-   * if result.success:
-   *     print('Data:', result.success['data'])
-   *     if result.warning:
-   *         print('Warnings:', result.warning)
-   * elif result.error:
-   *     print('Error:', result.error['message'], result.error['code'])
-   * ```
-   */
-  async getAccounts(params?: GetAccountsParams): Promise<Awaited<ReturnType<typeof this.brokers.getAccounts>>> {
-    return await this.brokers.getAccounts(params);
-  }
-
-  /**
    * Get Order Fills
    * 
    * Get order fills for a specific order.
@@ -1164,7 +1164,7 @@ export class FinaticServer {
    * @param params.offset {number} (optional) Number of fills to skip for pagination
    * @param params.includeMetadata {boolean} (optional) Include fill metadata in response (excluded by default for FDX compliance)
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_order_fills_api_v1_brokers_data_orders__order_id__fills_get
+   * @methodId get_order_fills_api_beta_brokers_data_orders__order_id__fills_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -1256,7 +1256,7 @@ export class FinaticServer {
    * @param params.offset {number} (optional) Number of events to skip for pagination
    * @param params.includeMetadata {boolean} (optional) Include event metadata in response (excluded by default for FDX compliance)
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_order_events_api_v1_brokers_data_orders__order_id__events_get
+   * @methodId get_order_events_api_beta_brokers_data_orders__order_id__events_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -1350,7 +1350,7 @@ export class FinaticServer {
    * @param params.createdBefore {string} (optional) Filter order groups created before this timestamp
    * @param params.includeMetadata {boolean} (optional) Include group metadata in response (excluded by default for FDX compliance)
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_order_groups_api_v1_brokers_data_orders_groups_get
+   * @methodId get_order_groups_api_beta_brokers_data_orders_groups_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -1436,7 +1436,7 @@ export class FinaticServer {
    * @param params.limit {number} (optional) Maximum number of position lots to return
    * @param params.offset {number} (optional) Number of position lots to skip for pagination
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_position_lots_api_v1_brokers_data_positions_lots_get
+   * @methodId get_position_lots_api_beta_brokers_data_positions_lots_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -1518,7 +1518,7 @@ export class FinaticServer {
    * @param params.limit {number} (optional) Maximum number of fills to return
    * @param params.offset {number} (optional) Number of fills to skip for pagination
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId get_position_lot_fills_api_v1_brokers_data_positions_lots__lot_id__fills_get
+   * @methodId get_position_lot_fills_api_beta_brokers_data_positions_lots__lot_id__fills_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -1658,7 +1658,7 @@ export class FinaticServer {
    * @param params.body {OrderRequest} (optional) Broker-specific extra parameters object. This is used to pass in broker-specific fields if you want to send a reqeust to a broker API with the parameters that EXTEND our standardized query parameters.
    * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId place_order_api_v1_brokers_orders_post
+   * @methodId place_order_api_beta_brokers_orders_post
    * @category brokers
    * @example
    * ```typescript-server
@@ -1739,7 +1739,7 @@ export class FinaticServer {
    * 
    * @param params.orderId {string} Order ID
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId cancel_order_api_v1_brokers_orders__order_id__delete
+   * @methodId cancel_order_api_beta_brokers_orders__order_id__delete
    * @category brokers
    * @example
    * ```typescript-server
@@ -1798,7 +1798,7 @@ export class FinaticServer {
    * @param params.accountNumber {string} (optional) Account number owning the order
    * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
-   * @methodId modify_order_api_v1_brokers_orders__order_id__patch
+   * @methodId modify_order_api_beta_brokers_orders__order_id__patch
    * @category brokers
    * @example
    * ```typescript-server
@@ -1876,6 +1876,240 @@ export class FinaticServer {
 
 
   /**
+   * Get all Balances across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * This method automatically paginates through all pages and returns all items in a single response.
+   * It uses the underlying getBalances method with internal pagination handling.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllBalances({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
+   * @methodId get_all_balances_api_beta_brokers_data_balances_get
+   * @category brokers
+   * @example
+   * ```typescript-server
+   * // Get all items with optional filters
+   * const result = await finatic.getAllBalances({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountId: '123456789' });
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Total items:', result.success.data.length);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message);
+   * }
+   * ```
+   * @example
+   * ```typescript-client
+   * // Get all items with optional filters
+   * const result = await finatic.getAllBalances({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountId: '123456789' });
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Total items:', result.success.data.length);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message);
+   * }
+   * ```
+   * @example
+   * ```python
+   * # Get all items with optional filters
+   * result = await finatic.get_all_balances(
+   *            broker_id='alpaca',
+            connection_id='00000000-0000-0000-0000-000000000000',
+            account_id='123456789'
+   * )
+   * 
+   * # Access the response data
+   * if result.success:
+   *     print('Total items:', len(result.success['data']))
+   *     if result.warning:
+   *         print('Warnings:', result.warning)
+   * elif result.error:
+   *     print('Error:', result.error['message'])
+   * ```
+   */
+  async getAllBalances(params?: Partial<GetBalancesParams>): Promise<FinaticResponse<LegacyBrokerBalance[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetBalancesParams = (params || {}) as GetBalancesParams;
+    const allData: LegacyBrokerBalance[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getBalances({ ...filterParams, limit, offset });
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
+      // PaginatedData has array-like behavior but we extract items for getAll* methods
+      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+        ? result.items
+        : (Array.isArray(result) ? result : [result]);
+      
+      if (!items || items.length === 0) break;
+      allData.push(...items);
+      // If we got fewer items than the limit, there are no more pages
+      if (items.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as LegacyBrokerBalance[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
+    };
+  }
+
+  /**
+   * Get all Accounts across all pages.
+   * Auto-generated from paginated endpoint.
+   * 
+   * This method automatically paginates through all pages and returns all items in a single response.
+   * It uses the underlying getAccounts method with internal pagination handling.
+   * 
+   * @param params - Optional parameters object. Only include the fields you want to filter by.
+   *                 Example: getAllAccounts({ accountId: "123", symbol: "AAPL" })
+   * @returns FinaticResponse with success, error, and warning fields containing array of all items
+   * @methodId get_all_accounts_api_beta_brokers_data_accounts_get
+   * @category brokers
+   * @example
+   * ```typescript-server
+   * // Get all items with optional filters
+   * const result = await finatic.getAllAccounts({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountType: 'margin' });
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Total items:', result.success.data.length);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message);
+   * }
+   * ```
+   * @example
+   * ```typescript-client
+   * // Get all items with optional filters
+   * const result = await finatic.getAllAccounts({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountType: 'margin' });
+   * 
+   * // Access the response data
+   * if (result.success) {
+   *   console.log('Total items:', result.success.data.length);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message);
+   * }
+   * ```
+   * @example
+   * ```python
+   * # Get all items with optional filters
+   * result = await finatic.get_all_accounts(
+   *            broker_id='alpaca',
+            connection_id='00000000-0000-0000-0000-000000000000',
+            account_type='margin'
+   * )
+   * 
+   * # Access the response data
+   * if result.success:
+   *     print('Total items:', len(result.success['data']))
+   *     if result.warning:
+   *         print('Warnings:', result.warning)
+   * elif result.error:
+   *     print('Error:', result.error['message'])
+   * ```
+   */
+  async getAllAccounts(params?: Partial<GetAccountsParams>): Promise<FinaticResponse<LegacyBrokerAccount[]>> {
+    // Use provided params or empty object (excluding limit and offset which are handled internally)
+    const filterParams: GetAccountsParams = (params || {}) as GetAccountsParams;
+    const allData: LegacyBrokerAccount[] = [];
+    let offset = 0;
+    const limit = 1000;
+    let lastError: { [key: string]: any; } | null = null;
+    let warnings: Array<{ [key: string]: any; }> = [];
+    
+    while (true) {
+      const response = await this.brokers.getAccounts({ ...filterParams, limit, offset });
+      
+      // Collect warnings from each page
+      if (response.warning && Array.isArray(response.warning)) {
+        warnings.push(...response.warning);
+      }
+      
+      if (response.error) {
+        lastError = response.error;
+        break;
+      }
+      
+      const result = response.success?.data || [];
+      // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
+      // PaginatedData has array-like behavior but we extract items for getAll* methods
+      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+        ? result.items
+        : (Array.isArray(result) ? result : [result]);
+      
+      if (!items || items.length === 0) break;
+      allData.push(...items);
+      // If we got fewer items than the limit, there are no more pages
+      if (items.length < limit) break;
+      offset += limit;
+    }
+    
+    // Return FinaticResponse with accumulated data
+    // When error occurs, return error response (success may be omitted or null)
+    if (lastError) {
+      return {
+        success: {
+          data: [] as LegacyBrokerAccount[],
+        },
+        error: lastError,
+        warning: warnings.length > 0 ? warnings : null,
+      };
+    }
+    
+    return {
+      success: {
+        data: allData,
+      },
+      error: null,
+      warning: warnings.length > 0 ? warnings : null,
+    };
+  }
+
+  /**
    * Get all Orders across all pages.
    * Auto-generated from paginated endpoint.
    * 
@@ -1885,7 +2119,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllOrders({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_orders_api_v1_brokers_data_orders_get
+   * @methodId get_all_orders_api_beta_brokers_data_orders_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2002,7 +2236,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllPositions({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_positions_api_v1_brokers_data_positions_get
+   * @methodId get_all_positions_api_beta_brokers_data_positions_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2110,123 +2344,6 @@ export class FinaticServer {
   }
 
   /**
-   * Get all Balances across all pages.
-   * Auto-generated from paginated endpoint.
-   * 
-   * This method automatically paginates through all pages and returns all items in a single response.
-   * It uses the underlying getBalances method with internal pagination handling.
-   * 
-   * @param params - Optional parameters object. Only include the fields you want to filter by.
-   *                 Example: getAllBalances({ accountId: "123", symbol: "AAPL" })
-   * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_balances_api_v1_brokers_data_balances_get
-   * @category brokers
-   * @example
-   * ```typescript-server
-   * // Get all items with optional filters
-   * const result = await finatic.getAllBalances({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountId: '123456789' });
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Total items:', result.success.data.length);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message);
-   * }
-   * ```
-   * @example
-   * ```typescript-client
-   * // Get all items with optional filters
-   * const result = await finatic.getAllBalances({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountId: '123456789' });
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Total items:', result.success.data.length);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message);
-   * }
-   * ```
-   * @example
-   * ```python
-   * # Get all items with optional filters
-   * result = await finatic.get_all_balances(
-   *            broker_id='alpaca',
-            connection_id='00000000-0000-0000-0000-000000000000',
-            account_id='123456789'
-   * )
-   * 
-   * # Access the response data
-   * if result.success:
-   *     print('Total items:', len(result.success['data']))
-   *     if result.warning:
-   *         print('Warnings:', result.warning)
-   * elif result.error:
-   *     print('Error:', result.error['message'])
-   * ```
-   */
-  async getAllBalances(params?: Partial<GetBalancesParams>): Promise<FinaticResponse<FDXBrokerBalance[]>> {
-    // Use provided params or empty object (excluding limit and offset which are handled internally)
-    const filterParams: GetBalancesParams = (params || {}) as GetBalancesParams;
-    const allData: FDXBrokerBalance[] = [];
-    let offset = 0;
-    const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
-    while (true) {
-      const response = await this.brokers.getBalances({ ...filterParams, limit, offset });
-      
-      // Collect warnings from each page
-      if (response.warning && Array.isArray(response.warning)) {
-        warnings.push(...response.warning);
-      }
-      
-      if (response.error) {
-        lastError = response.error;
-        break;
-      }
-      
-      const result = response.success?.data || [];
-      // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
-      // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
-      if (!items || items.length === 0) break;
-      allData.push(...items);
-      // If we got fewer items than the limit, there are no more pages
-      if (items.length < limit) break;
-      offset += limit;
-    }
-    
-    // Return FinaticResponse with accumulated data
-    // When error occurs, return error response (success may be omitted or null)
-    if (lastError) {
-      return {
-        success: {
-          data: [] as FDXBrokerBalance[],
-        },
-        error: lastError,
-        warning: warnings.length > 0 ? warnings : null,
-      };
-    }
-    
-    return {
-      success: {
-        data: allData,
-      },
-      error: null,
-      warning: warnings.length > 0 ? warnings : null,
-    };
-  }
-
-  /**
    * Get all Transactions across all pages.
    * Auto-generated from paginated endpoint.
    * 
@@ -2236,7 +2353,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllTransactions({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_transactions_api_v1_brokers_data_transactions_get
+   * @methodId get_all_transactions_api_beta_brokers_data_transactions_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2344,123 +2461,6 @@ export class FinaticServer {
   }
 
   /**
-   * Get all Accounts across all pages.
-   * Auto-generated from paginated endpoint.
-   * 
-   * This method automatically paginates through all pages and returns all items in a single response.
-   * It uses the underlying getAccounts method with internal pagination handling.
-   * 
-   * @param params - Optional parameters object. Only include the fields you want to filter by.
-   *                 Example: getAllAccounts({ accountId: "123", symbol: "AAPL" })
-   * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_accounts_api_v1_brokers_data_accounts_get
-   * @category brokers
-   * @example
-   * ```typescript-server
-   * // Get all items with optional filters
-   * const result = await finatic.getAllAccounts({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountType: 'margin' });
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Total items:', result.success.data.length);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message);
-   * }
-   * ```
-   * @example
-   * ```typescript-client
-   * // Get all items with optional filters
-   * const result = await finatic.getAllAccounts({ brokerId: 'alpaca', connectionId: '00000000-0000-0000-0000-000000000000', accountType: 'margin' });
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Total items:', result.success.data.length);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message);
-   * }
-   * ```
-   * @example
-   * ```python
-   * # Get all items with optional filters
-   * result = await finatic.get_all_accounts(
-   *            broker_id='alpaca',
-            connection_id='00000000-0000-0000-0000-000000000000',
-            account_type='margin'
-   * )
-   * 
-   * # Access the response data
-   * if result.success:
-   *     print('Total items:', len(result.success['data']))
-   *     if result.warning:
-   *         print('Warnings:', result.warning)
-   * elif result.error:
-   *     print('Error:', result.error['message'])
-   * ```
-   */
-  async getAllAccounts(params?: Partial<GetAccountsParams>): Promise<FinaticResponse<FDXBrokerAccount[]>> {
-    // Use provided params or empty object (excluding limit and offset which are handled internally)
-    const filterParams: GetAccountsParams = (params || {}) as GetAccountsParams;
-    const allData: FDXBrokerAccount[] = [];
-    let offset = 0;
-    const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
-    while (true) {
-      const response = await this.brokers.getAccounts({ ...filterParams, limit, offset });
-      
-      // Collect warnings from each page
-      if (response.warning && Array.isArray(response.warning)) {
-        warnings.push(...response.warning);
-      }
-      
-      if (response.error) {
-        lastError = response.error;
-        break;
-      }
-      
-      const result = response.success?.data || [];
-      // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
-      // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
-      if (!items || items.length === 0) break;
-      allData.push(...items);
-      // If we got fewer items than the limit, there are no more pages
-      if (items.length < limit) break;
-      offset += limit;
-    }
-    
-    // Return FinaticResponse with accumulated data
-    // When error occurs, return error response (success may be omitted or null)
-    if (lastError) {
-      return {
-        success: {
-          data: [] as FDXBrokerAccount[],
-        },
-        error: lastError,
-        warning: warnings.length > 0 ? warnings : null,
-      };
-    }
-    
-    return {
-      success: {
-        data: allData,
-      },
-      error: null,
-      warning: warnings.length > 0 ? warnings : null,
-    };
-  }
-
-  /**
    * Get all OrderFills across all pages.
    * Auto-generated from paginated endpoint.
    * 
@@ -2470,7 +2470,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllOrderFills({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_order_fills_api_v1_brokers_data_orders__order_id__fills_get
+   * @methodId get_all_order_fills_api_beta_brokers_data_orders__order_id__fills_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2586,7 +2586,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllOrderEvents({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_order_events_api_v1_brokers_data_orders__order_id__events_get
+   * @methodId get_all_order_events_api_beta_brokers_data_orders__order_id__events_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2702,7 +2702,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllOrderGroups({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_order_groups_api_v1_brokers_data_orders_groups_get
+   * @methodId get_all_order_groups_api_beta_brokers_data_orders_groups_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2819,7 +2819,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllPositionLots({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_position_lots_api_v1_brokers_data_positions_lots_get
+   * @methodId get_all_position_lots_api_beta_brokers_data_positions_lots_get
    * @category brokers
    * @example
    * ```typescript-server
@@ -2936,7 +2936,7 @@ export class FinaticServer {
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllPositionLotFills({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
-   * @methodId get_all_position_lot_fills_api_v1_brokers_data_positions_lots__lot_id__fills_get
+   * @methodId get_all_position_lot_fills_api_beta_brokers_data_positions_lots__lot_id__fills_get
    * @category brokers
    * @example
    * ```typescript-server
