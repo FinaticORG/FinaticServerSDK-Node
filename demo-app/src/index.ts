@@ -85,45 +85,45 @@ async function main() {
   // const positionLots = await finatic.getPositionLots();
   // const positionLotFills = await finatic.getPositionLotFills({ lotId: 'lot-id' }); // Required: lotId
 
-  // Data methods - getAll* (paginated, fetches all pages)
+  // // Data methods - getAll* (paginated, fetches all pages)
   const allAccounts = await finatic.getAllAccounts();
   const oneAccount = allAccounts.success.data[0];
-  console.log('oneAccount', oneAccount);
-  const allOrders = await finatic.getAllOrders({
-    accountId: oneAccount.accountId, // broker-provided accountId
-    orderStatus: 'filled', // string enum coercion
-  });
-  console.log('sampleOrder', allOrders.success.data[0]);
+  // console.log('oneAccount', oneAccount);
+  // const allOrders = await finatic.getAllOrders({
+  //   accountId: oneAccount.accountId, // broker-provided accountId
+  //   orderStatus: 'filled', // string enum coercion
+  // });
+  // console.log('sampleOrder', allOrders.success.data[0]);
 
-  const allPositions = await finatic.getAllPositions({ accountId: oneAccount.accountId });
-  console.log('samplePosition', allPositions.success.data[0]);
+  // const allPositions = await finatic.getAllPositions({ accountId: oneAccount.accountId });
+  // console.log('samplePosition', allPositions.success.data[0]);
 
-  const allBalances = await finatic.getAllBalances({ accountId: oneAccount.accountId });
-  console.log('sampleBalance', allBalances.success.data[0]);
+  // const allBalances = await finatic.getAllBalances({ accountId: oneAccount.accountId });
+  // console.log('sampleBalance', allBalances.success.data[0]);
 
   const allTransactions = await finatic.getAllTransactions({ accountId: oneAccount.accountId });
   console.log('sampleTransaction', allTransactions.success.data[0]);
   
-  const allPositionLots = await finatic.getAllPositionLots({ accountId: oneAccount.accountId });
-  const sampleLot = allPositionLots.success.data[0];
-  console.log('samplePositionLot', sampleLot);
+  // const allPositionLots = await finatic.getAllPositionLots({ accountId: oneAccount.accountId });
+  // const sampleLot = allPositionLots.success.data[0];
+  // console.log('samplePositionLot', sampleLot);
 
-  if (sampleLot?.lotId) {
-    const allPositionLotFills = await finatic.getAllPositionLotFills({ lotId: sampleLot.lotId });
-    console.log('samplePositionLotFill', allPositionLotFills.success.data[0]);
-  }
+  // if (sampleLot?.lotId) {
+  //   const allPositionLotFills = await finatic.getAllPositionLotFills({ lotId: sampleLot.lotId });
+  //   console.log('samplePositionLotFill', allPositionLotFills.success.data[0]);
+  // }
 
-  const sampleOrder = allOrders.success.data[0];
-  if (sampleOrder?.orderId) {
-    const allOrderFills = await finatic.getAllOrderFills({ orderId: sampleOrder.orderId });
-    console.log('sampleOrderFill', allOrderFills.success.data[0]);
+  // const sampleOrder = allOrders.success.data[0];
+  // if (sampleOrder?.orderId) {
+  //   const allOrderFills = await finatic.getAllOrderFills({ orderId: sampleOrder.orderId });
+  //   console.log('sampleOrderFill', allOrderFills.success.data[0]);
 
-    const allOrderEvents = await finatic.getAllOrderEvents({ orderId: sampleOrder.orderId });
-    console.log('sampleOrderEvent', allOrderEvents.success.data[0]);
-  }
+  //   const allOrderEvents = await finatic.getAllOrderEvents({ orderId: sampleOrder.orderId });
+  //   console.log('sampleOrderEvent', allOrderEvents.success.data[0]);
+  // }
 
-  const allOrderGroups = await finatic.getAllOrderGroups();
-  console.log('sampleOrderGroup', allOrderGroups.success.data[0]);
+  // const allOrderGroups = await finatic.getAllOrderGroups();
+  // console.log('sampleOrderGroup', allOrderGroups.success.data[0]);
 
   // Trading methods
   // const placeOrderResult = await finatic.placeOrder({

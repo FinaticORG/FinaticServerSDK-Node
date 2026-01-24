@@ -405,7 +405,9 @@ export class FinaticServer {
       throw new Error(response.error['message'] || 'Failed to get session user');
     }
     const userId = response.success?.data?.user_id || '';
-    const companyId = response.success?.data?.company_id || this.companyId || '';
+    // The 'getSessionUser' endpoint currently returns 'SessionUserResponse' which contains 'user_id'.
+    // Company context is tracked from 'startSession' and stored on the instance.
+    const companyId = this.companyId || '';
     
     // Store userId for getUserId() method
     if (userId) {
@@ -1655,7 +1657,7 @@ export class FinaticServer {
    * 
    * Convenience method that delegates to brokers wrapper.
    * 
-   * @param params.body {OrderRequest} (optional) Broker-specific extra parameters object. This is used to pass in broker-specific fields if you want to send a reqeust to a broker API with the parameters that EXTEND our standardized query parameters.
+   * @param params.body {PlaceOrderApiBetaBrokersOrdersPostRequest} (optional) Broker-specific extra parameters object. This is used to pass in broker-specific fields if you want to send a reqeust to a broker API with the parameters that EXTEND our standardized query parameters.
    * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId place_order_api_beta_brokers_orders_post
@@ -1794,7 +1796,7 @@ export class FinaticServer {
    * Convenience method that delegates to brokers wrapper.
    * 
    * @param params.orderId {string} Order ID
-   * @param params.body {OrderRequest} (optional) Broker-specific *modify order* payload. Pass **all** standard parameters plus any broker-specific extensions under the `order` key. See the schema for a formal reference.
+   * @param params.body {ModifyOrderApiBetaBrokersOrdersOrderIdPatchRequest} (optional) Broker-specific *modify order* payload. Pass **all** standard parameters plus any broker-specific extensions under the `order` key. See the schema for a formal reference.
    * @param params.accountNumber {string} (optional) Account number owning the order
    * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
