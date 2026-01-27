@@ -309,16 +309,7 @@ export class SessionWrapper {
    * Generated from: POST /api/beta/session/start
    * @methodId start_session_api_beta_session_start_post
    * @category session
-   * @example
-   * ```typescript-server
-   * // Example with no parameters
-   * const result = await finatic.startSession({});
-   * 
-   * // Access the response data
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   * }
-   * ```
+
    */
   async startSession(params: StartSessionParams): Promise<FinaticResponse<SessionResponseData>> {
     // Use params object (required parameters present)
@@ -695,7 +686,7 @@ export class SessionWrapper {
    * ```typescript-server
    * // Minimal example with required parameters only
    * const result = await finatic.getSessionUser({
-    sessionId: 'sess_1234567890abcdef'
+    sessionId: 'example-id'
    * });
    * 
    * // Access the response data

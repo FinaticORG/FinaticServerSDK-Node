@@ -127,18 +127,32 @@ async function main() {
 
   // Trading methods
   // const placeOrderResult = await finatic.placeOrder({
-  //   connectionId: oneAccount.connectionId,
-  //   orderType: 'market',
-  //   assetType: 'equity',
-  //   action: 'buy',
-  //   symbol: 'AAPL',
-  //   orderQty: 1,
+  //   broker: 'robinhood', // Required: broker identifier
+  //   accountNumber: oneAccount.accountNumber || oneAccount.accountId, // Required: account number at top level
+  //   order: {
+  //     orderType: 'market',
+  //     assetType: 'equity',
+  //     action: 'buy',
+  //     timeInForce: 'day',
+  //     symbol: 'AAPL',
+  //     orderQty: 1,
+  //   },
+  //   connectionId: oneAccount.connectionId, // Optional
   // });
   // console.log('placeOrderResult', placeOrderResult);
 
   // const modifyOrderResult = await finatic.modifyOrder({
   //   orderId: sampleOrder.orderId,
-  //   orderQty: 2,
+  //   broker: 'robinhood', // Required: broker identifier
+  //   accountNumber: oneAccount.accountNumber || oneAccount.accountId, // Required: account number at top level
+  //   order: {
+  //     orderType: 'market',
+  //     assetType: 'equity',
+  //     action: 'buy',
+  //     timeInForce: 'day',
+  //     symbol: 'AAPL',
+  //     orderQty: 2,
+  //   },
   // });
   // console.log('modifyOrderResult', modifyOrderResult);
 

@@ -1,1 +1,0 @@
-{"version":3,"file":"tasty-trade-order-modify-request.d.ts","sourceRoot":"","sources":["tasty-trade-order-modify-request.ts"],"names":[],"mappings":"AAEA;;;;;;;;;;GAUG;AAKH,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,UAAU,CAAC;AAEvC,MAAM,WAAW,4BAA4B;IACzC,CAAC,GAAG,EAAE,MAAM,GAAG,GAAG,CAAC;IAEnB,QAAQ,EAAE,sCAAsC,CAAC;IACjD,OAAO,EAAE,MAAM,CAAC;CACnB;AAED,oBAAY,sCAAsC;IAC9C,UAAU,gBAAgB;CAC7B"}
