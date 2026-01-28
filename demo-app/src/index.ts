@@ -85,66 +85,47 @@ async function main() {
   // const positionLots = await finatic.getPositionLots();
   // const positionLotFills = await finatic.getPositionLotFills({ lotId: 'lot-id' }); // Required: lotId
 
-  // // Data methods - getAll* (paginated, fetches all pages)
-  const allAccounts = await finatic.getAllAccounts();
-  const oneAccount = allAccounts.success.data[0];
-  // console.log('oneAccount', oneAccount);
+  // Data methods - getAll* (paginated, fetches all pages)
+  // COMMENTED OUT - focus on trading
+  // const allAccounts = await finatic.getAllAccounts();
+  // const oneAccount = allAccounts.success.data[0];
   // const allOrders = await finatic.getAllOrders({
-  //   accountId: oneAccount.accountId, // broker-provided accountId
-  //   orderStatus: 'filled', // string enum coercion
+  //   accountId: oneAccount.accountId,
+  //   orderStatus: 'filled',
   // });
-  // console.log('sampleOrder', allOrders.success.data[0]);
-
   // const allPositions = await finatic.getAllPositions({ accountId: oneAccount.accountId });
-  // console.log('samplePosition', allPositions.success.data[0]);
-
   // const allBalances = await finatic.getAllBalances({ accountId: oneAccount.accountId });
-  // console.log('sampleBalance', allBalances.success.data[0]);
-
-  const allTransactions = await finatic.getAllTransactions({ accountId: oneAccount.accountId });
-  console.log('sampleTransaction', allTransactions.success.data[0]);
-  
+  // const allTransactions = await finatic.getAllTransactions({ accountId: oneAccount.accountId });
   // const allPositionLots = await finatic.getAllPositionLots({ accountId: oneAccount.accountId });
-  // const sampleLot = allPositionLots.success.data[0];
-  // console.log('samplePositionLot', sampleLot);
-
-  // if (sampleLot?.lotId) {
-  //   const allPositionLotFills = await finatic.getAllPositionLotFills({ lotId: sampleLot.lotId });
-  //   console.log('samplePositionLotFill', allPositionLotFills.success.data[0]);
-  // }
-
-  // const sampleOrder = allOrders.success.data[0];
-  // if (sampleOrder?.orderId) {
-  //   const allOrderFills = await finatic.getAllOrderFills({ orderId: sampleOrder.orderId });
-  //   console.log('sampleOrderFill', allOrderFills.success.data[0]);
-
-  //   const allOrderEvents = await finatic.getAllOrderEvents({ orderId: sampleOrder.orderId });
-  //   console.log('sampleOrderEvent', allOrderEvents.success.data[0]);
-  // }
-
   // const allOrderGroups = await finatic.getAllOrderGroups();
-  // console.log('sampleOrderGroup', allOrderGroups.success.data[0]);
 
-  // Trading methods
-  // const placeOrderResult = await finatic.placeOrder({
-  //   broker: 'robinhood', // Required: broker identifier
-  //   accountNumber: oneAccount.accountNumber || oneAccount.accountId, // Required: account number at top level
-  //   order: {
-  //     orderType: 'market',
-  //     assetType: 'equity',
-  //     action: 'buy',
-  //     timeInForce: 'day',
-  //     symbol: 'AAPL',
-  //     orderQty: 1,
-  //   },
-  //   connectionId: oneAccount.connectionId, // Optional
-  // });
-  // console.log('placeOrderResult', placeOrderResult);
+  // Trading methods - ACTIVE for testing
+  // Get an account first (you'll need to uncomment getAllAccounts above or provide account details)
+  // For now, using placeholder values - update these with your actual account details
+  const testAccountNumber = 123456789; // Replace with your account number
+  const testBroker = 'robinhood'; // Replace with your broker
+  const testConnectionId = undefined; // Optional: replace with your connectionId if available
 
+  const placeOrderResult = await finatic.placeOrder({
+    broker: testBroker,
+    accountNumber: testAccountNumber,
+    order: {
+      orderType: 'market',
+      assetType: 'equity',
+      action: 'buy',
+      timeInForce: 'day',
+      symbol: 'AAPL',
+      orderQty: 1,
+    },
+    // connectionId: testConnectionId, // Optional
+  });
+  console.log('placeOrderResult', placeOrderResult);
+
+  // Other trading methods - COMMENTED OUT for now
   // const modifyOrderResult = await finatic.modifyOrder({
-  //   orderId: sampleOrder.orderId,
-  //   broker: 'robinhood', // Required: broker identifier
-  //   accountNumber: oneAccount.accountNumber || oneAccount.accountId, // Required: account number at top level
+  //   orderId: 'order-id',
+  //   broker: testBroker,
+  //   accountNumber: testAccountNumber,
   //   order: {
   //     orderType: 'market',
   //     assetType: 'equity',
@@ -157,7 +138,7 @@ async function main() {
   // console.log('modifyOrderResult', modifyOrderResult);
 
   // const cancelOrderResult = await finatic.cancelOrder({
-  //   orderId: sampleOrder.orderId,
+  //   orderId: 'order-id',
   // });
   // console.log('cancelOrderResult', cancelOrderResult);
 }

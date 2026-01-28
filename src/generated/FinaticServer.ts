@@ -1621,7 +1621,6 @@ export class FinaticServer {
    * @param params.order.timeInForce {string} Time in force for the order
    * @param params.order.symbol {string} Trading symbol
    * @param params.order.orderQty {number} Order quantity
-   * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId place_order_api_beta_brokers_orders_post
    * @category brokers
@@ -1633,21 +1632,6 @@ export class FinaticServer {
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
-   * }
-   * ```
-   * @example
-   * ```typescript-server
-   * // Full example with optional parameters
-   * const result = await finatic.placeOrder({ connectionId: 'example-id' });
-   * 
-   * // Handle response with warnings
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message, result.error.code);
    * }
    * ```
    * @example
@@ -1765,7 +1749,6 @@ export class FinaticServer {
    * @param params.order.timeInForce {string} Time in force for the order
    * @param params.order.symbol {string} Trading symbol
    * @param params.order.orderQty {number} Order quantity
-   * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId modify_order_api_beta_brokers_orders__order_id__patch
    * @category brokers
@@ -1779,21 +1762,6 @@ export class FinaticServer {
    *   console.log('Data:', result.success.data);
    * } else if (result.error) {
    *   console.error('Error:', result.error.message);
-   * }
-   * ```
-   * @example
-   * ```typescript-server
-   * // Full example with optional parameters
-   * const result = await finatic.modifyOrder({ orderId: 'example-id', connectionId: 'example-id' });
-   * 
-   * // Handle response with warnings
-   * if (result.success) {
-   *   console.log('Data:', result.success.data);
-   *   if (result.warning && result.warning.length > 0) {
-   *     console.warn('Warnings:', result.warning);
-   *   }
-   * } else if (result.error) {
-   *   console.error('Error:', result.error.message, result.error.code);
    * }
    * ```
    * @example
