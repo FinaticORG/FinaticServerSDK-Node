@@ -106,6 +106,7 @@ async function main() {
   const testBroker = 'robinhood'; // Replace with your broker
   const testConnectionId = undefined; // Optional: replace with your connectionId if available
 
+  // Place order: top-level params are broker, accountNumber?, order (no body wrapper)
   const placeOrderResult = await finatic.placeOrder({
     broker: testBroker,
     accountNumber: testAccountNumber,
@@ -122,6 +123,7 @@ async function main() {
   console.log('placeOrderResult', placeOrderResult);
 
   // Other trading methods - COMMENTED OUT for now
+  // Modify order: top-level params are orderId, broker, accountNumber?, order
   // const modifyOrderResult = await finatic.modifyOrder({
   //   orderId: 'order-id',
   //   broker: testBroker,
