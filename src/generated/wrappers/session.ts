@@ -19,10 +19,10 @@ import { unwrapAxiosResponse } from '../utils/response-utils';
 import { coerceEnumValue } from '../utils/enum-coercion';
 import { convertToPlainObject } from '../utils/plain-object';
 
-import type { FinaticResponseSessionUserResponse } from '../models';
+import type { FinaticResponseSessionResponseData } from '../models';
+import type { FinaticResponseTokenResponseData } from '../models';
 import type { FinaticapiCoreStandardModelsAbstractResponsesFinaticResponsePortalUrlResponse2 } from '../models';
-import type { FinaticapiCoreStandardModelsAbstractResponsesFinaticResponseSessionResponseData2 } from '../models';
-import type { FinaticapiCoreStandardModelsAbstractResponsesFinaticResponseTokenResponseData2 } from '../models';
+import type { FinaticapiCoreStandardModelsAbstractResponsesFinaticResponseSessionUserResponse2 } from '../models';
 import type { PortalUrlResponse } from '../models';
 import type { SessionResponseData } from '../models';
 import type { SessionStartRequest } from '../models';
