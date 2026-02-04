@@ -1617,6 +1617,7 @@ export class FinaticServer {
    * @param params.order.timeInForce {string} Time in force for the order
    * @param params.order.symbol {string} Trading symbol
    * @param params.order.orderQty {number} Order quantity
+   * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId place_order_api_beta_brokers_orders_post
    * @category brokers
@@ -1628,6 +1629,21 @@ export class FinaticServer {
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
+   * }
+   * ```
+   * @example
+   * ```typescript-server
+   * // Full example with optional parameters
+   * const result = await finatic.placeOrder({ connectionId: 'example-id' });
+   * 
+   * // Handle response with warnings
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message, result.error.code);
    * }
    * ```
    * @example
@@ -1674,12 +1690,14 @@ export class FinaticServer {
    * 
    * Cancel an existing order.
    * 
-   * Cancels an order by its order ID. The broker connection is automatically
-   * resolved from the order record.
+   * Request must include broker and account_number in the body; order_id is in the path.
+   * Connection is resolved by broker and account_number.
    * 
    * Convenience method that delegates to brokers wrapper.
    * 
-   * @param params.orderId {string} Order ID
+   * @param params.orderId {string} Broker-provided order ID to cancel
+   * @param params.broker {string} Broker identifier (robinhood, tasty_trade, ninja_trader)
+   * @param params.accountNumber {number} Account number for the order
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId cancel_order_api_beta_brokers_orders__order_id__delete
    * @category brokers
@@ -1730,21 +1748,22 @@ export class FinaticServer {
    * 
    * Modify an existing order.
    * 
-   * Updates an order's parameters (price, quantity, etc.) by order ID.
-   * The order structure follows the same pattern as placing orders, with common
-   * fields shared across brokers and broker-specific fields available per broker.
+   * Request must include broker and account_number in the body; order_id is in the path.
+   * Connection is resolved by broker and account_number. The order object is a partial update.
    * 
    * Convenience method that delegates to brokers wrapper.
    * 
-   * @param params.orderId {string} Order ID
+   * @param params.orderId {string} Broker-provided order ID to modify
    * @param params.broker {string} Broker identifier (robinhood, tasty_trade, ninja_trader)
    * @param params.accountNumber {number} Account number for the order
-   * @param params.order.orderType {string} Type of order (market, limit, etc.)
-   * @param params.order.assetType {string} Type of asset (equity, equity_option, crypto, forex)
-   * @param params.order.action {string} Order action (buy, sell)
-   * @param params.order.timeInForce {string} Time in force for the order
-   * @param params.order.symbol {string} Trading symbol
-   * @param params.order.orderQty {number} Order quantity
+   * @param params.order.orderQty {number} (optional) Order quantity (optional)
+   * @param params.order.price {number} (optional) Limit price (optional)
+   * @param params.order.stopPrice {number} (optional) Stop price (optional)
+   * @param params.order.time_in_force {string} (optional) Time in force (optional)
+   * @param params.order.orderType {string} (optional) Order type (optional)
+   * @param params.order.assetType {string} (optional) Asset type (optional)
+   * @param params.order.expireTime {string} (optional) Expire time ISO 8601 (optional)
+   * @param params.connectionId {string} (optional) Temporary bypass for testing: specify connection ID directly
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId modify_order_api_beta_brokers_orders__order_id__patch
    * @category brokers
@@ -1758,6 +1777,21 @@ export class FinaticServer {
    *   console.log('Data:', result.success.data);
    * } else if (result.error) {
    *   console.error('Error:', result.error.message);
+   * }
+   * ```
+   * @example
+   * ```typescript-server
+   * // Full example with optional parameters
+   * const result = await finatic.modifyOrder({ orderId: 'example-id', connectionId: 'example-id' });
+   * 
+   * // Handle response with warnings
+   * if (result.success) {
+   *   console.log('Data:', result.success.data);
+   *   if (result.warning && result.warning.length > 0) {
+   *     console.warn('Warnings:', result.warning);
+   *   }
+   * } else if (result.error) {
+   *   console.error('Error:', result.error.message, result.error.code);
    * }
    * ```
    * @example
@@ -1790,7 +1824,6 @@ export class FinaticServer {
    * # Full example with optional parameters
    * result = await finatic.modify_order(
    *            order_id='example',
-            account_number='example',
             connection_id='example'
    * )
    * 
