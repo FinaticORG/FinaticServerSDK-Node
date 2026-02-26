@@ -7,7 +7,7 @@
 
 import { Configuration } from './configuration';
 import { SdkConfig, defaultConfig } from './config';
-import { appendThemeToURL, appendBrokerFilterToURL, appendKindToURL, appendAssetTypesToURL } from './utils/url-utils';
+import { appendThemeToURL, appendBrokerFilterToURL, appendKindToURL, appendAssetTypesToURL, appendStageToURL } from './utils/url-utils';
 import { getLogger, type Logger } from './utils/logger';
 import type { SessionStartRequest } from './models';
 import type { GetCompanyParams } from './wrappers/company';
@@ -299,20 +299,21 @@ export class FinaticServer {
    * @param params.brokers - Optional array of broker IDs to filter
    * @param params.kind - Optional filter by provider type ('broker' or 'exchange')
    * @param params.asset_types - Optional asset types/capabilities to filter (AND logic)
+   * @param params.stage - Optional broker stage filter: array of 'production' | 'beta' | 'alpha' (OR; omit = show all)
    * @param params.email - Optional email address
    * @param params.mode - Optional mode ('light' or 'dark')
    * @returns Portal URL string
    * @example
    * ```typescript-server
-   * const url = await finatic.getPortalUrl({ theme: 'default', brokers: ['broker-1'], kind: 'exchange', asset_types: ['crypto'], email: 'user@example.com', mode: 'dark' });
+   * const url = await finatic.getPortalUrl({ theme: 'default', brokers: ['broker-1'], kind: 'exchange', asset_types: ['crypto'], stage: ['production'], email: 'user@example.com', mode: 'dark' });
    * ```
    * @example
    * ```typescript-client
-   * const url = await finatic.getPortalUrl({ theme: 'default', brokers: ['broker-1'], kind: 'exchange', asset_types: ['crypto'], email: 'user@example.com', mode: 'dark' });
+   * const url = await finatic.getPortalUrl({ theme: 'default', brokers: ['broker-1'], kind: 'exchange', asset_types: ['crypto'], stage: ['production'], email: 'user@example.com', mode: 'dark' });
    * ```
    * @example
    * ```python
-   * url = await finatic.get_portal_url(theme='default', brokers=['broker-1'], kind='exchange', asset_types=['crypto'], email='user@example.com', mode='dark')
+   * url = await finatic.get_portal_url(theme='default', brokers=['broker-1'], kind='exchange', asset_types=['crypto'], stage=['production'], email='user@example.com', mode='dark')
    * ```
    */
   async getPortalUrl(params?: { 
@@ -320,6 +321,7 @@ export class FinaticServer {
     brokers?: string[];
     kind?: 'broker' | 'exchange';
     asset_types?: string[];
+    stage?: ('production' | 'beta' | 'alpha')[];
     email?: string;
     mode?: 'light' | 'dark';
   }): Promise<string> {
@@ -327,7 +329,7 @@ export class FinaticServer {
       throw new Error('Session not initialized. Call startSession() first.');
     }
 
-    const { theme, brokers, kind, asset_types, email, mode } = params || {};
+    const { theme, brokers, kind, asset_types, stage, email, mode } = params || {};
 
     // Get raw portal URL from session wrapper
     const response = await this.session.getPortalUrl();
@@ -368,6 +370,11 @@ export class FinaticServer {
     // Append asset types (capabilities) filter if provided
     if (asset_types && asset_types.length > 0) {
       portalUrl = appendAssetTypesToURL(portalUrl, asset_types);
+    }
+
+    // Append stage filter if provided
+    if (stage && stage.length > 0) {
+      portalUrl = appendStageToURL(portalUrl, stage);
     }
 
     // Append email if provided
