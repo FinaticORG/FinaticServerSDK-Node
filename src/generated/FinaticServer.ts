@@ -155,7 +155,7 @@ export class FinaticServer {
     if (response.error) {
       throw new Error(response.error['message'] || 'Failed to initialize session');
     }
-    return response.success?.data?.one_time_token || '';
+    return (response.success?.data as Record<string, unknown>)?.['one_time_token'] as string | undefined || '';
   }
 
   /**
@@ -223,10 +223,11 @@ export class FinaticServer {
     if (response.error) {
       throw new Error(response.error['message'] || 'Failed to start session');
     }
-    const sessionId = response.success?.data?.session_id || '';
-    const companyId = response.success?.data?.company_id || '';
-    const csrfToken = (response.success?.data as any)?.csrf_token || '';
-    const responseUserId = response.success?.data?.user_id || '';
+    const sessionData = response.success?.data as Record<string, unknown> | undefined;
+    const sessionId = (sessionData?.['session_id'] as string | undefined) || '';
+    const companyId = (sessionData?.['company_id'] as string | undefined) || '';
+    const csrfToken = (sessionData?.['csrf_token'] as string | undefined) || '';
+    const responseUserId = (sessionData?.['user_id'] as string | undefined) || '';
     
     if (sessionId && companyId) {
       this.setSessionContext(sessionId, companyId, csrfToken);
@@ -342,7 +343,7 @@ export class FinaticServer {
       throw new Error('Invalid portal URL response: missing data');
     }
     
-    let portalUrl = response.success.data.portal_url || '';
+    let portalUrl = (response.success?.data as Record<string, unknown>)?.['portal_url'] as string | undefined || '';
     
     // Validate URL before manipulation
     try {
@@ -425,7 +426,7 @@ export class FinaticServer {
     if (response.error) {
       throw new Error(response.error['message'] || 'Failed to get session user');
     }
-    const userId = response.success?.data?.user_id || '';
+    const userId = (response.success?.data as Record<string, unknown>)?.['user_id'] as string | undefined || '';
     // The 'getSessionUser' endpoint currently returns 'SessionUserResponse' which contains 'user_id'.
     // Company context is tracked from 'startSession' and stored on the instance.
     const companyId = this.companyId || '';
