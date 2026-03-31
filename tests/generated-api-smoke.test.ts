@@ -1,0 +1,118 @@
+import { BrokersApi } from '../src/generated/api/brokers-api';
+import { CompanyApi } from '../src/generated/api/company-api';
+import { SessionApi } from '../src/generated/api/session-api';
+
+type ApiCtor = new (...args: any[]) => any;
+
+function createParamsProxy(): Record<string, any> {
+  return new Proxy(
+    {},
+    {
+      get(_target, property) {
+        const propertyName = String(property).toLowerCase();
+
+        // Some generated API paths treat the first/second arg as "options" and spread
+        // options.headers. Provide a real object so spreads/indexing won't fail.
+        if (propertyName === 'headers') {
+          return { 'content-type': 'application/json' };
+        }
+
+        // Ensure required path params are not undefined/null.
+        if (propertyName.includes('id') || propertyName.includes('key') || propertyName.includes('token')) {
+          return 'test-id';
+        }
+
+        if (propertyName.includes('limit') || propertyName.includes('offset')) {
+          return 1;
+        }
+
+        if (propertyName.startsWith('is') || propertyName.startsWith('include')) {
+          return true;
+        }
+
+        return 'value';
+      },
+    },
+  );
+}
+
+function createAxiosLikeClient(): any {
+  return {
+    defaults: { headers: { common: {} } },
+    interceptors: {
+      request: { use: jest.fn() },
+      response: { use: jest.fn() },
+    },
+    request: jest.fn(async () => ({
+      data: {
+        success: { data: [] },
+        error: null,
+        warning: null,
+      },
+    })),
+  };
+}
+
+async function invokeApiMethods(apiCtor: ApiCtor): Promise<number> {
+  const api = new apiCtor(undefined, 'http://localhost', createAxiosLikeClient());
+  const prototype = Object.getPrototypeOf(api) as Record<string, unknown>;
+
+  const prototypeMethodNames = Object.getOwnPropertyNames(prototype).filter(
+    (name) =>
+      name !== 'constructor' &&
+      typeof (api as Record<string, unknown>)[name] === 'function',
+  );
+
+  const ownMethodNames = Object.getOwnPropertyNames(api).filter(
+    (name) =>
+      !name.startsWith('_') && typeof (api as Record<string, unknown>)[name] === 'function',
+  );
+
+  const methodNames = [...new Set([...prototypeMethodNames, ...ownMethodNames])];
+
+  let invokedMethodCount = 0;
+  let errorCount = 0;
+  let firstErrorMethodName: string | null = null;
+  let firstError: unknown = null;
+
+  for (const methodName of methodNames) {
+    const method = (api as Record<string, ((...args: any[]) => any) | undefined>)[methodName];
+    if (typeof method !== 'function') continue;
+
+    const params = createParamsProxy();
+    try {
+      // Preserve this-binding for generated class methods.
+      await method.call(api, params as any, params as any);
+      invokedMethodCount += 1;
+    } catch (e) {
+      errorCount += 1;
+      if (!firstErrorMethodName) {
+        firstErrorMethodName = methodName;
+        firstError = e;
+      }
+    }
+  }
+
+  if (errorCount > 0) {
+    const firstErrorDetails =
+      firstError instanceof Error ? firstError.stack || firstError.message : String(firstError);
+    throw new Error(
+      `Generated API smoke: ${errorCount} methods threw. First failing method: ${firstErrorMethodName}\n${firstErrorDetails}`,
+    );
+  }
+
+  return invokedMethodCount;
+}
+
+describe('Generated API smoke coverage (Node SDK)', () => {
+  it('invokes many generated api methods', async () => {
+    const brokersInvoked = await invokeApiMethods(BrokersApi);
+    const companyInvoked = await invokeApiMethods(CompanyApi);
+    const sessionInvoked = await invokeApiMethods(SessionApi);
+
+    expect(brokersInvoked).toBeGreaterThan(10);
+    expect(companyInvoked).toBeGreaterThan(0);
+    expect(sessionInvoked).toBeGreaterThan(0);
+  });
+});
+
