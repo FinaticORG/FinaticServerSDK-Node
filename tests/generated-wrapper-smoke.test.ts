@@ -1,7 +1,7 @@
-import { BrokersWrapper } from '../src/generated/wrappers/brokers';
-import { CompanyWrapper } from '../src/generated/wrappers/company';
-import { SessionWrapper } from '../src/generated/wrappers/session';
-import { FinaticServer } from '../src/generated/FinaticServer';
+import { BrokersWrapper } from '../src/wrappers/brokers';
+import { CompanyWrapper } from '../src/wrappers/company';
+import { SessionWrapper } from '../src/wrappers/session';
+import { FinaticServer } from '../src/FinaticServerCore';
 
 type WrapperCtor = new (...args: any[]) => any;
 

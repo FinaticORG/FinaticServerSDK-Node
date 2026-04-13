@@ -5,9 +5,9 @@
  * For custom logic, edit src/custom/wrappers/company.ts instead.
  */
 
-import { CompanyApi } from '../api/company-api';
+import { CompanyApi } from '../openapi/api/company-api';
 
-import type { Configuration } from '../configuration';
+import type { Configuration } from '../openapi/configuration';
 import type { SdkConfig } from '../config';
 import { generateRequestId } from '../utils/request-id';
 import { retryApiCall } from '../utils/retry';
@@ -19,8 +19,8 @@ import { unwrapAxiosResponse } from '../utils/response-utils';
 import { coerceEnumValue } from '../utils/enum-coercion';
 import { convertToPlainObject } from '../utils/plain-object';
 
-import type { Accounts } from '../models';
-import type { FinaticResponseAccounts } from '../models';
+import type { Accounts } from '../openapi/models';
+import type { FinaticResponseAccounts } from '../openapi/models';
 
 // Always import PaginatedData since method bodies may reference it (even if unreachable)
 import { PaginatedData } from '../utils/pagination';

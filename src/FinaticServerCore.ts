@@ -5,17 +5,17 @@
  * For custom logic, extend this class or use custom wrappers.
  */
 
-import { Configuration } from './configuration';
+import { Configuration } from './openapi/configuration';
 import { SdkConfig, defaultConfig } from './config';
 import { appendThemeToURL, appendBrokerFilterToURL, appendKindToURL, appendAssetTypesToURL, appendStageToURL } from './utils/url-utils';
 import { getLogger, type Logger } from './utils/logger';
-import type { SessionStartRequest } from './models';
+import type { SessionStartRequest } from './openapi/models';
 import type { GetCompanyParams } from './wrappers/company';
 import type { CancelOrderParams, DisconnectCompanyFromBrokerParams, FinaticResponse, GetAccountsParams, GetBalancesParams, GetBrokerConnectionsParams, GetBrokersParams, GetOrderEventsParams, GetOrderFillsParams, GetOrderGroupsParams, GetOrdersParams, GetPositionLotFillsParams, GetPositionLotsParams, GetPositionsParams, GetTransactionsParams, ModifyOrderParams, PlaceOrderParams } from './wrappers/brokers';
-import type { FDXBrokerOrder, FDXBrokerOrderEvent, FDXBrokerOrderFill, FDXBrokerOrderGroup, FDXBrokerPosition, FDXBrokerPositionLot, FDXBrokerPositionLotFill, FDXBrokerTransaction, LegacyBrokerAccount, LegacyBrokerBalance } from './models';
-import { BrokersApi } from './api/brokers-api';
-import { CompanyApi } from './api/company-api';
-import { SessionApi } from './api/session-api';
+import type { FDXBrokerOrder, FDXBrokerOrderEvent, FDXBrokerOrderFill, FDXBrokerOrderGroup, FDXBrokerPosition, FDXBrokerPositionLot, FDXBrokerPositionLotFill, FDXBrokerTransaction, LegacyBrokerAccount, LegacyBrokerBalance } from './openapi/models';
+import { BrokersApi } from './openapi/api/brokers-api';
+import { CompanyApi } from './openapi/api/company-api';
+import { SessionApi } from './openapi/api/session-api';
 import { BrokersWrapper } from './wrappers/brokers';
 import { CompanyWrapper } from './wrappers/company';
 import { SessionWrapper } from './wrappers/session';

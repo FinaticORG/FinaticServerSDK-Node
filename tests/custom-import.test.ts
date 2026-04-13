@@ -1,4 +1,4 @@
-import { FinaticServer } from '../src/custom/FinaticServer';
+import { FinaticServer } from '../src/FinaticServer';
 
 describe('Custom FinaticServer import', () => {
   it('is the protected subclass with marker', () => {

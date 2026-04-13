@@ -5,10 +5,10 @@
  * For custom logic, edit src/custom/wrappers/brokers.ts instead.
  */
 
-import { BrokersApi } from '../api/brokers-api';
-import type { BrokersApiCancelOrderApiBetaBrokersOrdersOrderIdDeleteRequest, BrokersApiModifyOrderApiBetaBrokersOrdersOrderIdPatchRequest, BrokersApiPlaceOrderApiBetaBrokersOrdersPostRequest } from '../api/brokers-api';
+import { BrokersApi } from '../openapi/api/brokers-api';
+import type { BrokersApiCancelOrderApiBetaBrokersOrdersOrderIdDeleteRequest, BrokersApiModifyOrderApiBetaBrokersOrdersOrderIdPatchRequest, BrokersApiPlaceOrderApiBetaBrokersOrdersPostRequest } from '../openapi/api/brokers-api';
 
-import type { Configuration } from '../configuration';
+import type { Configuration } from '../openapi/configuration';
 import type { SdkConfig } from '../config';
 import { generateRequestId } from '../utils/request-id';
 import { retryApiCall } from '../utils/retry';
@@ -19,40 +19,40 @@ import { applyRequestInterceptors, applyResponseInterceptors, applyErrorIntercep
 import { unwrapAxiosResponse } from '../utils/response-utils';
 import { coerceEnumValue } from '../utils/enum-coercion';
 import { convertToPlainObject } from '../utils/plain-object';
-import { BrokerDataAccountTypeEnum } from '../models';
-import { BrokerDataAssetTypeEnum } from '../models';
-import { BrokerDataOrderSideEnum } from '../models';
-import { BrokerDataPositionStatusEnum } from '../models';
+import { BrokerDataAccountTypeEnum } from '../openapi/models';
+import { BrokerDataAssetTypeEnum } from '../openapi/models';
+import { BrokerDataOrderSideEnum } from '../openapi/models';
+import { BrokerDataPositionStatusEnum } from '../openapi/models';
 
-import type { BrokerInfo } from '../models';
-import type { DisconnectCompanyFromBrokerConnectionResult } from '../models';
-import type { FDXBrokerOrder } from '../models';
-import type { FDXBrokerOrderEvent } from '../models';
-import type { FDXBrokerOrderFill } from '../models';
-import type { FDXBrokerOrderGroup } from '../models';
-import type { FDXBrokerPosition } from '../models';
-import type { FDXBrokerPositionLot } from '../models';
-import type { FDXBrokerPositionLotFill } from '../models';
-import type { FDXBrokerTransaction } from '../models';
-import type { FinaticResponseDisconnectCompanyFromBrokerConnectionResult } from '../models';
-import type { FinaticResponseListBrokerInfo } from '../models';
-import type { FinaticResponseListFDXBrokerOrder } from '../models';
-import type { FinaticResponseListFDXBrokerOrderEvent } from '../models';
-import type { FinaticResponseListFDXBrokerOrderFill } from '../models';
-import type { FinaticResponseListFDXBrokerOrderGroup } from '../models';
-import type { FinaticResponseListFDXBrokerPosition } from '../models';
-import type { FinaticResponseListFDXBrokerPositionLot } from '../models';
-import type { FinaticResponseListFDXBrokerPositionLotFill } from '../models';
-import type { FinaticResponseListFDXBrokerTransaction } from '../models';
-import type { FinaticResponseListLegacyBrokerAccount } from '../models';
-import type { FinaticResponseListLegacyBrokerBalance } from '../models';
-import type { FinaticResponseListUserBrokerConnectionWithPermissions } from '../models';
-import type { FinaticResponseOrderActionResult } from '../models';
-import type { LegacyBrokerAccount } from '../models';
-import type { LegacyBrokerBalance } from '../models';
-import type { NinjaTraderOrderModifyRequest } from '../models';
-import type { OrderActionResult } from '../models';
-import type { UserBrokerConnectionWithPermissions } from '../models';
+import type { BrokerInfo } from '../openapi/models';
+import type { DisconnectCompanyFromBrokerConnectionResult } from '../openapi/models';
+import type { FDXBrokerOrder } from '../openapi/models';
+import type { FDXBrokerOrderEvent } from '../openapi/models';
+import type { FDXBrokerOrderFill } from '../openapi/models';
+import type { FDXBrokerOrderGroup } from '../openapi/models';
+import type { FDXBrokerPosition } from '../openapi/models';
+import type { FDXBrokerPositionLot } from '../openapi/models';
+import type { FDXBrokerPositionLotFill } from '../openapi/models';
+import type { FDXBrokerTransaction } from '../openapi/models';
+import type { FinaticResponseDisconnectCompanyFromBrokerConnectionResult } from '../openapi/models';
+import type { FinaticResponseListBrokerInfo } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerOrder } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerOrderEvent } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerOrderFill } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerOrderGroup } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerPosition } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerPositionLot } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerPositionLotFill } from '../openapi/models';
+import type { FinaticResponseListFDXBrokerTransaction } from '../openapi/models';
+import type { FinaticResponseListLegacyBrokerAccount } from '../openapi/models';
+import type { FinaticResponseListLegacyBrokerBalance } from '../openapi/models';
+import type { FinaticResponseListUserBrokerConnectionWithPermissions } from '../openapi/models';
+import type { FinaticResponseOrderActionResult } from '../openapi/models';
+import type { LegacyBrokerAccount } from '../openapi/models';
+import type { LegacyBrokerBalance } from '../openapi/models';
+import type { NinjaTraderOrderModifyRequest } from '../openapi/models';
+import type { OrderActionResult } from '../openapi/models';
+import type { UserBrokerConnectionWithPermissions } from '../openapi/models';
 
 // Always import PaginatedData since method bodies may reference it (even if unreachable)
 import { PaginatedData } from '../utils/pagination';

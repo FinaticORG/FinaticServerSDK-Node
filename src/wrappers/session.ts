@@ -5,9 +5,9 @@
  * For custom logic, edit src/custom/wrappers/session.ts instead.
  */
 
-import { SessionApi } from '../api/session-api';
+import { SessionApi } from '../openapi/api/session-api';
 
-import type { Configuration } from '../configuration';
+import type { Configuration } from '../openapi/configuration';
 import type { SdkConfig } from '../config';
 import { generateRequestId } from '../utils/request-id';
 import { retryApiCall } from '../utils/retry';
@@ -19,11 +19,11 @@ import { unwrapAxiosResponse } from '../utils/response-utils';
 import { coerceEnumValue } from '../utils/enum-coercion';
 import { convertToPlainObject } from '../utils/plain-object';
 
-import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponsePortalUrlResponse2 } from '../models';
-import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseSessionResponseData2 } from '../models';
-import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseSessionUserResponse2 } from '../models';
-import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseTokenResponseData2 } from '../models';
-import type { SessionStartRequest } from '../models';
+import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponsePortalUrlResponse2 } from '../openapi/models';
+import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseSessionResponseData2 } from '../openapi/models';
+import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseSessionUserResponse2 } from '../openapi/models';
+import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseTokenResponseData2 } from '../openapi/models';
+import type { SessionStartRequest } from '../openapi/models';
 
 // Always import PaginatedData since method bodies may reference it (even if unreachable)
 import { PaginatedData } from '../utils/pagination';
