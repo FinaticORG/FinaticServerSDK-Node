@@ -30,9 +30,9 @@
     "quality:check": "npm run format:check && npm run lint && npm run type:check && npm run build",
     "quality:fix": "npm run format:fix && (npm run lint:fix || true) && npm run build",
     "dev": "yarn build:watch",
-    "demo:dev": "yarn workspace @finatic/server-node-demo dev",
-    "demo:build": "yarn workspace @finatic/server-node-demo build",
-    "demo:start": "yarn workspace @finatic/server-node-demo start"
+    "demo:dev": "yarn --cwd ../../../demoapps/server-node/demo-app dev",
+    "demo:build": "yarn --cwd ../../../demoapps/server-node/demo-app build",
+    "demo:start": "yarn --cwd ../../../demoapps/server-node/demo-app start"
   },
   "keywords": [
     "finatic",
@@ -103,8 +103,5 @@
     "url": "https://github.com/FinaticORG/FinaticServerSDK-Node/issues"
   },
   "homepage": "https://github.com/FinaticORG/FinaticServerSDK-Node#readme",
-  "packageManager": "yarn@4.9.4+sha512.7b1cb0b62abba6a537b3a2ce00811a843bea02bcf53138581a6ae5b1bf563f734872bd47de49ce32a9ca9dcaff995aa789577ffb16811da7c603dcf69e73750b",
-  "workspaces": [
-    "demo-app"
-  ]
+  "packageManager": "yarn@4.9.4+sha512.7b1cb0b62abba6a537b3a2ce00811a843bea02bcf53138581a6ae5b1bf563f734872bd47de49ce32a9ca9dcaff995aa789577ffb16811da7c603dcf69e73750b"
 }
