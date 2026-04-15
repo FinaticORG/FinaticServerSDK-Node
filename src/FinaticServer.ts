@@ -5,7 +5,7 @@
  * on the old src/custom folder structure.
  */
 
-import { FinaticServer as GeneratedFinaticServer } from "./FinaticServerCore";
+import { FinaticServer as GeneratedFinaticServer } from './FinaticServerCore';
 
 export class FinaticServer extends GeneratedFinaticServer {
   // Marker to verify hand-authored class is being used

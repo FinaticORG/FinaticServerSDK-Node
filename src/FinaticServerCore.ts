@@ -1,18 +1,53 @@
 /**
  * Main client class for Finatic Server SDK (Node.js).
- * 
+ *
  * This file is regenerated on each run - do not edit directly.
  * For custom logic, extend this class or use custom wrappers.
  */
 
 import { Configuration } from './openapi/configuration';
 import { SdkConfig, defaultConfig } from './config';
-import { appendThemeToURL, appendBrokerFilterToURL, appendKindToURL, appendAssetTypesToURL, appendStageToURL } from './utils/url-utils';
+import {
+  appendThemeToURL,
+  appendBrokerFilterToURL,
+  appendKindToURL,
+  appendAssetTypesToURL,
+  appendStageToURL,
+} from './utils/url-utils';
 import { getLogger, type Logger } from './utils/logger';
 import type { SessionStartRequest } from './openapi/models';
 import type { GetCompanyParams } from './wrappers/company';
-import type { CancelOrderParams, DisconnectCompanyFromBrokerParams, FinaticResponse, GetAccountsParams, GetBalancesParams, GetBrokerConnectionsParams, GetBrokersParams, GetOrderEventsParams, GetOrderFillsParams, GetOrderGroupsParams, GetOrdersParams, GetPositionLotFillsParams, GetPositionLotsParams, GetPositionsParams, GetTransactionsParams, ModifyOrderParams, PlaceOrderParams } from './wrappers/brokers';
-import type { FDXBrokerOrder, FDXBrokerOrderEvent, FDXBrokerOrderFill, FDXBrokerOrderGroup, FDXBrokerPosition, FDXBrokerPositionLot, FDXBrokerPositionLotFill, FDXBrokerTransaction, LegacyBrokerAccount, LegacyBrokerBalance } from './openapi/models';
+import type {
+  CancelOrderParams,
+  DisconnectCompanyFromBrokerParams,
+  FinaticResponse,
+  GetAccountsParams,
+  GetBalancesParams,
+  GetBrokerConnectionsParams,
+  GetBrokersParams,
+  GetOrderEventsParams,
+  GetOrderFillsParams,
+  GetOrderGroupsParams,
+  GetOrdersParams,
+  GetPositionLotFillsParams,
+  GetPositionLotsParams,
+  GetPositionsParams,
+  GetTransactionsParams,
+  ModifyOrderParams,
+  PlaceOrderParams,
+} from './wrappers/brokers';
+import type {
+  FDXBrokerOrder,
+  FDXBrokerOrderEvent,
+  FDXBrokerOrderFill,
+  FDXBrokerOrderGroup,
+  FDXBrokerPosition,
+  FDXBrokerPositionLot,
+  FDXBrokerPositionLotFill,
+  FDXBrokerTransaction,
+  LegacyBrokerAccount,
+  LegacyBrokerBalance,
+} from './openapi/models';
 import { BrokersApi } from './openapi/api/brokers-api';
 import { CompanyApi } from './openapi/api/company-api';
 import { SessionApi } from './openapi/api/session-api';
@@ -58,10 +93,10 @@ export class FinaticServer {
   /**
    * Static initialization method - creates instance and starts session.
    * This is the recommended way to initialize the Server SDK.
-   * 
+   *
    * @methodId init_server_sdk
    * @category session
-   * 
+   *
    * @example
    * ```typescript-server
    * const finatic = await FinaticServer.init('your-api-key', 'optional-user-id', {
@@ -71,13 +106,13 @@ export class FinaticServer {
    * // Session is already started, ready to use
    * const orders = await finatic.getAllOrders();
    * ```
-   * 
+   *
    * @example
    * ```typescript-server
    * // Minimal example with just API key
    * const finatic = await FinaticServer.init('your-api-key');
    * ```
-   * 
+   *
    * @example
    * ```python
    * client = await FinaticServer.init(
@@ -88,7 +123,7 @@ export class FinaticServer {
    * # Session is already started, ready to use
    * orders = await client.get_all_orders()
    * ```
-   * 
+   *
    * @param apiKey - Company API key (required)
    * @param userId - Optional user ID for direct authentication
    * @param sdkConfig - Optional SDK configuration overrides (includes baseUrl)
@@ -101,38 +136,42 @@ export class FinaticServer {
   ): Promise<FinaticServer> {
     // Create instance (baseUrl is extracted from sdkConfig in constructor)
     const instance = new FinaticServer(apiKey, sdkConfig);
-    
+
     // Start session automatically using the instance's startSession method
     // This will use the API key from constructor and get token internally
     // Pass userId to startSession if provided
     try {
       const sessionResult = await instance.startSession(userId ? { userId } : undefined);
-      
+
       // Handle union return type: can be { success, session_id, company_id, error } or { session_id, company_id }
       if ('success' in sessionResult && !sessionResult.success) {
         throw new Error(
-          sessionResult.error || 'Session initialization failed. Please check that the API endpoint returned a valid session response and ensure the API key is valid.'
+          sessionResult.error ||
+            'Session initialization failed. Please check that the API endpoint returned a valid session response and ensure the API key is valid.'
         );
       }
-      
+
       // Verify session was initialized correctly
       const sessionId = sessionResult.session_id || instance.getSessionId();
       if (!sessionId) {
         throw new Error(
           'Session initialization failed: startSession() did not return a session_id. ' +
-          'Please check that the API endpoint returned a valid session response.'
+            'Please check that the API endpoint returned a valid session response.'
         );
       }
-      
+
       return instance;
     } catch (error) {
       // Re-throw with more context if it's a session initialization error
       if (error instanceof Error) {
-        if (error.message.includes('Session not initialized') || error.message.includes('session_id')) {
+        if (
+          error.message.includes('Session not initialized') ||
+          error.message.includes('session_id')
+        ) {
           throw new Error(
             `Failed to initialize Finatic session: ${error.message}. ` +
-            'This may indicate that startSession() was called but did not successfully create a session. ' +
-            'Please check the API response and ensure the API key is valid.'
+              'This may indicate that startSession() was called but did not successfully create a session. ' +
+              'Please check the API response and ensure the API key is valid.'
           );
         }
       }
@@ -155,15 +194,19 @@ export class FinaticServer {
     if (response.error) {
       throw new Error(response.error['message'] || 'Failed to initialize session');
     }
-    return (response.success?.data as Record<string, unknown>)?.['one_time_token'] as string | undefined || '';
+    return (
+      ((response.success?.data as Record<string, unknown>)?.['one_time_token'] as
+        | string
+        | undefined) || ''
+    );
   }
 
   /**
    * Get a one-time token from an API key.
-   * 
+   *
    * This method only retrieves the token and returns it - it does NOT start a session
    * or set any session context. Useful for generating tokens to pass to clients.
-   * 
+   *
    * @methodId init_session_api_v1_session_init_post
    * @category session
    * @param apiKey - Company API key (uses instance API key if not provided)
@@ -191,10 +234,10 @@ export class FinaticServer {
 
   /**
    * Start a session.
-   * 
+   *
    * If oneTimeToken is provided, uses it directly.
    * If not provided, gets a one-time token using the API key from constructor, then starts session.
-   * 
+   *
    * @methodId start_session_api_v1_session_start_post
    * @category session
    * @param params - Optional parameters object
@@ -214,34 +257,46 @@ export class FinaticServer {
    * result = await finatic.start_session(one_time_token=one_time_token, user_id=user_id)
    * ```
    */
-  async startSession(params?: { oneTimeToken?: string; userId?: string }): Promise<{ success: boolean; session_id: string | null; company_id: string | null; error: string | null } | { session_id: string; company_id: string }> {
+  async startSession(params?: { oneTimeToken?: string; userId?: string }): Promise<
+    | {
+        success: boolean;
+        session_id: string | null;
+        company_id: string | null;
+        error: string | null;
+      }
+    | { session_id: string; company_id: string }
+  > {
     const { oneTimeToken, userId: paramUserId } = params || {};
     // If token provided, use it directly
     if (oneTimeToken) {
-    const requestBody: SessionStartRequest = paramUserId !== undefined ? { user_id: paramUserId } : {};
-    const response = await this.session.startSession({ OneTimeToken: oneTimeToken, body: requestBody });
-    if (response.error) {
-      throw new Error(response.error['message'] || 'Failed to start session');
+      const requestBody: SessionStartRequest =
+        paramUserId !== undefined ? { user_id: paramUserId } : {};
+      const response = await this.session.startSession({
+        OneTimeToken: oneTimeToken,
+        body: requestBody,
+      });
+      if (response.error) {
+        throw new Error(response.error['message'] || 'Failed to start session');
+      }
+      const sessionData = response.success?.data as Record<string, unknown> | undefined;
+      const sessionId = (sessionData?.['session_id'] as string | undefined) || '';
+      const companyId = (sessionData?.['company_id'] as string | undefined) || '';
+      const csrfToken = (sessionData?.['csrf_token'] as string | undefined) || '';
+      const responseUserId = (sessionData?.['user_id'] as string | undefined) || '';
+
+      if (sessionId && companyId) {
+        this.setSessionContext(sessionId, companyId, csrfToken);
+      }
+
+      // Store userId if present in response (for getUserId() and isAuthed())
+      // Use userId from response if available, otherwise use the parameter userId
+      const finalUserId = responseUserId || paramUserId;
+      if (finalUserId) {
+        this.userId = finalUserId;
+      }
+
+      return { session_id: sessionId, company_id: companyId };
     }
-    const sessionData = response.success?.data as Record<string, unknown> | undefined;
-    const sessionId = (sessionData?.['session_id'] as string | undefined) || '';
-    const companyId = (sessionData?.['company_id'] as string | undefined) || '';
-    const csrfToken = (sessionData?.['csrf_token'] as string | undefined) || '';
-    const responseUserId = (sessionData?.['user_id'] as string | undefined) || '';
-    
-    if (sessionId && companyId) {
-      this.setSessionContext(sessionId, companyId, csrfToken);
-    }
-    
-    // Store userId if present in response (for getUserId() and isAuthed())
-    // Use userId from response if available, otherwise use the parameter userId
-    const finalUserId = responseUserId || paramUserId;
-    if (finalUserId) {
-      this.userId = finalUserId;
-    }
-    
-    return { session_id: sessionId, company_id: companyId };
-  }
 
     // No token provided - get one using API key
     try {
@@ -256,7 +311,7 @@ export class FinaticServer {
 
       // Step 1: Get one-time token
       const oneTimeToken = await this._initSession(this.apiKey);
-      
+
       if (!oneTimeToken || typeof oneTimeToken !== 'string') {
         return {
           success: false,
@@ -267,8 +322,11 @@ export class FinaticServer {
       }
 
       // Step 2: Start session with the token
-      const sessionResult = await this.startSession({ oneTimeToken, ...(paramUserId !== undefined ? { userId: paramUserId } : {}) });
-      
+      const sessionResult = await this.startSession({
+        oneTimeToken,
+        ...(paramUserId !== undefined ? { userId: paramUserId } : {}),
+      });
+
       const sessionId = sessionResult.session_id || null;
       const companyId = sessionResult.company_id || null;
 
@@ -292,7 +350,7 @@ export class FinaticServer {
    * Get portal URL with optional theme and broker filters.
    * This is where URL manipulation happens (not in session wrapper).
    * Returns the URL - app can use it as needed.
-   * 
+   *
    * @methodId get_portal_url_api_v1_session_portal_get
    * @category session
    * @param params - Optional parameters object
@@ -317,7 +375,7 @@ export class FinaticServer {
    * url = await finatic.get_portal_url(theme='default', brokers=['broker-1'], kind='exchange', asset_types=['crypto'], stage=['production'], email='user@example.com', mode='dark')
    * ```
    */
-  async getPortalUrl(params?: { 
+  async getPortalUrl(params?: {
     theme?: string | { preset?: string; custom?: Record<string, unknown> };
     brokers?: string[];
     kind?: 'broker' | 'exchange';
@@ -337,14 +395,16 @@ export class FinaticServer {
     if (response.error) {
       throw new Error(response.error['message'] || 'Failed to get portal URL');
     }
-    
+
     // Validate response structure
     if (!response.success?.data) {
       throw new Error('Invalid portal URL response: missing data');
     }
-    
-    let portalUrl = (response.success?.data as Record<string, unknown>)?.['portal_url'] as string | undefined || '';
-    
+
+    let portalUrl =
+      ((response.success?.data as Record<string, unknown>)?.['portal_url'] as string | undefined) ||
+      '';
+
     // Validate URL before manipulation
     try {
       new URL(portalUrl);
@@ -400,7 +460,7 @@ export class FinaticServer {
 
   /**
    * Get session user information after portal authentication.
-   * 
+   *
    * @methodId get_session_user_api_v1_session__session_id__user_get
    * @category session
    * @returns Object with user_id and company_id
@@ -421,21 +481,23 @@ export class FinaticServer {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call startSession() first.');
     }
-    
+
     const response = await this.session.getSessionUser({ sessionId: this.sessionId! });
     if (response.error) {
       throw new Error(response.error['message'] || 'Failed to get session user');
     }
-    const userId = (response.success?.data as Record<string, unknown>)?.['user_id'] as string | undefined || '';
+    const userId =
+      ((response.success?.data as Record<string, unknown>)?.['user_id'] as string | undefined) ||
+      '';
     // The 'getSessionUser' endpoint currently returns 'SessionUserResponse' which contains 'user_id'.
     // Company context is tracked from 'startSession' and stored on the instance.
     const companyId = this.companyId || '';
-    
+
     // Store userId for getUserId() method
     if (userId) {
       this.userId = userId;
     }
-    
+
     return {
       user_id: userId,
       company_id: companyId,
@@ -449,7 +511,7 @@ export class FinaticServer {
     this.sessionId = sessionId;
     this.companyId = companyId;
     this.csrfToken = csrfToken;
-    
+
     // Update all wrappers with session context
     this.brokers.setSessionContext(sessionId, companyId, csrfToken);
     this.company.setSessionContext(sessionId, companyId, csrfToken);
@@ -472,7 +534,7 @@ export class FinaticServer {
 
   /**
    * Get current user ID (set after portal authentication).
-   * 
+   *
    * @methodId get_user_id_helper
    * @category session
    * @returns Current user ID or undefined if not authenticated
@@ -495,7 +557,7 @@ export class FinaticServer {
 
   /**
    * Check if user is authenticated (has userId).
-   * 
+   *
    * @methodId is_authed_helper
    * @category session
    * @returns True if user is authenticated, false otherwise
@@ -516,14 +578,13 @@ export class FinaticServer {
     return !!this.userId;
   }
 
-
   /**
    * Get Company
-   * 
+   *
    * Get public company details by ID (no user check, no sensitive data).
-   * 
+   *
    * Convenience method that delegates to company wrapper.
-   * 
+   *
    * @param params.companyId {string} Company ID
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId get_company_api_beta_company__company_id__get
@@ -532,7 +593,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Minimal example with required parameters only
    * const result = await finatic.getCompany({ companyId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -544,7 +605,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Minimal example with required parameters only
    * const result = await finatic.getCompany({ companyId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -558,7 +619,7 @@ export class FinaticServer {
    * result = await finatic.get_company(
    *            company_id='example'
    * )
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Data:', result.success['data'])
@@ -566,7 +627,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getCompany(params: GetCompanyParams): Promise<Awaited<ReturnType<typeof this.company.getCompany>>> {
+  async getCompany(
+    params: GetCompanyParams
+  ): Promise<Awaited<ReturnType<typeof this.company.getCompany>>> {
     return await this.company.getCompany(params);
   }
 
@@ -654,7 +717,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getBalances(params?: GetBalancesParams): Promise<Awaited<ReturnType<typeof this.brokers.getBalances>>> {
+  async getBalances(
+    params?: GetBalancesParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getBalances>>> {
     return await this.brokers.getBalances(params);
   }
 
@@ -740,25 +805,27 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getAccounts(params?: GetAccountsParams): Promise<Awaited<ReturnType<typeof this.brokers.getAccounts>>> {
+  async getAccounts(
+    params?: GetAccountsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getAccounts>>> {
     return await this.brokers.getAccounts(params);
   }
 
   /**
    * Get Brokers
-   * 
+   *
    * Get all available brokers.
-   * 
+   *
    * This is a fast operation that returns a cached list of available brokers.
    * The list is loaded once at startup and never changes during runtime.
-   * 
+   *
    * Returns
    * -------
    * FinaticResponse[list[BrokerInfo]]
    *     list of available brokers with their metadata.
-   * 
+   *
    * Convenience method that delegates to brokers wrapper.
-   * 
+   *
    * @param params No parameters required for this method
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId get_brokers_api_beta_brokers__get
@@ -767,7 +834,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Example with no parameters
    * const result = await finatic.getBrokers();
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -777,7 +844,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Example with no parameters
    * const result = await finatic.getBrokers();
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -787,7 +854,7 @@ export class FinaticServer {
    * ```python
    * # Example with no parameters
    * result = await finatic.get_brokers()
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Data:', result.success['data'])
@@ -799,15 +866,15 @@ export class FinaticServer {
 
   /**
    * List Broker Connections
-   * 
+   *
    * List all broker connections for the current user with permissions.
-   * 
+   *
    * This endpoint is accessible from the portal and uses session-only authentication.
    * Returns connections that the user has any permissions for, including the current
    * company's permissions (read/write) for each connection.
-   * 
+   *
    * Convenience method that delegates to brokers wrapper.
-   * 
+   *
    * @param params No parameters required for this method
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId list_broker_connections_api_beta_brokers_connections_get
@@ -816,7 +883,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Example with no parameters
    * const result = await finatic.getBrokerConnections();
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -826,7 +893,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Example with no parameters
    * const result = await finatic.getBrokerConnections();
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -836,26 +903,28 @@ export class FinaticServer {
    * ```python
    * # Example with no parameters
    * result = await finatic.get_broker_connections()
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Data:', result.success['data'])
    * ```
    */
-  async getBrokerConnections(params?: {}): Promise<Awaited<ReturnType<typeof this.brokers.getBrokerConnections>>> {
+  async getBrokerConnections(params?: {}): Promise<
+    Awaited<ReturnType<typeof this.brokers.getBrokerConnections>>
+  > {
     return await this.brokers.getBrokerConnections();
   }
 
   /**
    * Disconnect Company From Broker
-   * 
+   *
    * Remove a company's access to a broker connection.
-   * 
+   *
    * If the company is the only one with access, the entire connection is deleted.
    * If other companies have access, only the company's access is removed.
-   * 
+   *
    * Convenience method that delegates to brokers wrapper.
-   * 
+   *
    * @param params.connectionId {string} Connection ID
    * @returns FinaticResponse with success, error, and warning fields
    * @methodId disconnect_company_from_broker_api_beta_brokers_disconnect_company__connection_id__delete
@@ -864,7 +933,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Minimal example with required parameters only
    * const result = await finatic.disconnectCompanyFromBroker({ connectionId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -876,7 +945,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Minimal example with required parameters only
    * const result = await finatic.disconnectCompanyFromBroker({ connectionId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -890,7 +959,7 @@ export class FinaticServer {
    * result = await finatic.disconnect_company_from_broker(
    *            connection_id='example'
    * )
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Data:', result.success['data'])
@@ -898,7 +967,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async disconnectCompanyFromBroker(params: DisconnectCompanyFromBrokerParams): Promise<Awaited<ReturnType<typeof this.brokers.disconnectCompanyFromBroker>>> {
+  async disconnectCompanyFromBroker(
+    params: DisconnectCompanyFromBrokerParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.disconnectCompanyFromBroker>>> {
     return await this.brokers.disconnectCompanyFromBroker(params);
   }
 
@@ -989,7 +1060,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getOrders(params?: GetOrdersParams): Promise<Awaited<ReturnType<typeof this.brokers.getOrders>>> {
+  async getOrders(
+    params?: GetOrdersParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getOrders>>> {
     return await this.brokers.getOrders(params);
   }
 
@@ -1080,7 +1153,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getPositions(params?: GetPositionsParams): Promise<Awaited<ReturnType<typeof this.brokers.getPositions>>> {
+  async getPositions(
+    params?: GetPositionsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getPositions>>> {
     return await this.brokers.getPositions(params);
   }
 
@@ -1169,7 +1244,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getTransactions(params?: GetTransactionsParams): Promise<Awaited<ReturnType<typeof this.brokers.getTransactions>>> {
+  async getTransactions(
+    params?: GetTransactionsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getTransactions>>> {
     return await this.brokers.getTransactions(params);
   }
 
@@ -1261,7 +1338,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getOrderFills(params: GetOrderFillsParams): Promise<Awaited<ReturnType<typeof this.brokers.getOrderFills>>> {
+  async getOrderFills(
+    params: GetOrderFillsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getOrderFills>>> {
     return await this.brokers.getOrderFills(params);
   }
 
@@ -1353,7 +1432,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getOrderEvents(params: GetOrderEventsParams): Promise<Awaited<ReturnType<typeof this.brokers.getOrderEvents>>> {
+  async getOrderEvents(
+    params: GetOrderEventsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getOrderEvents>>> {
     return await this.brokers.getOrderEvents(params);
   }
 
@@ -1438,7 +1519,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getOrderGroups(params?: GetOrderGroupsParams): Promise<Awaited<ReturnType<typeof this.brokers.getOrderGroups>>> {
+  async getOrderGroups(
+    params?: GetOrderGroupsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getOrderGroups>>> {
     return await this.brokers.getOrderGroups(params);
   }
 
@@ -1524,7 +1607,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getPositionLots(params?: GetPositionLotsParams): Promise<Awaited<ReturnType<typeof this.brokers.getPositionLots>>> {
+  async getPositionLots(
+    params?: GetPositionLotsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getPositionLots>>> {
     return await this.brokers.getPositionLots(params);
   }
 
@@ -1615,22 +1700,24 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async getPositionLotFills(params: GetPositionLotFillsParams): Promise<Awaited<ReturnType<typeof this.brokers.getPositionLotFills>>> {
+  async getPositionLotFills(
+    params: GetPositionLotFillsParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.getPositionLotFills>>> {
     return await this.brokers.getPositionLotFills(params);
   }
 
   /**
    * Place Order
-   * 
+   *
    * Place a new order through the specified broker.
-   * 
+   *
    * Creates an order using the broker connection associated with your account.
    * Request uses top-level broker, account_number, and order. The order object
    * includes common fields (symbol, quantity, order type, etc.) shared across
    * brokers plus broker-specific fields—see the broker-specific tabs for details.
-   * 
+   *
    * Convenience method that delegates to brokers wrapper.
-   * 
+   *
    * @param params.broker {string} Broker identifier (robinhood, tasty_trade, ninja_trader)
    * @param params.accountNumber {number} Account number for the order
    * @param params.order.orderType {string} Type of order (market, limit, etc.)
@@ -1647,7 +1734,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Example with no parameters
    * const result = await finatic.placeOrder();
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -1657,7 +1744,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Full example with optional parameters
    * const result = await finatic.placeOrder({ connectionId: 'example-id' });
-   * 
+   *
    * // Handle response with warnings
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -1672,7 +1759,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Example with no parameters
    * const result = await finatic.placeOrder();
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -1682,7 +1769,7 @@ export class FinaticServer {
    * ```python
    * # Example with no parameters
    * result = await finatic.place_order()
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Data:', result.success['data'])
@@ -1693,7 +1780,7 @@ export class FinaticServer {
    * result = await finatic.place_order(
    *            connection_id='example'
    * )
-   * 
+   *
    * # Handle response with warnings
    * if result.success:
    *     print('Data:', result.success['data'])
@@ -1703,20 +1790,22 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async placeOrder(params: PlaceOrderParams): Promise<Awaited<ReturnType<typeof this.brokers.placeOrder>>> {
+  async placeOrder(
+    params: PlaceOrderParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.placeOrder>>> {
     return await this.brokers.placeOrder(params);
   }
 
   /**
    * Cancel Order
-   * 
+   *
    * Cancel an existing order.
-   * 
+   *
    * Request must include broker and account_number in the body; order_id is in the path.
    * Connection is resolved by broker and account_number.
-   * 
+   *
    * Convenience method that delegates to brokers wrapper.
-   * 
+   *
    * @param params.orderId {string} Broker-provided order ID to cancel
    * @param params.broker {string} Broker identifier (robinhood, tasty_trade, ninja_trader)
    * @param params.accountNumber {number} Account number for the order
@@ -1727,7 +1816,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Minimal example with required parameters only
    * const result = await finatic.cancelOrder({ orderId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -1739,7 +1828,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Minimal example with required parameters only
    * const result = await finatic.cancelOrder({ orderId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Data:', result.success.data);
@@ -1753,7 +1842,7 @@ export class FinaticServer {
    * result = await finatic.cancel_order(
    *            order_id='example'
    * )
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Data:', result.success['data'])
@@ -1761,7 +1850,9 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async cancelOrder(params: CancelOrderParams): Promise<Awaited<ReturnType<typeof this.brokers.cancelOrder>>> {
+  async cancelOrder(
+    params: CancelOrderParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.cancelOrder>>> {
     return await this.brokers.cancelOrder(params);
   }
 
@@ -1858,10 +1949,11 @@ export class FinaticServer {
    *     print('Error:', result.error['message'], result.error['code'])
    * ```
    */
-  async modifyOrder(params: ModifyOrderParams): Promise<Awaited<ReturnType<typeof this.brokers.modifyOrder>>> {
+  async modifyOrder(
+    params: ModifyOrderParams
+  ): Promise<Awaited<ReturnType<typeof this.brokers.modifyOrder>>> {
     return await this.brokers.modifyOrder(params);
   }
-
 
   /**
    * Get all Balances across all pages.
@@ -1923,42 +2015,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllBalances(params?: Partial<GetBalancesParams>): Promise<FinaticResponse<LegacyBrokerBalance[]>> {
+  async getAllBalances(
+    params?: Partial<GetBalancesParams>
+  ): Promise<FinaticResponse<LegacyBrokerBalance[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetBalancesParams = (params || {}) as GetBalancesParams;
     const allData: LegacyBrokerBalance[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getBalances({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -1970,7 +2067,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2040,42 +2137,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllAccounts(params?: Partial<GetAccountsParams>): Promise<FinaticResponse<LegacyBrokerAccount[]>> {
+  async getAllAccounts(
+    params?: Partial<GetAccountsParams>
+  ): Promise<FinaticResponse<LegacyBrokerAccount[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetAccountsParams = (params || {}) as GetAccountsParams;
     const allData: LegacyBrokerAccount[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getAccounts({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2087,7 +2189,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2157,42 +2259,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllOrders(params?: Partial<GetOrdersParams>): Promise<FinaticResponse<FDXBrokerOrder[]>> {
+  async getAllOrders(
+    params?: Partial<GetOrdersParams>
+  ): Promise<FinaticResponse<FDXBrokerOrder[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetOrdersParams = (params || {}) as GetOrdersParams;
     const allData: FDXBrokerOrder[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getOrders({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2204,7 +2311,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2274,42 +2381,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllPositions(params?: Partial<GetPositionsParams>): Promise<FinaticResponse<FDXBrokerPosition[]>> {
+  async getAllPositions(
+    params?: Partial<GetPositionsParams>
+  ): Promise<FinaticResponse<FDXBrokerPosition[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetPositionsParams = (params || {}) as GetPositionsParams;
     const allData: FDXBrokerPosition[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getPositions({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2321,7 +2433,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2391,42 +2503,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllTransactions(params?: Partial<GetTransactionsParams>): Promise<FinaticResponse<FDXBrokerTransaction[]>> {
+  async getAllTransactions(
+    params?: Partial<GetTransactionsParams>
+  ): Promise<FinaticResponse<FDXBrokerTransaction[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetTransactionsParams = (params || {}) as GetTransactionsParams;
     const allData: FDXBrokerTransaction[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getTransactions({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2438,7 +2555,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2507,42 +2624,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllOrderFills(params?: Partial<GetOrderFillsParams>): Promise<FinaticResponse<FDXBrokerOrderFill[]>> {
+  async getAllOrderFills(
+    params?: Partial<GetOrderFillsParams>
+  ): Promise<FinaticResponse<FDXBrokerOrderFill[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetOrderFillsParams = (params || {}) as GetOrderFillsParams;
     const allData: FDXBrokerOrderFill[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getOrderFills({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2554,7 +2676,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2623,42 +2745,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllOrderEvents(params?: Partial<GetOrderEventsParams>): Promise<FinaticResponse<FDXBrokerOrderEvent[]>> {
+  async getAllOrderEvents(
+    params?: Partial<GetOrderEventsParams>
+  ): Promise<FinaticResponse<FDXBrokerOrderEvent[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetOrderEventsParams = (params || {}) as GetOrderEventsParams;
     const allData: FDXBrokerOrderEvent[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getOrderEvents({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2670,7 +2797,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2740,42 +2867,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllOrderGroups(params?: Partial<GetOrderGroupsParams>): Promise<FinaticResponse<FDXBrokerOrderGroup[]>> {
+  async getAllOrderGroups(
+    params?: Partial<GetOrderGroupsParams>
+  ): Promise<FinaticResponse<FDXBrokerOrderGroup[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetOrderGroupsParams = (params || {}) as GetOrderGroupsParams;
     const allData: FDXBrokerOrderGroup[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getOrderGroups({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2787,7 +2919,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2857,42 +2989,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllPositionLots(params?: Partial<GetPositionLotsParams>): Promise<FinaticResponse<FDXBrokerPositionLot[]>> {
+  async getAllPositionLots(
+    params?: Partial<GetPositionLotsParams>
+  ): Promise<FinaticResponse<FDXBrokerPositionLot[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetPositionLotsParams = (params || {}) as GetPositionLotsParams;
     const allData: FDXBrokerPositionLot[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getPositionLots({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -2904,7 +3041,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
@@ -2917,10 +3054,10 @@ export class FinaticServer {
   /**
    * Get all PositionLotFills across all pages.
    * Auto-generated from paginated endpoint.
-   * 
+   *
    * This method automatically paginates through all pages and returns all items in a single response.
    * It uses the underlying getPositionLotFills method with internal pagination handling.
-   * 
+   *
    * @param params - Optional parameters object. Only include the fields you want to filter by.
    *                 Example: getAllPositionLotFills({ accountId: "123", symbol: "AAPL" })
    * @returns FinaticResponse with success, error, and warning fields containing array of all items
@@ -2930,7 +3067,7 @@ export class FinaticServer {
    * ```typescript-server
    * // Get all items with optional filters
    * const result = await finatic.getAllPositionLotFills({ connectionId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Total items:', result.success.data.length);
@@ -2945,7 +3082,7 @@ export class FinaticServer {
    * ```typescript-client
    * // Get all items with optional filters
    * const result = await finatic.getAllPositionLotFills({ connectionId: 'example-id' });
-   * 
+   *
    * // Access the response data
    * if (result.success) {
    *   console.log('Total items:', result.success.data.length);
@@ -2962,7 +3099,7 @@ export class FinaticServer {
    * result = await finatic.get_all_position_lot_fills(
    *            connection_id='example'
    * )
-   * 
+   *
    * # Access the response data
    * if result.success:
    *     print('Total items:', len(result.success['data']))
@@ -2972,42 +3109,47 @@ export class FinaticServer {
    *     print('Error:', result.error['message'])
    * ```
    */
-  async getAllPositionLotFills(params?: Partial<GetPositionLotFillsParams>): Promise<FinaticResponse<FDXBrokerPositionLotFill[]>> {
+  async getAllPositionLotFills(
+    params?: Partial<GetPositionLotFillsParams>
+  ): Promise<FinaticResponse<FDXBrokerPositionLotFill[]>> {
     // Use provided params or empty object (excluding limit and offset which are handled internally)
     const filterParams: GetPositionLotFillsParams = (params || {}) as GetPositionLotFillsParams;
     const allData: FDXBrokerPositionLotFill[] = [];
     let offset = 0;
     const limit = 1000;
-    let lastError: { [key: string]: any; } | null = null;
-    let warnings: Array<{ [key: string]: any; }> = [];
-    
+    let lastError: { [key: string]: any } | null = null;
+    let warnings: Array<{ [key: string]: any }> = [];
+
     while (true) {
       const response = await this.brokers.getPositionLotFills({ ...filterParams, limit, offset });
-      
+
       // Collect warnings from each page
       if (response.warning && Array.isArray(response.warning)) {
         warnings.push(...response.warning);
       }
-      
+
       if (response.error) {
         lastError = response.error;
         break;
       }
-      
+
       const result = response.success?.data || [];
       // Extract items from PaginatedData if it's a PaginatedData object, otherwise use as-is
       // PaginatedData has array-like behavior but we extract items for getAll* methods
-      const items = result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
-        ? result.items
-        : (Array.isArray(result) ? result : [result]);
-      
+      const items =
+        result && typeof result === 'object' && 'items' in result && Array.isArray(result.items)
+          ? result.items
+          : Array.isArray(result)
+            ? result
+            : [result];
+
       if (!items || items.length === 0) break;
       allData.push(...items);
       // If we got fewer items than the limit, there are no more pages
       if (items.length < limit) break;
       offset += limit;
     }
-    
+
     // Return FinaticResponse with accumulated data
     // When error occurs, return error response (success may be omitted or null)
     if (lastError) {
@@ -3019,7 +3161,7 @@ export class FinaticServer {
         warning: warnings.length > 0 ? warnings : null,
       };
     }
-    
+
     return {
       success: {
         data: allData,
