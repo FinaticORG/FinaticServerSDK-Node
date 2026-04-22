@@ -4,7 +4,6 @@
  * Generated - do not edit directly.
  */
 
-// @ts-ignore - pino types available via @types/pino
 import pino from 'pino';
 import type { SdkConfig } from '../config';
 

@@ -4,7 +4,6 @@
  * Generated - do not edit directly.
  */
 
-// @ts-ignore - node-cache types available via @types/node-cache
 import NodeCache from 'node-cache';
 import type { SdkConfig } from '../config';
 
