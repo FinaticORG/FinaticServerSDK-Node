@@ -86,7 +86,7 @@
     "rollup": "^4.53.3",
     "rollup-plugin-dts": "^6.3.0",
     "ts-jest": "^29.0.0",
-    "typescript": "^5.0.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.1"
   },
   "type": "module",
