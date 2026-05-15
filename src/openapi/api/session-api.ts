@@ -42,8 +42,6 @@ import {
 // @ts-ignore
 import type { FinaticAPIErrorResponse } from '../models';
 // @ts-ignore
-import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseMCPBootstrapResponseData2 } from '../models';
-// @ts-ignore
 import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponsePortalUrlResponse2 } from '../models';
 // @ts-ignore
 import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseSessionResponseData2 } from '../models';
@@ -52,65 +50,12 @@ import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResp
 // @ts-ignore
 import type { FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseTokenResponseData2 } from '../models';
 // @ts-ignore
-import type { MCPBootstrapRequest } from '../models';
-// @ts-ignore
 import type { SessionStartRequest } from '../models';
 /**
  * SessionApi - axios parameter creator
  */
 export const SessionApiAxiosParamCreator = function (configuration?: Configuration) {
   return {
-    /**
-     * Exchange API key for a short-lived MCP bearer token.
-     * @summary Bootstrap Mcp Bearer
-     * @param {string} xApiKey Company API key
-     * @param {MCPBootstrapRequest} [mCPBootstrapRequest]
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    bootstrapMcpBearerApiBetaSessionMcpBootstrapPost: async (
-      xApiKey: string,
-      mCPBootstrapRequest?: MCPBootstrapRequest,
-      options: RawAxiosRequestConfig = {}
-    ): Promise<RequestArgs> => {
-      // verify required parameter 'xApiKey' is not null or undefined
-      assertParamExists('bootstrapMcpBearerApiBetaSessionMcpBootstrapPost', 'xApiKey', xApiKey);
-      const localVarPath = `/api/beta/session/mcp/bootstrap`;
-      // use dummy base URL string because the URL constructor only accepts absolute URLs.
-      const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-      let baseOptions;
-      if (configuration) {
-        baseOptions = configuration.baseOptions;
-      }
-
-      const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
-      const localVarHeaderParameter = {} as any;
-      const localVarQueryParameter = {} as any;
-
-      localVarHeaderParameter['Content-Type'] = 'application/json';
-      localVarHeaderParameter['Accept'] = 'application/json';
-
-      if (xApiKey != null) {
-        localVarHeaderParameter['x-api-key'] = String(xApiKey);
-      }
-      setSearchParams(localVarUrlObj, localVarQueryParameter);
-      let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-      localVarRequestOptions.headers = {
-        ...localVarHeaderParameter,
-        ...headersFromBaseOptions,
-        ...options.headers,
-      };
-      localVarRequestOptions.data = serializeDataIfNeeded(
-        mCPBootstrapRequest,
-        localVarRequestOptions,
-        configuration
-      );
-
-      return {
-        url: toPathString(localVarUrlObj),
-        options: localVarRequestOptions,
-      };
-    },
     /**
      * Get a portal URL with token for a session.  The session must be in ACTIVE or AUTHENTICATING state and the request must come from the same device that initiated the session. Device info is automatically validated from the request.
      * @summary Get Portal Url
@@ -251,23 +196,17 @@ export const SessionApiAxiosParamCreator = function (configuration?: Configurati
      * Start a session with a one-time token.
      * @summary Start Session
      * @param {string} oneTimeToken One-time use token obtained from init_session endpoint to authenticate and start the session
-     * @param {SessionStartRequest} sessionStartRequest Session start request containing optional user ID to associate with the session
+     * @param {SessionStartRequest | null} [sessionStartRequest] Session start request containing optional user ID to associate with the session
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     startSessionApiBetaSessionStartPost: async (
       oneTimeToken: string,
-      sessionStartRequest: SessionStartRequest,
+      sessionStartRequest?: SessionStartRequest | null,
       options: RawAxiosRequestConfig = {}
     ): Promise<RequestArgs> => {
       // verify required parameter 'oneTimeToken' is not null or undefined
       assertParamExists('startSessionApiBetaSessionStartPost', 'oneTimeToken', oneTimeToken);
-      // verify required parameter 'sessionStartRequest' is not null or undefined
-      assertParamExists(
-        'startSessionApiBetaSessionStartPost',
-        'sessionStartRequest',
-        sessionStartRequest
-      );
       const localVarPath = `/api/beta/session/start`;
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
       const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -313,43 +252,6 @@ export const SessionApiAxiosParamCreator = function (configuration?: Configurati
 export const SessionApiFp = function (configuration?: Configuration) {
   const localVarAxiosParamCreator = SessionApiAxiosParamCreator(configuration);
   return {
-    /**
-     * Exchange API key for a short-lived MCP bearer token.
-     * @summary Bootstrap Mcp Bearer
-     * @param {string} xApiKey Company API key
-     * @param {MCPBootstrapRequest} [mCPBootstrapRequest]
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    async bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-      xApiKey: string,
-      mCPBootstrapRequest?: MCPBootstrapRequest,
-      options?: RawAxiosRequestConfig
-    ): Promise<
-      (
-        axios?: AxiosInstance,
-        basePath?: string
-      ) => AxiosPromise<FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseMCPBootstrapResponseData2>
-    > {
-      const localVarAxiosArgs =
-        await localVarAxiosParamCreator.bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-          xApiKey,
-          mCPBootstrapRequest,
-          options
-        );
-      const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-      const localVarOperationServerBasePath =
-        operationServerMap['SessionApi.bootstrapMcpBearerApiBetaSessionMcpBootstrapPost']?.[
-          localVarOperationServerIndex
-        ]?.url;
-      return (axios, basePath) =>
-        createRequestFunction(
-          localVarAxiosArgs,
-          globalAxios,
-          BASE_PATH,
-          configuration
-        )(axios, localVarOperationServerBasePath || basePath);
-    },
     /**
      * Get a portal URL with token for a session.  The session must be in ACTIVE or AUTHENTICATING state and the request must come from the same device that initiated the session. Device info is automatically validated from the request.
      * @summary Get Portal Url
@@ -457,13 +359,13 @@ export const SessionApiFp = function (configuration?: Configuration) {
      * Start a session with a one-time token.
      * @summary Start Session
      * @param {string} oneTimeToken One-time use token obtained from init_session endpoint to authenticate and start the session
-     * @param {SessionStartRequest} sessionStartRequest Session start request containing optional user ID to associate with the session
+     * @param {SessionStartRequest | null} [sessionStartRequest] Session start request containing optional user ID to associate with the session
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     async startSessionApiBetaSessionStartPost(
       oneTimeToken: string,
-      sessionStartRequest: SessionStartRequest,
+      sessionStartRequest?: SessionStartRequest | null,
       options?: RawAxiosRequestConfig
     ): Promise<
       (
@@ -502,25 +404,6 @@ export const SessionApiFactory = function (
 ) {
   const localVarFp = SessionApiFp(configuration);
   return {
-    /**
-     * Exchange API key for a short-lived MCP bearer token.
-     * @summary Bootstrap Mcp Bearer
-     * @param {SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     */
-    bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-      requestParameters: SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest,
-      options?: RawAxiosRequestConfig
-    ): AxiosPromise<FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseMCPBootstrapResponseData2> {
-      return localVarFp
-        .bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-          requestParameters.xApiKey,
-          requestParameters.mCPBootstrapRequest,
-          options
-        )
-        .then((request) => request(axios, basePath));
-    },
     /**
      * Get a portal URL with token for a session.  The session must be in ACTIVE or AUTHENTICATING state and the request must come from the same device that initiated the session. Device info is automatically validated from the request.
      * @summary Get Portal Url
@@ -597,18 +480,6 @@ export const SessionApiFactory = function (
  */
 export interface SessionApiInterface {
   /**
-   * Exchange API key for a short-lived MCP bearer token.
-   * @summary Bootstrap Mcp Bearer
-   * @param {SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest} requestParameters Request parameters.
-   * @param {*} [options] Override http request option.
-   * @throws {RequiredError}
-   */
-  bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-    requestParameters: SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest,
-    options?: RawAxiosRequestConfig
-  ): AxiosPromise<FinaticBrokerFactoryCoreStandardModelsAbstractResponsesFinaticResponseMCPBootstrapResponseData2>;
-
-  /**
    * Get a portal URL with token for a session.  The session must be in ACTIVE or AUTHENTICATING state and the request must come from the same device that initiated the session. Device info is automatically validated from the request.
    * @summary Get Portal Url
    * @param {SessionApiGetPortalUrlApiBetaSessionPortalGetRequest} requestParameters Request parameters.
@@ -658,18 +529,6 @@ export interface SessionApiInterface {
 }
 
 /**
- * Request parameters for bootstrapMcpBearerApiBetaSessionMcpBootstrapPost operation in SessionApi.
- */
-export interface SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest {
-  /**
-   * Company API key
-   */
-  readonly xApiKey: string;
-
-  readonly mCPBootstrapRequest?: MCPBootstrapRequest;
-}
-
-/**
  * Request parameters for getPortalUrlApiBetaSessionPortalGet operation in SessionApi.
  */
 export interface SessionApiGetPortalUrlApiBetaSessionPortalGetRequest {
@@ -716,33 +575,13 @@ export interface SessionApiStartSessionApiBetaSessionStartPostRequest {
   /**
    * Session start request containing optional user ID to associate with the session
    */
-  readonly sessionStartRequest: SessionStartRequest;
+  readonly sessionStartRequest?: SessionStartRequest | null;
 }
 
 /**
  * SessionApi - object-oriented interface
  */
 export class SessionApi extends BaseAPI implements SessionApiInterface {
-  /**
-   * Exchange API key for a short-lived MCP bearer token.
-   * @summary Bootstrap Mcp Bearer
-   * @param {SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest} requestParameters Request parameters.
-   * @param {*} [options] Override http request option.
-   * @throws {RequiredError}
-   */
-  public bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-    requestParameters: SessionApiBootstrapMcpBearerApiBetaSessionMcpBootstrapPostRequest,
-    options?: RawAxiosRequestConfig
-  ) {
-    return SessionApiFp(this.configuration)
-      .bootstrapMcpBearerApiBetaSessionMcpBootstrapPost(
-        requestParameters.xApiKey,
-        requestParameters.mCPBootstrapRequest,
-        options
-      )
-      .then((request) => request(this.axios, this.basePath));
-  }
-
   /**
    * Get a portal URL with token for a session.  The session must be in ACTIVE or AUTHENTICATING state and the request must come from the same device that initiated the session. Device info is automatically validated from the request.
    * @summary Get Portal Url

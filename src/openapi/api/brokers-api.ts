@@ -140,7 +140,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
       };
     },
     /**
-     * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+     * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
      * @summary Disconnect Company From Broker
      * @param {string} connectionId Connection ID
      * @param {*} [options] Override http request option.
@@ -1289,7 +1289,7 @@ export const BrokersApiFp = function (configuration?: Configuration) {
         )(axios, localVarOperationServerBasePath || basePath);
     },
     /**
-     * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+     * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
      * @summary Disconnect Company From Broker
      * @param {string} connectionId Connection ID
      * @param {*} [options] Override http request option.
@@ -2026,7 +2026,7 @@ export const BrokersApiFactory = function (
         .then((request) => request(axios, basePath));
     },
     /**
-     * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+     * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
      * @summary Disconnect Company From Broker
      * @param {BrokersApiDisconnectCompanyFromBrokerApiBetaBrokersDisconnectCompanyConnectionIdDeleteRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -2378,7 +2378,7 @@ export interface BrokersApiInterface {
   ): AxiosPromise<FinaticResponseOrderActionResult>;
 
   /**
-   * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+   * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
    * @summary Disconnect Company From Broker
    * @param {BrokersApiDisconnectCompanyFromBrokerApiBetaBrokersDisconnectCompanyConnectionIdDeleteRequest} requestParameters Request parameters.
    * @param {*} [options] Override http request option.
@@ -3080,7 +3080,7 @@ export class BrokersApi extends BaseAPI implements BrokersApiInterface {
   }
 
   /**
-   * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+   * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
    * @summary Disconnect Company From Broker
    * @param {BrokersApiDisconnectCompanyFromBrokerApiBetaBrokersDisconnectCompanyConnectionIdDeleteRequest} requestParameters Request parameters.
    * @param {*} [options] Override http request option.
