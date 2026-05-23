@@ -1,0 +1,113 @@
+name: Release Node Server SDK to NPM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and pack without publishing to NPM"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+      version:
+        description: "Optional release version. Defaults to the next patch version."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release):')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve release mode
+        id: mode
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "dry_run=${{ inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare release version
+        id: version
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+          DRY_RUN: ${{ steps.mode.outputs.dry_run }}
+        run: |
+          if [[ -n "$REQUESTED_VERSION" ]]; then
+            npm version "$REQUESTED_VERSION" --no-git-tag-version
+          else
+            npm version patch --no-git-tag-version
+          fi
+
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          if [[ "$DRY_RUN" != "true" ]]; then
+            if [[ -f CHANGELOG.md ]]; then
+              EXISTING="$(cat CHANGELOG.md)"
+            else
+              EXISTING="# Changelog"
+            fi
+            if ! grep -q "## ${VERSION}" CHANGELOG.md 2>/dev/null; then
+              printf '# Changelog\n\n## %s\n\n- Release from %s.\n\n%s\n' "$VERSION" "$GITHUB_SHA" "$(printf '%s' "$EXISTING" | sed '1{/^# Changelog$/d;}')" > CHANGELOG.md
+            fi
+          fi
+
+      - name: Run quality gate
+        run: |
+          npm run lint
+          npm run format:check
+          npm test
+          npm run build
+
+      - name: Pack release artifact
+        run: npm pack
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finatic-server-node-${{ steps.version.outputs.version }}
+          path: finatic-server-node-*.tgz
+
+      - name: Commit version bump and tag
+        if: steps.mode.outputs.dry_run != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore(release): v${{ steps.version.outputs.version }}"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin HEAD:main --follow-tags
+
+      - name: Publish to NPM
+        if: steps.mode.outputs.dry_run != 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
