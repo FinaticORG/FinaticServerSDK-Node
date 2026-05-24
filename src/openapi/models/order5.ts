@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty3 } from './orderqty3';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { Trading212LimitOrderPlaceQueryParams } from './trading212-limit-order-place-query-params';

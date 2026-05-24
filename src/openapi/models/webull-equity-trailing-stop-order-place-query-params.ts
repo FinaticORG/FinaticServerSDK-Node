@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty4 } from './orderqty4';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Equity trailing stop order for Webull OAuth.
@@ -25,14 +28,23 @@ export interface WebullEquityTrailingStopOrderPlaceQueryParams {
   orderType: WebullEquityTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: WebullEquityTrailingStopOrderPlaceQueryParamsAssetTypeEnum;
   action: WebullEquityTrailingStopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
-  orderQty: number;
+  orderQty: Orderqty4;
   stopPrice: number;
   trailPercent?: number | null;
   trailPrice?: number | null;
+  /**
+   * Extended hours: N=regular only, Y=pre/post market
+   */
   supportTradingSession?: WebullEquityTrailingStopOrderPlaceQueryParamsSupportTradingSessionEnum | null;
+  /**
+   * When true, allow pre/post market. Used when supportTradingSession not set.
+   */
   extendedHours?: boolean | null;
+  /**
+   * Idempotency key; server generates if omitted
+   */
   clientOrderId?: string | null;
 }
 

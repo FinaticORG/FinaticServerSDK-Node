@@ -22,8 +22,20 @@ export interface NinjaTraderOrderCancelQueryParams {
    * Broker-assigned order identifier
    */
   orderId: string;
+  /**
+   * Client order identifier (max 64 chars).  Useful for idempotency.
+   */
   clOrdId?: string | null;
+  /**
+   * Optional custom FIX tag 50 (max 64 chars).
+   */
   customTag50?: string | null;
+  /**
+   * ISO-8601 timestamp specifying when the cancellation becomes active.
+   */
   activationTime?: string | null;
+  /**
+   * Must be *True* for programmatic requests.
+   */
   isAutomated?: boolean | null;
 }

@@ -14,22 +14,16 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
- * Equity stop limit order with Robinhood-specific extras.
+ * Robinhood equity stop-limit order (stopPrice + limitPrice).
  */
 export interface RobinhoodEquityStopLimitOrderPlaceQueryParams {
   [key: string]: any;
 
-  orderType: RobinhoodEquityStopLimitOrderPlaceQueryParamsOrderTypeEnum;
-  assetType?: RobinhoodEquityStopLimitOrderPlaceQueryParamsAssetTypeEnum;
-  action: RobinhoodEquityStopLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
-  symbol: string;
+  assetType: RobinhoodEquityStopLimitOrderPlaceQueryParamsAssetTypeEnum;
   orderQty: number;
-  stopPrice: number;
-  limitPrice: number;
   /**
    * Allow trading during extended hours (premium users only)
    */
@@ -38,20 +32,32 @@ export interface RobinhoodEquityStopLimitOrderPlaceQueryParams {
    * Market hours to trade in
    */
   marketHours?: RobinhoodEquityStopLimitOrderPlaceQueryParamsMarketHoursEnum;
+  orderType: RobinhoodEquityStopLimitOrderPlaceQueryParamsOrderTypeEnum;
+  action: RobinhoodEquityStopLimitOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  stopPrice: number;
+  limitPrice: number;
 }
 
-export enum RobinhoodEquityStopLimitOrderPlaceQueryParamsOrderTypeEnum {
-  StopLimit = 'stop_limit',
-}
 export enum RobinhoodEquityStopLimitOrderPlaceQueryParamsAssetTypeEnum {
   Equity = 'equity',
-}
-export enum RobinhoodEquityStopLimitOrderPlaceQueryParamsActionEnum {
-  Buy = 'buy',
-  Sell = 'sell',
+  EquityOption = 'equity_option',
+  Crypto = 'crypto',
+  Forex = 'forex',
+  Future = 'future',
+  FutureOption = 'future_option',
+  Bond = 'bond',
 }
 export enum RobinhoodEquityStopLimitOrderPlaceQueryParamsMarketHoursEnum {
   RegularHours = 'regular_hours',
   AllDayHours = 'all_day_hours',
   ExtendedHours = 'extended_hours',
+}
+export enum RobinhoodEquityStopLimitOrderPlaceQueryParamsOrderTypeEnum {
+  StopLimit = 'stop_limit',
+}
+export enum RobinhoodEquityStopLimitOrderPlaceQueryParamsActionEnum {
+  Buy = 'buy',
+  Sell = 'sell',
 }

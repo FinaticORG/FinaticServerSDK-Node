@@ -9,12 +9,14 @@ module.exports = {
       "ts-jest",
       {
         useESM: false,
+        tsconfig: "<rootDir>/tsconfig.jest.json",
       },
     ],
     "^.+\\.js$": [
       "ts-jest",
       {
         useESM: false,
+        tsconfig: "<rootDir>/tsconfig.jest.json",
       },
     ],
   },

@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty3 } from './orderqty3';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Consumer params for Trading212 stop order placement.  Stop orders trigger a market order when the stop price is reached. The stop price is triggered by the Last Traded Price (LTP).
@@ -22,17 +25,17 @@ import type { Timeinforce1 } from './timeinforce1';
 export interface Trading212StopOrderPlaceQueryParams {
   [key: string]: any;
 
+  orderType: Trading212StopOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: Trading212StopOrderPlaceQueryParamsAssetTypeEnum;
+  action: Trading212StopOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: Orderqty3;
+  stopPrice: number;
   /**
    * Allow execution outside regular trading hours (market orders only)
    */
   extendedHours?: boolean;
-  orderType: Trading212StopOrderPlaceQueryParamsOrderTypeEnum;
-  assetType: Trading212StopOrderPlaceQueryParamsAssetTypeEnum;
-  action: Trading212StopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
-  symbol: string;
-  orderQty: number;
-  stopPrice: number;
 }
 
 export enum Trading212StopOrderPlaceQueryParamsOrderTypeEnum {

@@ -14,7 +14,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Futures stop order with NinjaTrader-specific extras.
@@ -25,7 +25,7 @@ export interface NinjaTraderFutureStopOrderPlaceQueryParams {
   orderType: NinjaTraderFutureStopOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: NinjaTraderFutureStopOrderPlaceQueryParamsAssetTypeEnum;
   action: NinjaTraderFutureStopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   stopPrice: number;

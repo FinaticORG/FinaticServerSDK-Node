@@ -17,10 +17,10 @@
 import type { BrokerDataOptionTypeEnum } from './broker-data-option-type-enum';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Strikeprice1 } from './strikeprice1';
+import type { Strikeprice } from './strikeprice';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Webull single-leg option stop order. Options do not support TRAILING_STOP_LOSS or STOP_LOSS_LIMIT.
@@ -31,14 +31,20 @@ export interface WebullOptionStopOrderPlaceQueryParams {
   orderType: WebullOptionStopOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: WebullOptionStopOrderPlaceQueryParamsAssetTypeEnum;
   action: WebullOptionStopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   stopPrice: number;
+  /**
+   * Extended hours: N=regular only, Y=pre/post market
+   */
   supportTradingSession?: WebullOptionStopOrderPlaceQueryParamsSupportTradingSessionEnum | null;
+  /**
+   * Idempotency key; server generates if omitted
+   */
   clientOrderId?: string | null;
   expirationDate: string;
-  strikePrice: Strikeprice1;
+  strikePrice: Strikeprice;
   optionType: BrokerDataOptionTypeEnum;
   positionEffect?: string | null;
   creditOrDebit?: string | null;

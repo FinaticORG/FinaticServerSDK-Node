@@ -12,12 +12,14 @@
  * Do not edit the class manually.
  */
 
-// May contain unused imports in some cases
-// @ts-ignore
-import type { FDXBrokerPositionLotFill } from './fdxbroker-position-lot-fill';
-
 export interface SuccessPayloadListFDXBrokerPositionLotFill {
   _id?: string;
-  data?: Array<FDXBrokerPositionLotFill> | null;
+  /**
+   * The response data (None when error is present)
+   */
+  data?: Array<any> | null;
+  /**
+   * Optional metadata (pagination, etc.)
+   */
   meta?: { [key: string]: any } | null;
 }

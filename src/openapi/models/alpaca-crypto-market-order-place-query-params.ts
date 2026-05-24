@@ -14,10 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Notional2 } from './notional2';
+import type { Notional1 } from './notional1';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Crypto market order.
@@ -28,12 +28,12 @@ export interface AlpacaCryptoMarketOrderPlaceQueryParams {
   orderType: AlpacaCryptoMarketOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: AlpacaCryptoMarketOrderPlaceQueryParamsAssetTypeEnum;
   action: AlpacaCryptoMarketOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   client_order_id?: string | null;
   order_class?: string | null;
-  notional?: Notional2 | null;
+  notional?: Notional1 | null;
 }
 
 export enum AlpacaCryptoMarketOrderPlaceQueryParamsOrderTypeEnum {

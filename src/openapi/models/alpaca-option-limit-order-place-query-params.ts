@@ -14,10 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Notional2 } from './notional2';
+import type { Notional1 } from './notional1';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Option limit order.
@@ -28,14 +28,14 @@ export interface AlpacaOptionLimitOrderPlaceQueryParams {
   orderType: AlpacaOptionLimitOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: AlpacaOptionLimitOrderPlaceQueryParamsAssetTypeEnum;
   action: AlpacaOptionLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   price: number;
   client_order_id?: string | null;
   extended_hours?: boolean | null;
   order_class?: string | null;
-  notional?: Notional2 | null;
+  notional?: Notional1 | null;
   take_profit?: { [key: string]: any } | null;
   stop_loss?: { [key: string]: any } | null;
   legs?: Array<{ [key: string]: any }> | null;

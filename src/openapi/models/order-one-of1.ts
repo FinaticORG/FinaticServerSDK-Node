@@ -20,10 +20,10 @@ import type { AlpacaOptionLimitOrderPlaceQueryParams } from './alpaca-option-lim
 import type { AlpacaOptionMarketOrderPlaceQueryParams } from './alpaca-option-market-order-place-query-params';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Notional2 } from './notional2';
+import type { Notional1 } from './notional1';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * @type OrderOneOf1

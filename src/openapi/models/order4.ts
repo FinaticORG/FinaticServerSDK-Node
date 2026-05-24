@@ -23,7 +23,7 @@ import type { Order4OneOf1 } from './order4-one-of1';
 import type { Order4OneOf2 } from './order4-one-of2';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * @type Order4

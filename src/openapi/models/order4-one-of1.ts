@@ -14,7 +14,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { TradestationFutureLimitOrderPlaceQueryParams } from './tradestation-future-limit-order-place-query-params';

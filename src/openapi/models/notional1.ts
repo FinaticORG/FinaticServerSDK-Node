@@ -12,7 +12,4 @@
  * Do not edit the class manually.
  */
 
-/**
- * Order notional value (for fractional)
- */
 export interface Notional1 {}

@@ -13,6 +13,6 @@
  */
 
 /**
- * TastyTrade account number owning the order (optional, typically passed via call chain).
+ * Broker-provided account number or \'demo\'/\'real\'.
  */
 export interface Accountnumber1 {}

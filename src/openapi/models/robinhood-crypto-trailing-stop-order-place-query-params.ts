@@ -14,10 +14,13 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty2 } from './orderqty2';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
- * Crypto trailing stop order with Robinhood-specific extras.
+ * Robinhood crypto trailing stop order (stopPrice trails market).
  */
 export interface RobinhoodCryptoTrailingStopOrderPlaceQueryParams {
   [key: string]: any;
@@ -25,9 +28,9 @@ export interface RobinhoodCryptoTrailingStopOrderPlaceQueryParams {
   orderType: RobinhoodCryptoTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: RobinhoodCryptoTrailingStopOrderPlaceQueryParamsAssetTypeEnum;
   action: RobinhoodCryptoTrailingStopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
-  orderQty: number;
+  orderQty: Orderqty2;
   stopPrice: number;
   trailPercent?: number | null;
   trailPrice?: number | null;

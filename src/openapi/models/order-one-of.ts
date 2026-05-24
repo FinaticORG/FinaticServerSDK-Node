@@ -29,10 +29,13 @@ import type { AlpacaEquityStopOrderPlaceQueryParams } from './alpaca-equity-stop
 import type { AlpacaEquityTrailingStopOrderPlaceQueryParams } from './alpaca-equity-trailing-stop-order-place-query-params';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Notional1 } from './notional1';
+import type { Notional } from './notional';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty } from './orderqty';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { TrailPercent } from './trail-percent';

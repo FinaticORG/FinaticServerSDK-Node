@@ -20,7 +20,7 @@ import type { Order3OneOf } from './order3-one-of';
 import type { Order3OneOf1 } from './order3-one-of1';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * @type Order3

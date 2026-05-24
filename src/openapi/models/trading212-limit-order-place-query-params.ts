@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty3 } from './orderqty3';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Consumer params for Trading212 limit order placement.  Limit orders execute at the specified price or better. - BUY: fills at limit_price or lower - SELL: fills at limit_price or higher
@@ -22,17 +25,17 @@ import type { Timeinforce1 } from './timeinforce1';
 export interface Trading212LimitOrderPlaceQueryParams {
   [key: string]: any;
 
+  orderType: Trading212LimitOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: Trading212LimitOrderPlaceQueryParamsAssetTypeEnum;
+  action: Trading212LimitOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: Orderqty3;
+  price: number;
   /**
    * Allow execution outside regular trading hours (market orders only)
    */
   extendedHours?: boolean;
-  orderType: Trading212LimitOrderPlaceQueryParamsOrderTypeEnum;
-  assetType: Trading212LimitOrderPlaceQueryParamsAssetTypeEnum;
-  action: Trading212LimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
-  symbol: string;
-  orderQty: number;
-  price: number;
 }
 
 export enum Trading212LimitOrderPlaceQueryParamsOrderTypeEnum {

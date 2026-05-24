@@ -14,7 +14,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Option limit order with TastyTrade extras.
@@ -25,7 +25,7 @@ export interface TastyTradeOptionLimitOrderPlaceQueryParams {
   orderType: TastyTradeOptionLimitOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: TastyTradeOptionLimitOrderPlaceQueryParamsAssetTypeEnum;
   action: TastyTradeOptionLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   price: number;

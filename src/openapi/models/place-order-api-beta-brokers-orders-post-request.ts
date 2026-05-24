@@ -20,6 +20,9 @@ import type { Accountnumber } from './accountnumber';
 import type { AlpacaOrderPlaceRequest } from './alpaca-order-place-request';
 // May contain unused imports in some cases
 // @ts-ignore
+import type { EtoroOrderPlaceRequest } from './etoro-order-place-request';
+// May contain unused imports in some cases
+// @ts-ignore
 import type { NinjaTraderOrderPlaceRequest } from './ninja-trader-order-place-request';
 // May contain unused imports in some cases
 // @ts-ignore
@@ -46,6 +49,7 @@ import type { WebullOrderPlaceRequest } from './webull-order-place-request';
  */
 export type PlaceOrderApiBetaBrokersOrdersPostRequest =
   | ({ broker: 'alpaca' } & AlpacaOrderPlaceRequest)
+  | ({ broker: 'etoro' } & EtoroOrderPlaceRequest)
   | ({ broker: 'ninja_trader' } & NinjaTraderOrderPlaceRequest)
   | ({ broker: 'robinhood' } & RobinhoodOrderPlaceRequest)
   | ({ broker: 'tasty_trade' } & TastyTradeOrderPlaceRequest)

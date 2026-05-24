@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty4 } from './orderqty4';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Equity market order for Webull OAuth.
@@ -25,11 +28,20 @@ export interface WebullEquityMarketOrderPlaceQueryParams {
   orderType: WebullEquityMarketOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: WebullEquityMarketOrderPlaceQueryParamsAssetTypeEnum;
   action: WebullEquityMarketOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
-  orderQty: number;
+  orderQty: Orderqty4;
+  /**
+   * Extended hours: N=regular only, Y=pre/post market
+   */
   supportTradingSession?: WebullEquityMarketOrderPlaceQueryParamsSupportTradingSessionEnum | null;
+  /**
+   * When true, allow pre/post market. Used when supportTradingSession not set.
+   */
   extendedHours?: boolean | null;
+  /**
+   * Idempotency key; server generates if omitted
+   */
   clientOrderId?: string | null;
 }
 

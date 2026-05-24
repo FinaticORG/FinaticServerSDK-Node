@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty4 } from './orderqty4';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { WebullEquityLimitOrderPlaceQueryParams } from './webull-equity-limit-order-place-query-params';

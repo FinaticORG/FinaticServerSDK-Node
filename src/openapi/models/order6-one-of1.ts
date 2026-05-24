@@ -17,10 +17,10 @@
 import type { BrokerDataOptionTypeEnum } from './broker-data-option-type-enum';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Strikeprice1 } from './strikeprice1';
+import type { Strikeprice } from './strikeprice';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { WebullOptionLimitOrderPlaceQueryParams } from './webull-option-limit-order-place-query-params';

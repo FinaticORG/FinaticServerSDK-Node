@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty3 } from './orderqty3';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Consumer params for Trading212 stop-limit order placement.  When the stop price is reached, a limit order is placed. This helps protect against price slippage.
@@ -22,18 +25,18 @@ import type { Timeinforce1 } from './timeinforce1';
 export interface Trading212StopLimitOrderPlaceQueryParams {
   [key: string]: any;
 
+  orderType: Trading212StopLimitOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: Trading212StopLimitOrderPlaceQueryParamsAssetTypeEnum;
+  action: Trading212StopLimitOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: Orderqty3;
+  stopPrice: number;
+  limitPrice: number;
   /**
    * Allow execution outside regular trading hours (market orders only)
    */
   extendedHours?: boolean;
-  orderType: Trading212StopLimitOrderPlaceQueryParamsOrderTypeEnum;
-  assetType: Trading212StopLimitOrderPlaceQueryParamsAssetTypeEnum;
-  action: Trading212StopLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
-  symbol: string;
-  orderQty: number;
-  stopPrice: number;
-  limitPrice: number;
 }
 
 export enum Trading212StopLimitOrderPlaceQueryParamsOrderTypeEnum {

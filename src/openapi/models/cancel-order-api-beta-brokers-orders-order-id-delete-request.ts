@@ -20,6 +20,9 @@ import type { Accountnumber } from './accountnumber';
 import type { AlpacaOrderCancelRequest } from './alpaca-order-cancel-request';
 // May contain unused imports in some cases
 // @ts-ignore
+import type { EtoroOrderCancelRequest } from './etoro-order-cancel-request';
+// May contain unused imports in some cases
+// @ts-ignore
 import type { NinjaTraderOrderCancelRequest } from './ninja-trader-order-cancel-request';
 // May contain unused imports in some cases
 // @ts-ignore
@@ -46,6 +49,7 @@ import type { WebullOrderCancelRequest } from './webull-order-cancel-request';
  */
 export type CancelOrderApiBetaBrokersOrdersOrderIdDeleteRequest =
   | ({ broker: 'alpaca' } & AlpacaOrderCancelRequest)
+  | ({ broker: 'etoro' } & EtoroOrderCancelRequest)
   | ({ broker: 'ninja_trader' } & NinjaTraderOrderCancelRequest)
   | ({ broker: 'robinhood' } & RobinhoodOrderCancelRequest)
   | ({ broker: 'tasty_trade' } & TastyTradeOrderCancelRequest)

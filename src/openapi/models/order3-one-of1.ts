@@ -26,7 +26,7 @@ import type { TastyTradeOptionStopOrderPlaceQueryParams } from './tasty-trade-op
 import type { TastyTradeOptionTrailingStopOrderPlaceQueryParams } from './tasty-trade-option-trailing-stop-order-place-query-params';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * @type Order3OneOf1

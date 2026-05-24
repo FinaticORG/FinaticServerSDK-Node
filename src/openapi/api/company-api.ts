@@ -62,7 +62,7 @@ export const CompanyApiAxiosParamCreator = function (configuration?: Configurati
       // verify required parameter 'companyId' is not null or undefined
       assertParamExists('getCompanyApiBetaCompanyCompanyIdGet', 'companyId', companyId);
       const localVarPath = `/api/beta/company/{company_id}`.replace(
-        `{${'company_id'}}`,
+        '{company_id}',
         encodeURIComponent(String(companyId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.

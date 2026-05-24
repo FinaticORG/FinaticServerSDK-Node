@@ -104,7 +104,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
       // verify required parameter 'orderId' is not null or undefined
       assertParamExists('cancelOrderApiBetaBrokersOrdersOrderIdDelete', 'orderId', orderId);
       const localVarPath = `/api/beta/brokers/orders/{order_id}`.replace(
-        `{${'order_id'}}`,
+        '{order_id}',
         encodeURIComponent(String(orderId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -140,7 +140,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
       };
     },
     /**
-     * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+     * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
      * @summary Disconnect Company From Broker
      * @param {string} connectionId Connection ID
      * @param {*} [options] Override http request option.
@@ -157,7 +157,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
         connectionId
       );
       const localVarPath = `/api/beta/brokers/disconnect-company/{connection_id}`.replace(
-        `{${'connection_id'}}`,
+        '{connection_id}',
         encodeURIComponent(String(connectionId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -410,7 +410,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
         orderId
       );
       const localVarPath = `/api/beta/brokers/data/orders/{order_id}/events`.replace(
-        `{${'order_id'}}`,
+        '{order_id}',
         encodeURIComponent(String(orderId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -477,7 +477,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
       // verify required parameter 'orderId' is not null or undefined
       assertParamExists('getOrderFillsApiBetaBrokersDataOrdersOrderIdFillsGet', 'orderId', orderId);
       const localVarPath = `/api/beta/brokers/data/orders/{order_id}/fills`.replace(
-        `{${'order_id'}}`,
+        '{order_id}',
         encodeURIComponent(String(orderId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -618,8 +618,8 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
      * @param {BrokerDataAssetTypeEnum | null} [assetType] Filter by asset type (e.g., \&#39;stock\&#39;, \&#39;option\&#39;, \&#39;crypto\&#39;, \&#39;future\&#39;)
      * @param {number} [limit] Maximum number of orders to return
      * @param {number} [offset] Number of orders to skip for pagination
-     * @param {string | null} [createdAfter] Filter orders created after this timestamp
-     * @param {string | null} [createdBefore] Filter orders created before this timestamp
+     * @param {string | null} [createdAfter] Filter orders by effective creation time after this timestamp (broker order_created_at when set, otherwise row created_at)
+     * @param {string | null} [createdBefore] Filter orders by effective creation time before this timestamp (broker order_created_at when set, otherwise row created_at)
      * @param {boolean} [includeMetadata] Include order metadata in response (excluded by default for FDX compliance)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -744,7 +744,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
         lotId
       );
       const localVarPath = `/api/beta/brokers/data/positions/lots/{lot_id}/fills`.replace(
-        `{${'lot_id'}}`,
+        '{lot_id}',
         encodeURIComponent(String(lotId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -990,6 +990,9 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
      * @param {string | null} [endDate] Filter transactions until this date (ISO 8601)
      * @param {number} [limit] Maximum number of transactions to return
      * @param {number} [offset] Number of transactions to skip for pagination
+     * @param {string | null} [beforeTransactionDate] Keyset pagination: &#x60;transaction_date&#x60; of the **last** row from the previous page. Must be sent with &#x60;before_transaction_id&#x60;. When set, &#x60;offset&#x60; must be &#x60;0&#x60;.
+     * @param {string | null} [beforeTransactionId] Keyset pagination: internal transaction &#x60;id&#x60; (UUID) of the **last** row from the previous page. Must be sent with &#x60;before_transaction_date&#x60;.
+     * @param {boolean} [includeRawPayload] Load &#x60;raw_payload&#x60; JSONB from the database (slower). Default false for list performance.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
@@ -1004,6 +1007,9 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
       endDate?: string | null,
       limit?: number,
       offset?: number,
+      beforeTransactionDate?: string | null,
+      beforeTransactionId?: string | null,
+      includeRawPayload?: boolean,
       options: RawAxiosRequestConfig = {}
     ): Promise<RequestArgs> => {
       const localVarPath = `/api/beta/brokers/data/transactions`;
@@ -1058,6 +1064,21 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
 
       if (offset !== undefined) {
         localVarQueryParameter['offset'] = offset;
+      }
+
+      if (beforeTransactionDate !== undefined) {
+        localVarQueryParameter['before_transaction_date'] =
+          (beforeTransactionDate as any) instanceof Date
+            ? (beforeTransactionDate as any).toISOString()
+            : beforeTransactionDate;
+      }
+
+      if (beforeTransactionId !== undefined) {
+        localVarQueryParameter['before_transaction_id'] = beforeTransactionId;
+      }
+
+      if (includeRawPayload !== undefined) {
+        localVarQueryParameter['include_raw_payload'] = includeRawPayload;
       }
 
       localVarHeaderParameter['Accept'] = 'application/json';
@@ -1135,7 +1156,7 @@ export const BrokersApiAxiosParamCreator = function (configuration?: Configurati
         orderRequest
       );
       const localVarPath = `/api/beta/brokers/orders/{order_id}`.replace(
-        `{${'order_id'}}`,
+        '{order_id}',
         encodeURIComponent(String(orderId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -1268,7 +1289,7 @@ export const BrokersApiFp = function (configuration?: Configuration) {
         )(axios, localVarOperationServerBasePath || basePath);
     },
     /**
-     * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+     * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
      * @summary Disconnect Company From Broker
      * @param {string} connectionId Connection ID
      * @param {*} [options] Override http request option.
@@ -1589,8 +1610,8 @@ export const BrokersApiFp = function (configuration?: Configuration) {
      * @param {BrokerDataAssetTypeEnum | null} [assetType] Filter by asset type (e.g., \&#39;stock\&#39;, \&#39;option\&#39;, \&#39;crypto\&#39;, \&#39;future\&#39;)
      * @param {number} [limit] Maximum number of orders to return
      * @param {number} [offset] Number of orders to skip for pagination
-     * @param {string | null} [createdAfter] Filter orders created after this timestamp
-     * @param {string | null} [createdBefore] Filter orders created before this timestamp
+     * @param {string | null} [createdAfter] Filter orders by effective creation time after this timestamp (broker order_created_at when set, otherwise row created_at)
+     * @param {string | null} [createdBefore] Filter orders by effective creation time before this timestamp (broker order_created_at when set, otherwise row created_at)
      * @param {boolean} [includeMetadata] Include order metadata in response (excluded by default for FDX compliance)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1816,6 +1837,9 @@ export const BrokersApiFp = function (configuration?: Configuration) {
      * @param {string | null} [endDate] Filter transactions until this date (ISO 8601)
      * @param {number} [limit] Maximum number of transactions to return
      * @param {number} [offset] Number of transactions to skip for pagination
+     * @param {string | null} [beforeTransactionDate] Keyset pagination: &#x60;transaction_date&#x60; of the **last** row from the previous page. Must be sent with &#x60;before_transaction_id&#x60;. When set, &#x60;offset&#x60; must be &#x60;0&#x60;.
+     * @param {string | null} [beforeTransactionId] Keyset pagination: internal transaction &#x60;id&#x60; (UUID) of the **last** row from the previous page. Must be sent with &#x60;before_transaction_date&#x60;.
+     * @param {boolean} [includeRawPayload] Load &#x60;raw_payload&#x60; JSONB from the database (slower). Default false for list performance.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
@@ -1830,6 +1854,9 @@ export const BrokersApiFp = function (configuration?: Configuration) {
       endDate?: string | null,
       limit?: number,
       offset?: number,
+      beforeTransactionDate?: string | null,
+      beforeTransactionId?: string | null,
+      includeRawPayload?: boolean,
       options?: RawAxiosRequestConfig
     ): Promise<
       (
@@ -1849,6 +1876,9 @@ export const BrokersApiFp = function (configuration?: Configuration) {
           endDate,
           limit,
           offset,
+          beforeTransactionDate,
+          beforeTransactionId,
+          includeRawPayload,
           options
         );
       const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
@@ -1996,7 +2026,7 @@ export const BrokersApiFactory = function (
         .then((request) => request(axios, basePath));
     },
     /**
-     * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+     * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
      * @summary Disconnect Company From Broker
      * @param {BrokersApiDisconnectCompanyFromBrokerApiBetaBrokersDisconnectCompanyConnectionIdDeleteRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -2269,6 +2299,9 @@ export const BrokersApiFactory = function (
           requestParameters.endDate,
           requestParameters.limit,
           requestParameters.offset,
+          requestParameters.beforeTransactionDate,
+          requestParameters.beforeTransactionId,
+          requestParameters.includeRawPayload,
           options
         )
         .then((request) => request(axios, basePath));
@@ -2345,7 +2378,7 @@ export interface BrokersApiInterface {
   ): AxiosPromise<FinaticResponseOrderActionResult>;
 
   /**
-   * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+   * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
    * @summary Disconnect Company From Broker
    * @param {BrokersApiDisconnectCompanyFromBrokerApiBetaBrokersDisconnectCompanyConnectionIdDeleteRequest} requestParameters Request parameters.
    * @param {*} [options] Override http request option.
@@ -2778,12 +2811,12 @@ export interface BrokersApiGetOrdersApiBetaBrokersDataOrdersGetRequest {
   readonly offset?: number;
 
   /**
-   * Filter orders created after this timestamp
+   * Filter orders by effective creation time after this timestamp (broker order_created_at when set, otherwise row created_at)
    */
   readonly createdAfter?: string | null;
 
   /**
-   * Filter orders created before this timestamp
+   * Filter orders by effective creation time before this timestamp (broker order_created_at when set, otherwise row created_at)
    */
   readonly createdBefore?: string | null;
 
@@ -2976,6 +3009,21 @@ export interface BrokersApiGetTransactionsApiBetaBrokersDataTransactionsGetReque
    * Number of transactions to skip for pagination
    */
   readonly offset?: number;
+
+  /**
+   * Keyset pagination: &#x60;transaction_date&#x60; of the **last** row from the previous page. Must be sent with &#x60;before_transaction_id&#x60;. When set, &#x60;offset&#x60; must be &#x60;0&#x60;.
+   */
+  readonly beforeTransactionDate?: string | null;
+
+  /**
+   * Keyset pagination: internal transaction &#x60;id&#x60; (UUID) of the **last** row from the previous page. Must be sent with &#x60;before_transaction_date&#x60;.
+   */
+  readonly beforeTransactionId?: string | null;
+
+  /**
+   * Load &#x60;raw_payload&#x60; JSONB from the database (slower). Default false for list performance.
+   */
+  readonly includeRawPayload?: boolean;
 }
 
 /**
@@ -3032,7 +3080,7 @@ export class BrokersApi extends BaseAPI implements BrokersApiInterface {
   }
 
   /**
-   * Remove a company\'s access to a broker connection.  If the company is the only one with access, the entire connection is deleted. If other companies have access, only the company\'s access is removed.
+   * Remove a company\'s access to a broker connection.  When other companies still have access, only the calling company\'s access is removed. When the calling company is the last access holder, the connection is marked ``deletion_pending`` for asynchronous purge and this endpoint returns immediately.
    * @summary Disconnect Company From Broker
    * @param {BrokersApiDisconnectCompanyFromBrokerApiBetaBrokersDisconnectCompanyConnectionIdDeleteRequest} requestParameters Request parameters.
    * @param {*} [options] Override http request option.
@@ -3314,6 +3362,9 @@ export class BrokersApi extends BaseAPI implements BrokersApiInterface {
         requestParameters.endDate,
         requestParameters.limit,
         requestParameters.offset,
+        requestParameters.beforeTransactionDate,
+        requestParameters.beforeTransactionId,
+        requestParameters.includeRawPayload,
         options
       )
       .then((request) => request(this.axios, this.basePath));

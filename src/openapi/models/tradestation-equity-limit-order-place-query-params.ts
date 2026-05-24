@@ -14,7 +14,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Equity limit order with TradeStation-specific extras.
@@ -25,7 +25,7 @@ export interface TradestationEquityLimitOrderPlaceQueryParams {
   orderType: TradestationEquityLimitOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: TradestationEquityLimitOrderPlaceQueryParamsAssetTypeEnum;
   action: TradestationEquityLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   price: number;

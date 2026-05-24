@@ -14,7 +14,10 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty3 } from './orderqty3';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Consumer params for Trading212 market order placement.  Market orders are executed immediately at the best available price. Extended hours trading is supported.
@@ -22,16 +25,16 @@ import type { Timeinforce1 } from './timeinforce1';
 export interface Trading212MarketOrderPlaceQueryParams {
   [key: string]: any;
 
+  orderType: Trading212MarketOrderPlaceQueryParamsOrderTypeEnum;
+  assetType: Trading212MarketOrderPlaceQueryParamsAssetTypeEnum;
+  action: Trading212MarketOrderPlaceQueryParamsActionEnum;
+  timeInForce: Timeinforce;
+  symbol: string;
+  orderQty: Orderqty3;
   /**
    * Allow execution outside regular trading hours (market orders only)
    */
   extendedHours?: boolean;
-  orderType: Trading212MarketOrderPlaceQueryParamsOrderTypeEnum;
-  assetType: Trading212MarketOrderPlaceQueryParamsAssetTypeEnum;
-  action: Trading212MarketOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
-  symbol: string;
-  orderQty: number;
 }
 
 export enum Trading212MarketOrderPlaceQueryParamsOrderTypeEnum {

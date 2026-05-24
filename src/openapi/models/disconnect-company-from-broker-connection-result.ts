@@ -18,4 +18,7 @@
 export interface DisconnectCompanyFromBrokerConnectionResult {
   success: boolean;
   message: string;
+  action?: string | null;
+  connection_id?: string | null;
+  disconnect_operation_id?: string | null;
 }

@@ -58,9 +58,21 @@ export interface LegacyBrokerBalance {
    * Broker-provided account ID
    */
   accountId: string;
+  /**
+   * Internal account UUID
+   */
   internalAccountId?: string | null;
+  /**
+   * Connection ID
+   */
   connectionId?: string | null;
+  /**
+   * Balance type
+   */
   balanceType?: string | null;
+  /**
+   * Balance name
+   */
   balanceName?: string | null;
   availableBalance?: Availablebalance | null;
   currentBalance?: Currentbalance | null;
@@ -73,7 +85,16 @@ export interface LegacyBrokerBalance {
   totalCashValue?: Totalcashvalue | null;
   availableToWithdraw?: Availabletowithdraw | null;
   totalRealizedPnl?: Totalrealizedpnl | null;
+  /**
+   * Currency code
+   */
   currencyCode?: string | null;
-  balanceDate?: string | null;
+  /**
+   * Balance as-of date, sourced from balance_created_at
+   */
+  balanceCreatedAt?: string | null;
+  /**
+   * Last updated
+   */
   lastUpdated?: string | null;
 }

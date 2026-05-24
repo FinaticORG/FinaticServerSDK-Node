@@ -117,7 +117,7 @@ export const SessionApiAxiosParamCreator = function (configuration?: Configurati
       // verify required parameter 'xSessionId' is not null or undefined
       assertParamExists('getSessionUserApiBetaSessionSessionIdUserGet', 'xSessionId', xSessionId);
       const localVarPath = `/api/beta/session/{session_id}/user`.replace(
-        `{${'session_id'}}`,
+        '{session_id}',
         encodeURIComponent(String(sessionId))
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -196,23 +196,17 @@ export const SessionApiAxiosParamCreator = function (configuration?: Configurati
      * Start a session with a one-time token.
      * @summary Start Session
      * @param {string} oneTimeToken One-time use token obtained from init_session endpoint to authenticate and start the session
-     * @param {SessionStartRequest} sessionStartRequest Session start request containing optional user ID to associate with the session
+     * @param {SessionStartRequest | null} [sessionStartRequest] Session start request containing optional user ID to associate with the session
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     startSessionApiBetaSessionStartPost: async (
       oneTimeToken: string,
-      sessionStartRequest: SessionStartRequest,
+      sessionStartRequest?: SessionStartRequest | null,
       options: RawAxiosRequestConfig = {}
     ): Promise<RequestArgs> => {
       // verify required parameter 'oneTimeToken' is not null or undefined
       assertParamExists('startSessionApiBetaSessionStartPost', 'oneTimeToken', oneTimeToken);
-      // verify required parameter 'sessionStartRequest' is not null or undefined
-      assertParamExists(
-        'startSessionApiBetaSessionStartPost',
-        'sessionStartRequest',
-        sessionStartRequest
-      );
       const localVarPath = `/api/beta/session/start`;
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
       const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -365,13 +359,13 @@ export const SessionApiFp = function (configuration?: Configuration) {
      * Start a session with a one-time token.
      * @summary Start Session
      * @param {string} oneTimeToken One-time use token obtained from init_session endpoint to authenticate and start the session
-     * @param {SessionStartRequest} sessionStartRequest Session start request containing optional user ID to associate with the session
+     * @param {SessionStartRequest | null} [sessionStartRequest] Session start request containing optional user ID to associate with the session
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
     async startSessionApiBetaSessionStartPost(
       oneTimeToken: string,
-      sessionStartRequest: SessionStartRequest,
+      sessionStartRequest?: SessionStartRequest | null,
       options?: RawAxiosRequestConfig
     ): Promise<
       (
@@ -581,7 +575,7 @@ export interface SessionApiStartSessionApiBetaSessionStartPostRequest {
   /**
    * Session start request containing optional user ID to associate with the session
    */
-  readonly sessionStartRequest: SessionStartRequest;
+  readonly sessionStartRequest?: SessionStartRequest | null;
 }
 
 /**

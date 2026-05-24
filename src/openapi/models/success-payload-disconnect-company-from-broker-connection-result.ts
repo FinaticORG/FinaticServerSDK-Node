@@ -18,6 +18,12 @@ import type { DisconnectCompanyFromBrokerConnectionResult } from './disconnect-c
 
 export interface SuccessPayloadDisconnectCompanyFromBrokerConnectionResult {
   _id?: string;
+  /**
+   * The response data (None when error is present)
+   */
   data?: DisconnectCompanyFromBrokerConnectionResult | null;
+  /**
+   * Optional metadata (pagination, etc.)
+   */
   meta?: { [key: string]: any } | null;
 }

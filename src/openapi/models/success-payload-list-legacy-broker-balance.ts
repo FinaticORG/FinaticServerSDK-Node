@@ -18,6 +18,12 @@ import type { LegacyBrokerBalance } from './legacy-broker-balance';
 
 export interface SuccessPayloadListLegacyBrokerBalance {
   _id?: string;
+  /**
+   * The response data (None when error is present)
+   */
   data?: Array<LegacyBrokerBalance> | null;
+  /**
+   * Optional metadata (pagination, etc.)
+   */
   meta?: { [key: string]: any } | null;
 }

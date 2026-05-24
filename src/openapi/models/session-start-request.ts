@@ -16,5 +16,8 @@
  * Request model for session start.
  */
 export interface SessionStartRequest {
+  /**
+   * Optional user ID to associate with session
+   */
   user_id?: string | null;
 }

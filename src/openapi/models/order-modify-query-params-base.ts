@@ -22,10 +22,16 @@ import type { OrderModifyQueryParamsBaseTimeInForce } from './order-modify-query
 export interface OrderModifyQueryParamsBase {
   [key: string]: any;
 
+  /**
+   * Broker-assigned order identifier
+   */
   orderId?: string | null;
   orderType?: OrderModifyQueryParamsBaseOrderTypeEnum | null;
   assetType?: OrderModifyQueryParamsBaseAssetTypeEnum | null;
   timeInForce?: OrderModifyQueryParamsBaseTimeInForce | null;
+  /**
+   * Indicates algorithmic/automated order source (optional)
+   */
   isAutomated?: boolean | null;
   price?: number | null;
   stopPrice?: number | null;

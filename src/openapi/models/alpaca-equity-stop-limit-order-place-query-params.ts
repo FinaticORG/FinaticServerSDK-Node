@@ -14,10 +14,13 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Notional1 } from './notional1';
+import type { Notional } from './notional';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty } from './orderqty';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 // May contain unused imports in some cases
 // @ts-ignore
 import type { TrailPercent } from './trail-percent';
@@ -34,19 +37,37 @@ export interface AlpacaEquityStopLimitOrderPlaceQueryParams {
   orderType: AlpacaEquityStopLimitOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: AlpacaEquityStopLimitOrderPlaceQueryParamsAssetTypeEnum;
   action: AlpacaEquityStopLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
-  orderQty: number;
+  orderQty: Orderqty;
   stopPrice: number;
   limitPrice: number;
+  /**
+   * Client-provided order ID for tracking
+   */
   client_order_id?: string | null;
+  /**
+   * Allow execution during extended hours
+   */
   extended_hours?: boolean | null;
+  /**
+   * Order class: simple, bracket, oco, oto, mleg
+   */
   order_class?: string | null;
-  notional?: Notional1 | null;
+  notional?: Notional | null;
+  /**
+   * Take profit parameters for bracket/OCO orders
+   */
   take_profit?: { [key: string]: any } | null;
+  /**
+   * Stop loss parameters for bracket/OCO/OTO orders
+   */
   stop_loss?: { [key: string]: any } | null;
   trail_percent?: TrailPercent | null;
   trail_price?: TrailPrice | null;
+  /**
+   * Legs array for multi-leg orders
+   */
   legs?: Array<{ [key: string]: any }> | null;
 }
 

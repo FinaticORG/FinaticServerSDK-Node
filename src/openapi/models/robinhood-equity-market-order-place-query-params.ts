@@ -14,10 +14,13 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty1 } from './orderqty1';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
- * Equity market order with Robinhood-specific extras.
+ * Robinhood equity market order (no price; executes at best available).
  */
 export interface RobinhoodEquityMarketOrderPlaceQueryParams {
   [key: string]: any;
@@ -25,9 +28,9 @@ export interface RobinhoodEquityMarketOrderPlaceQueryParams {
   orderType: RobinhoodEquityMarketOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: RobinhoodEquityMarketOrderPlaceQueryParamsAssetTypeEnum;
   action: RobinhoodEquityMarketOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
-  orderQty: number;
+  orderQty: Orderqty1;
   /**
    * Allow trading during extended hours (premium users only)
    */

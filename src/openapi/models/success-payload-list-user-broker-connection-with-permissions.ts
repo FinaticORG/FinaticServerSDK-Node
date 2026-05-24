@@ -18,6 +18,12 @@ import type { UserBrokerConnectionWithPermissions } from './user-broker-connecti
 
 export interface SuccessPayloadListUserBrokerConnectionWithPermissions {
   _id?: string;
+  /**
+   * The response data (None when error is present)
+   */
   data?: Array<UserBrokerConnectionWithPermissions> | null;
+  /**
+   * Optional metadata (pagination, etc.)
+   */
   meta?: { [key: string]: any } | null;
 }

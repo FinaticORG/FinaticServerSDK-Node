@@ -14,10 +14,13 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Orderqty2 } from './orderqty2';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { Timeinforce } from './timeinforce';
 
 /**
- * Crypto limit order with Robinhood-specific extras.
+ * Robinhood crypto limit order (requires price).
  */
 export interface RobinhoodCryptoLimitOrderPlaceQueryParams {
   [key: string]: any;
@@ -25,9 +28,9 @@ export interface RobinhoodCryptoLimitOrderPlaceQueryParams {
   orderType: RobinhoodCryptoLimitOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: RobinhoodCryptoLimitOrderPlaceQueryParamsAssetTypeEnum;
   action: RobinhoodCryptoLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
-  orderQty: number;
+  orderQty: Orderqty2;
   price: number;
   /**
    * Whether quantityOrPrice represents quantity or price

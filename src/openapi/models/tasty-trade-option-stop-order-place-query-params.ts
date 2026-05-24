@@ -14,7 +14,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Option stop order with TastyTrade extras.
@@ -25,7 +25,7 @@ export interface TastyTradeOptionStopOrderPlaceQueryParams {
   orderType: TastyTradeOptionStopOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: TastyTradeOptionStopOrderPlaceQueryParamsAssetTypeEnum;
   action: TastyTradeOptionStopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   stopPrice: number;

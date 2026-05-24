@@ -14,7 +14,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
  * Option trailing stop order with TradeStation-specific extras.
@@ -25,14 +25,20 @@ export interface TradestationOptionTrailingStopOrderPlaceQueryParams {
   orderType: TradestationOptionTrailingStopOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: TradestationOptionTrailingStopOrderPlaceQueryParamsAssetTypeEnum;
   action: TradestationOptionTrailingStopOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   stopPrice: number;
   trailPercent?: number | null;
   trailPrice?: number | null;
   accountId?: string | null;
+  /**
+   * Route name from Get Routes; optional. If set, used as-is; else \"Intelligent\".
+   */
   route?: string | null;
+  /**
+   * Hint for option route type when resolving via Get Routes (future): stock_option (STOCKOPTION) or index_option (INDEXOPTION). Ignored if ``route`` is set.
+   */
   optionRouteKind?: TradestationOptionTrailingStopOrderPlaceQueryParamsOptionRouteKindEnum | null;
 }
 

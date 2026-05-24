@@ -17,10 +17,10 @@
 import type { RobinhoodOptionSpreadLeg } from './robinhood-option-spread-leg';
 // May contain unused imports in some cases
 // @ts-ignore
-import type { Timeinforce1 } from './timeinforce1';
+import type { Timeinforce } from './timeinforce';
 
 /**
- * Option limit order with Robinhood-specific extras.
+ * Robinhood option limit order (requires price; single-leg or spread).
  */
 export interface RobinhoodOptionLimitOrderPlaceQueryParams {
   [key: string]: any;
@@ -28,16 +28,37 @@ export interface RobinhoodOptionLimitOrderPlaceQueryParams {
   orderType: RobinhoodOptionLimitOrderPlaceQueryParamsOrderTypeEnum;
   assetType?: RobinhoodOptionLimitOrderPlaceQueryParamsAssetTypeEnum;
   action: RobinhoodOptionLimitOrderPlaceQueryParamsActionEnum;
-  timeInForce: Timeinforce1;
+  timeInForce: Timeinforce;
   symbol: string;
   orderQty: number;
   price: number;
+  /**
+   * Direction for option spread orders (debit/credit)
+   */
   direction?: RobinhoodOptionLimitOrderPlaceQueryParamsDirectionEnum | null;
+  /**
+   * Spread legs for order_option_spread()
+   */
   spread?: Array<RobinhoodOptionSpreadLeg> | null;
+  /**
+   * Position effect for single-leg option orders
+   */
   positionEffect?: RobinhoodOptionLimitOrderPlaceQueryParamsPositionEffectEnum | null;
+  /**
+   * Credit or debit for single-leg option orders
+   */
   creditOrDebit?: RobinhoodOptionLimitOrderPlaceQueryParamsCreditOrDebitEnum | null;
+  /**
+   * Option expiration date (YYYY-MM-DD format)
+   */
   expirationDate?: string | null;
+  /**
+   * Option strike price
+   */
   strikePrice?: number | null;
+  /**
+   * Option type (call/put/both)
+   */
   optionType?: RobinhoodOptionLimitOrderPlaceQueryParamsOptionTypeEnum | null;
 }
 

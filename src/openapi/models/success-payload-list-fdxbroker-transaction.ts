@@ -12,12 +12,14 @@
  * Do not edit the class manually.
  */
 
-// May contain unused imports in some cases
-// @ts-ignore
-import type { FDXBrokerTransaction } from './fdxbroker-transaction';
-
 export interface SuccessPayloadListFDXBrokerTransaction {
   _id?: string;
-  data?: Array<FDXBrokerTransaction> | null;
+  /**
+   * The response data (None when error is present)
+   */
+  data?: Array<any> | null;
+  /**
+   * Optional metadata (pagination, etc.)
+   */
   meta?: { [key: string]: any } | null;
 }

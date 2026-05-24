@@ -18,10 +18,16 @@ import type { OrderModifyQueryParamsBaseTimeInForce } from './order-modify-query
 
 export interface WebullTrailingStopOrderModifyQueryParams {
   orderQty?: number | null;
+  /**
+   * Broker-assigned order identifier
+   */
   orderId?: string | null;
   orderType: WebullTrailingStopOrderModifyQueryParamsOrderTypeEnum;
   assetType?: WebullTrailingStopOrderModifyQueryParamsAssetTypeEnum | null;
   timeInForce?: OrderModifyQueryParamsBaseTimeInForce | null;
+  /**
+   * Indicates algorithmic/automated order source (optional)
+   */
   isAutomated?: boolean | null;
   price?: number | null;
   stopPrice: number;
