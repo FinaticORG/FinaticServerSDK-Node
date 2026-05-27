@@ -15,9 +15,9 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { SuccessPayloadListLegacyBrokerBalance } from './success-payload-list-legacy-broker-balance';
+import type { SuccessPayloadSessionUserResponse } from './success-payload-session-user-response';
 
-export interface FinaticResponseListLegacyBrokerBalance {
+export interface FinaticResponseSessionUserResponse {
     /**
      * Request trace identifier for tracking and debugging. Auto-generated if not provided.
      */
@@ -25,7 +25,7 @@ export interface FinaticResponseListLegacyBrokerBalance {
     /**
      * Success payload containing data and optional meta. None when error is present.
      */
-    'success'?: SuccessPayloadListLegacyBrokerBalance | null;
+    'success'?: SuccessPayloadSessionUserResponse | null;
     /**
      * Optional error object with message, code, status, and details
      */
