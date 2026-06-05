@@ -11,6 +11,10 @@ import {
 } from '../../src/index';
 
 describe('public surface @finatic/server-node', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('exports FinaticServer', () => {
     expect(FinaticServer).toBeDefined();
     expect(typeof FinaticServer).toBe('function');
@@ -32,5 +36,17 @@ describe('public surface @finatic/server-node', () => {
     expect(typeof finatic.v1.listAccounts).toBe('function');
     expect(typeof finatic.v1.listPositions).toBe('function');
     expect(typeof finatic.v1.createPortalAccountGrant).toBe('function');
+  });
+
+  it('exposes account-first v1 facade when initialized through static init', async () => {
+    jest
+      .spyOn(FinaticServer.prototype, 'startSession')
+      .mockResolvedValue({ session_id: 'session_123', company_id: 'company_123' });
+
+    const finatic = await FinaticServer.init('fntc_test_key');
+
+    expect(finatic).toBeInstanceOf(FinaticServer);
+    expect(finatic.v1).toBeDefined();
+    expect(typeof finatic.v1.listAccounts).toBe('function');
   });
 });

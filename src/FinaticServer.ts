@@ -15,6 +15,49 @@ export class FinaticServer extends GeneratedFinaticServer {
 
   readonly v1: V1Wrapper;
 
+  static override async init(
+    apiKey: string,
+    userId?: string,
+    sdkConfig?: Partial<SdkConfig>
+  ): Promise<FinaticServer> {
+    const instance = new FinaticServer(apiKey, sdkConfig);
+
+    try {
+      const sessionResult = await instance.startSession(userId ? { userId } : undefined);
+
+      if ('success' in sessionResult && !sessionResult.success) {
+        throw new Error(
+          sessionResult.error ||
+            'Session initialization failed. Please check that the API endpoint returned a valid session response and ensure the API key is valid.'
+        );
+      }
+
+      const sessionId = sessionResult.session_id || instance.getSessionId();
+      if (!sessionId) {
+        throw new Error(
+          'Session initialization failed: startSession() did not return a session_id. ' +
+            'Please check that the API endpoint returned a valid session response.'
+        );
+      }
+
+      return instance;
+    } catch (error) {
+      if (error instanceof Error) {
+        if (
+          error.message.includes('Session not initialized') ||
+          error.message.includes('session_id')
+        ) {
+          throw new Error(
+            `Failed to initialize Finatic session: ${error.message}. ` +
+              'This may indicate that startSession() was called but did not successfully create a session. ' +
+              'Please check the API response and ensure the API key is valid.'
+          );
+        }
+      }
+      throw error;
+    }
+  }
+
   constructor(apiKey: string, sdkConfig?: Partial<SdkConfig>) {
     super(apiKey, sdkConfig);
     this.v1 = new V1Wrapper(apiKey, { ...defaultConfig, ...sdkConfig });

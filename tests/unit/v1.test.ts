@@ -217,20 +217,13 @@ describe('V1 account-first wrapper', () => {
     );
   });
 
-  it('covers webhook subscription read and update routes', async () => {
+  it('covers webhook subscription update route', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
 
-    await wrapper.getWebhookSubscription('subscription_123');
     await wrapper.updateWebhookSubscription('subscription_123', { active: false });
 
     expect(requests[0]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/webhooks/subscriptions/subscription_123',
-      })
-    );
-    expect(requests[1]).toEqual(
       expect.objectContaining({
         method: 'PATCH',
         url: '/api/v1/webhooks/subscriptions/subscription_123',

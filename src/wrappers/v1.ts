@@ -512,18 +512,6 @@ export class V1Wrapper {
     return this.request<T>('POST', '/api/v1/webhooks/subscriptions', { data: body }, options);
   }
 
-  getWebhookSubscription<T = unknown>(
-    subscriptionId: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'GET',
-      `/api/v1/webhooks/subscriptions/${encodeURIComponent(subscriptionId)}`,
-      {},
-      options
-    );
-  }
-
   updateWebhookSubscription<T = unknown>(
     subscriptionId: string,
     body: unknown,
