@@ -316,4 +316,36 @@ describe('V1 account-first wrapper', () => {
       ],
     });
   });
+
+  it('normalizes axios HTTP errors into the public v1 error envelope', async () => {
+    const client = {
+      request: jest.fn(async () => {
+        throw {
+          isAxiosError: true,
+          response: {
+            status: 422,
+            headers: { 'x-request-id': 'request-123' },
+            data: { message: 'missing accountId' },
+          },
+        };
+      }),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.getAccount('acct_123');
+
+    expect(result).toEqual({
+      traceId: 'request-123',
+      data: null,
+      warnings: [],
+      errors: [
+        {
+          category: 'VALIDATION',
+          code: 'VALIDATION',
+          message: 'missing accountId',
+          status: 422,
+        },
+      ],
+    });
+  });
 });

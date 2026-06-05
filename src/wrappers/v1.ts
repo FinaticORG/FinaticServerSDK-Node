@@ -18,6 +18,7 @@ export interface FinaticV1Error {
   category?: string;
   code: FinaticV1ErrorCode;
   message: string;
+  status?: number;
   details?: Record<string, unknown> | null;
 }
 
@@ -586,8 +587,19 @@ export class V1Wrapper {
       params: this.cleanParams(request.params),
       data: request.data,
     };
-    const response: AxiosResponse<unknown> = await this.client.request(config);
-    return this.normalizeResponse<T>(response.data);
+    try {
+      const response: AxiosResponse<unknown> = await this.client.request(config);
+      return this.normalizeResponse<T>(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        return this.normalizeErrorResponse<T>(
+          error.response.data,
+          error.response.status,
+          error.response.headers
+        );
+      }
+      throw error;
+    }
   }
 
   private normalizeResponse<T>(payload: unknown): FinaticV1Response<T> {
@@ -623,6 +635,34 @@ export class V1Wrapper {
     };
   }
 
+  private normalizeErrorResponse<T>(
+    payload: unknown,
+    status: number,
+    headers: unknown
+  ): FinaticV1Response<T> {
+    if (payload && typeof payload === 'object') {
+      const record = payload as Record<string, unknown>;
+      const errorPayload = record['errors'] ?? record['error'];
+      const message = record['message'] ?? record['detail'] ?? record['title'] ?? `HTTP ${status}`;
+      return {
+        traceId: this.traceId(record, headers),
+        data: null,
+        warnings: this.normalizeWarnings(record['warnings'] ?? record['warning']),
+        errors:
+          errorPayload === undefined
+            ? [this.normalizeError({ message }, status)]
+            : this.normalizeErrors(errorPayload, status),
+      };
+    }
+
+    return {
+      traceId: this.traceId(null, headers),
+      data: null,
+      warnings: [],
+      errors: [this.normalizeError({ message: String(payload || `HTTP ${status}`) }, status)],
+    };
+  }
+
   private normalizeWarnings(value: unknown): FinaticV1Warning[] {
     if (!Array.isArray(value)) {
       return [];
@@ -640,27 +680,38 @@ export class V1Wrapper {
       }));
   }
 
-  private normalizeErrors(value: unknown): FinaticV1Error[] {
+  private normalizeErrors(value: unknown, status?: number): FinaticV1Error[] {
     const rawErrors = Array.isArray(value) ? value : value ? [value] : [];
     return rawErrors
       .filter((error): error is Record<string, unknown> => {
         return Boolean(error && typeof error === 'object');
       })
-      .map((error) => {
-        const code = this.normalizeErrorCode(error['code']);
-        return {
-          ...(typeof error['category'] === 'string' ? { category: error['category'] } : {}),
-          code,
-          message: typeof error['message'] === 'string' ? error['message'] : code,
-          ...(error['details'] && typeof error['details'] === 'object'
-            ? { details: error['details'] as Record<string, unknown> }
-            : {}),
-        };
-      });
+      .map((error) => this.normalizeError(error, status));
   }
 
-  private normalizeErrorCode(value: unknown): FinaticV1ErrorCode {
-    const rawCode = typeof value === 'string' ? value : 'INTERNAL';
+  private normalizeError(error: Record<string, unknown>, status?: number): FinaticV1Error {
+    const code = this.normalizeErrorCode(error['code'], status, error);
+    return {
+      ...(typeof error['category'] === 'string'
+        ? { category: error['category'] }
+        : status !== undefined
+          ? { category: code }
+          : {}),
+      code,
+      message: typeof error['message'] === 'string' ? error['message'] : code,
+      ...(status !== undefined ? { status } : {}),
+      ...(error['details'] && typeof error['details'] === 'object'
+        ? { details: error['details'] as Record<string, unknown> }
+        : {}),
+    };
+  }
+
+  private normalizeErrorCode(
+    value: unknown,
+    status?: number,
+    error?: Record<string, unknown>
+  ): FinaticV1ErrorCode {
+    const rawCode = typeof value === 'string' ? value : undefined;
     if (
       rawCode === 'AUTHENTICATION' ||
       rawCode === 'AUTHORIZATION' ||
@@ -674,7 +725,66 @@ export class V1Wrapper {
     ) {
       return rawCode;
     }
+    if (rawCode === 'AUTH_ERROR') {
+      return 'AUTHENTICATION';
+    }
+    if (rawCode === 'ACCESS_DENIED') {
+      return 'AUTHORIZATION';
+    }
+    if (rawCode === 'VALIDATION_ERROR') {
+      return 'VALIDATION';
+    }
+    if (rawCode === 'SESSION_NOT_FOUND' || rawCode === 'ACCOUNT_NOT_FOUND') {
+      return 'NOT_FOUND';
+    }
+    const message = typeof error?.['message'] === 'string' ? error['message'].toLowerCase() : '';
+    if (message.includes('reauth') || message.includes('re-authoriz')) {
+      return 'REAUTH_REQUIRED';
+    }
+    if (message.includes('provider') || message.includes('broker')) {
+      return 'PROVIDER_ERROR';
+    }
+    if (status === 400 || status === 422) {
+      return 'VALIDATION';
+    }
+    if (status === 401) {
+      return 'AUTHENTICATION';
+    }
+    if (status === 403) {
+      return 'AUTHORIZATION';
+    }
+    if (status === 404) {
+      return 'NOT_FOUND';
+    }
+    if (status === 409) {
+      return 'CONFLICT';
+    }
+    if (status === 429) {
+      return 'RATE_LIMITED';
+    }
     return 'INTERNAL';
+  }
+
+  private traceId(payload: Record<string, unknown> | null, headers: unknown): string | null {
+    const payloadTrace = payload?.['traceId'] ?? payload?.['trace_id'] ?? payload?.['_id'];
+    if (typeof payloadTrace === 'string') {
+      return payloadTrace;
+    }
+    if (headers && typeof headers === 'object' && 'get' in headers) {
+      const get = (headers as { get: (name: string) => unknown }).get.bind(headers);
+      const headerTrace = get('x-trace-id') ?? get('x-request-id');
+      return typeof headerTrace === 'string' ? headerTrace : null;
+    }
+    if (headers && typeof headers === 'object') {
+      const record = headers as Record<string, unknown>;
+      const headerTrace =
+        record['x-trace-id'] ??
+        record['X-Trace-ID'] ??
+        record['x-request-id'] ??
+        record['X-Request-ID'];
+      return typeof headerTrace === 'string' ? headerTrace : null;
+    }
+    return null;
   }
 
   private cleanParams(
