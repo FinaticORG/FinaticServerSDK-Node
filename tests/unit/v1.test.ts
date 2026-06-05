@@ -101,7 +101,7 @@ describe('V1 account-first wrapper', () => {
     expect(requests[1]).toEqual(
       expect.objectContaining({
         method: 'POST',
-        url: '/api/v1/sessions/session_123/account-grants',
+        url: '/api/v1/portal/session_123/account-grants',
         data: expect.objectContaining({
           accountId: 'account_123',
           authAttemptId: 'auth_attempt_123',
@@ -112,6 +112,56 @@ describe('V1 account-first wrapper', () => {
       expect.objectContaining({
         method: 'GET',
         url: '/api/v1/sessions/session_123/sync-status',
+      })
+    );
+  });
+
+  it('uses API v1 revoke routes for grants, consents, and webhook subscriptions', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.revokeAccountGrant('grant_123');
+    await wrapper.revokeConsent('consent_123');
+    await wrapper.revokeWebhookSubscription('subscription_123');
+
+    expect(requests[0]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/account-grants/grant_123/revoke',
+      })
+    );
+    expect(requests[1]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/consents/consent_123/revoke',
+      })
+    );
+    expect(requests[2]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/webhooks/subscriptions/subscription_123/revoke',
+      })
+    );
+  });
+
+  it('covers webhook subscription read and update routes', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.getWebhookSubscription('subscription_123');
+    await wrapper.updateWebhookSubscription('subscription_123', { active: false });
+
+    expect(requests[0]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/webhooks/subscriptions/subscription_123',
+      })
+    );
+    expect(requests[1]).toEqual(
+      expect.objectContaining({
+        method: 'PATCH',
+        url: '/api/v1/webhooks/subscriptions/subscription_123',
+        data: { active: false },
       })
     );
   });

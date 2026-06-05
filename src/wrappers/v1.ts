@@ -137,7 +137,7 @@ export class V1Wrapper {
   ): Promise<FinaticV1Response<T>> {
     return this.request<T>(
       'POST',
-      `/api/v1/sessions/${encodeURIComponent(sessionId)}/account-grants`,
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/account-grants`,
       { data: body },
       options
     );
@@ -219,13 +219,6 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.listAccountResource<T>('orders', params, options);
-  }
-
-  listOrderGroups<T = unknown>(
-    params: AccountScopedParams,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.listAccountResource<T>('order-groups', params, options);
   }
 
   listPositionLots<T = unknown>(
@@ -344,8 +337,8 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.request<T>(
-      'DELETE',
-      `/api/v1/account-grants/${encodeURIComponent(grantId)}`,
+      'POST',
+      `/api/v1/account-grants/${encodeURIComponent(grantId)}/revoke`,
       {},
       options
     );
@@ -374,8 +367,8 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.request<T>(
-      'DELETE',
-      `/api/v1/consents/${encodeURIComponent(consentId)}`,
+      'POST',
+      `/api/v1/consents/${encodeURIComponent(consentId)}/revoke`,
       {},
       options
     );
@@ -402,6 +395,43 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.request<T>('POST', '/api/v1/webhooks/subscriptions', { data: body }, options);
+  }
+
+  getWebhookSubscription<T = unknown>(
+    subscriptionId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/webhooks/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      {},
+      options
+    );
+  }
+
+  updateWebhookSubscription<T = unknown>(
+    subscriptionId: string,
+    body: unknown,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'PATCH',
+      `/api/v1/webhooks/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      { data: body },
+      options
+    );
+  }
+
+  revokeWebhookSubscription<T = unknown>(
+    subscriptionId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      `/api/v1/webhooks/subscriptions/${encodeURIComponent(subscriptionId)}/revoke`,
+      {},
+      options
+    );
   }
 
   private listAccountResource<T>(
