@@ -84,12 +84,15 @@ describe('V1 account-first wrapper', () => {
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
 
     await wrapper.createPortalLink('session_123');
+    await wrapper.createPortalAuthAttempt('session_123', { brokerId: 'alpaca' });
+    await wrapper.getPortalAuthAttempt('session_123', 'auth_attempt_123');
     await wrapper.createPortalAccountGrant('session_123', {
       accountId: 'account_123',
       authAttemptId: 'auth_attempt_123',
       canRead: true,
       canTrade: false,
     });
+    await wrapper.completePortalSession('session_123');
     await wrapper.getSessionSyncStatus('session_123');
 
     expect(requests[0]).toEqual(
@@ -101,6 +104,19 @@ describe('V1 account-first wrapper', () => {
     expect(requests[1]).toEqual(
       expect.objectContaining({
         method: 'POST',
+        url: '/api/v1/portal/session_123/auth-attempts',
+        data: { brokerId: 'alpaca' },
+      })
+    );
+    expect(requests[2]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/portal/session_123/auth-attempts/auth_attempt_123',
+      })
+    );
+    expect(requests[3]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
         url: '/api/v1/portal/session_123/account-grants',
         data: expect.objectContaining({
           accountId: 'account_123',
@@ -108,10 +124,66 @@ describe('V1 account-first wrapper', () => {
         }),
       })
     );
-    expect(requests[2]).toEqual(
+    expect(requests[4]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/portal/session_123/complete',
+      })
+    );
+    expect(requests[5]).toEqual(
       expect.objectContaining({
         method: 'GET',
         url: '/api/v1/sessions/session_123/sync-status',
+      })
+    );
+  });
+
+  it('covers portal read, user-link, institution, discovery, and company routes', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.getPortal('portal_token_123');
+    await wrapper.getPortalOauthCompletion('oauth_token_123');
+    await wrapper.linkPortalUser('session_123', { userId: 'user_123' });
+    await wrapper.listPortalInstitutions('session_123');
+    await wrapper.listDiscoveredAccounts('session_123');
+    await wrapper.getCompany('company_123');
+
+    expect(requests[0]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/portal/portal_token_123',
+      })
+    );
+    expect(requests[1]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/portal/oauth/completion/oauth_token_123',
+      })
+    );
+    expect(requests[2]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/portal/session_123/user-link',
+        data: { userId: 'user_123' },
+      })
+    );
+    expect(requests[3]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/portal/session_123/institutions',
+      })
+    );
+    expect(requests[4]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/portal/session_123/discovered-accounts',
+      })
+    );
+    expect(requests[5]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/company/company_123',
       })
     );
   });

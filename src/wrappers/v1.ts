@@ -123,6 +123,90 @@ export class V1Wrapper {
     );
   }
 
+  getPortal<T = unknown>(
+    token: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>('GET', `/api/v1/portal/${encodeURIComponent(token)}`, {}, options);
+  }
+
+  getPortalOauthCompletion<T = unknown>(
+    token: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/portal/oauth/completion/${encodeURIComponent(token)}`,
+      {},
+      options
+    );
+  }
+
+  linkPortalUser<T = unknown>(
+    sessionId: string,
+    body: { userId: string },
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/user-link`,
+      { data: body },
+      options
+    );
+  }
+
+  listPortalInstitutions<T = unknown>(
+    sessionId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/institutions`,
+      {},
+      options
+    );
+  }
+
+  createPortalAuthAttempt<T = unknown>(
+    sessionId: string,
+    body: { brokerId: string },
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/auth-attempts`,
+      { data: body },
+      options
+    );
+  }
+
+  getPortalAuthAttempt<T = unknown>(
+    sessionId: string,
+    authAttemptId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/auth-attempts/${encodeURIComponent(
+        authAttemptId
+      )}`,
+      {},
+      options
+    );
+  }
+
+  listDiscoveredAccounts<T = unknown>(
+    sessionId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/discovered-accounts`,
+      {},
+      options
+    );
+  }
+
   createPortalAccountGrant<T = unknown>(
     sessionId: string,
     body: {
@@ -139,6 +223,18 @@ export class V1Wrapper {
       'POST',
       `/api/v1/portal/${encodeURIComponent(sessionId)}/account-grants`,
       { data: body },
+      options
+    );
+  }
+
+  completePortalSession<T = unknown>(
+    sessionId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      `/api/v1/portal/${encodeURIComponent(sessionId)}/complete`,
+      {},
       options
     );
   }
@@ -191,6 +287,13 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.getAccount<T>(accountId, options);
+  }
+
+  getCompany<T = unknown>(
+    companyId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>('GET', `/api/v1/company/${encodeURIComponent(companyId)}`, {}, options);
   }
 
   listBalances<T = unknown>(
