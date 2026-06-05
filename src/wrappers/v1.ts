@@ -15,6 +15,7 @@ export type FinaticV1ErrorCode =
   | 'INTERNAL';
 
 export interface FinaticV1Error {
+  category?: string;
   code: FinaticV1ErrorCode;
   message: string;
   details?: Record<string, unknown> | null;
@@ -27,13 +28,10 @@ export interface FinaticV1Warning {
 }
 
 export interface FinaticV1Response<T = unknown> {
-  _id?: string;
-  success?: {
-    data: T;
-    meta?: Record<string, unknown> | null;
-  };
-  error?: FinaticV1Error | Record<string, unknown> | null;
-  warning?: FinaticV1Warning[] | Array<Record<string, unknown>> | null;
+  traceId: string | null;
+  data: T | null;
+  warnings: FinaticV1Warning[];
+  errors: FinaticV1Error[];
 }
 
 export interface FinaticV1CallOptions {
@@ -588,8 +586,95 @@ export class V1Wrapper {
       params: this.cleanParams(request.params),
       data: request.data,
     };
-    const response: AxiosResponse<FinaticV1Response<T>> = await this.client.request(config);
-    return response.data;
+    const response: AxiosResponse<unknown> = await this.client.request(config);
+    return this.normalizeResponse<T>(response.data);
+  }
+
+  private normalizeResponse<T>(payload: unknown): FinaticV1Response<T> {
+    if (payload && typeof payload === 'object') {
+      const record = payload as Record<string, unknown>;
+      if ('traceId' in record || 'data' in record || 'warnings' in record || 'errors' in record) {
+        return {
+          traceId: typeof record['traceId'] === 'string' ? record['traceId'] : null,
+          data: (record['data'] as T | undefined) ?? null,
+          warnings: this.normalizeWarnings(record['warnings']),
+          errors: this.normalizeErrors(record['errors']),
+        };
+      }
+
+      const success = record['success'];
+      const successData =
+        success && typeof success === 'object'
+          ? (success as Record<string, unknown>)['data']
+          : undefined;
+      return {
+        traceId: typeof record['_id'] === 'string' ? record['_id'] : null,
+        data: (successData as T | undefined) ?? null,
+        warnings: this.normalizeWarnings(record['warnings'] ?? record['warning']),
+        errors: this.normalizeErrors(record['errors'] ?? record['error']),
+      };
+    }
+
+    return {
+      traceId: null,
+      data: (payload as T | undefined) ?? null,
+      warnings: [],
+      errors: [],
+    };
+  }
+
+  private normalizeWarnings(value: unknown): FinaticV1Warning[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    return value
+      .filter((warning): warning is Record<string, unknown> => {
+        return Boolean(warning && typeof warning === 'object');
+      })
+      .map((warning) => ({
+        ...(typeof warning['code'] === 'string' ? { code: warning['code'] } : {}),
+        ...(typeof warning['message'] === 'string' ? { message: warning['message'] } : {}),
+        ...(warning['details'] && typeof warning['details'] === 'object'
+          ? { details: warning['details'] as Record<string, unknown> }
+          : {}),
+      }));
+  }
+
+  private normalizeErrors(value: unknown): FinaticV1Error[] {
+    const rawErrors = Array.isArray(value) ? value : value ? [value] : [];
+    return rawErrors
+      .filter((error): error is Record<string, unknown> => {
+        return Boolean(error && typeof error === 'object');
+      })
+      .map((error) => {
+        const code = this.normalizeErrorCode(error['code']);
+        return {
+          ...(typeof error['category'] === 'string' ? { category: error['category'] } : {}),
+          code,
+          message: typeof error['message'] === 'string' ? error['message'] : code,
+          ...(error['details'] && typeof error['details'] === 'object'
+            ? { details: error['details'] as Record<string, unknown> }
+            : {}),
+        };
+      });
+  }
+
+  private normalizeErrorCode(value: unknown): FinaticV1ErrorCode {
+    const rawCode = typeof value === 'string' ? value : 'INTERNAL';
+    if (
+      rawCode === 'AUTHENTICATION' ||
+      rawCode === 'AUTHORIZATION' ||
+      rawCode === 'VALIDATION' ||
+      rawCode === 'RATE_LIMITED' ||
+      rawCode === 'REAUTH_REQUIRED' ||
+      rawCode === 'PROVIDER_ERROR' ||
+      rawCode === 'CONFLICT' ||
+      rawCode === 'NOT_FOUND' ||
+      rawCode === 'INTERNAL'
+    ) {
+      return rawCode;
+    }
+    return 'INTERNAL';
   }
 
   private cleanParams(

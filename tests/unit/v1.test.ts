@@ -42,10 +42,10 @@ function createClient(): { client: AxiosInstance; requests: AxiosRequestConfig[]
       requests.push(config);
       return {
         data: {
-          _id: 'trace-id',
-          success: { data: { ok: true }, meta: null },
-          error: null,
-          warning: null,
+          traceId: 'trace-id',
+          data: { ok: true },
+          warnings: [],
+          errors: [],
         },
       };
     }),
@@ -62,7 +62,8 @@ describe('V1 account-first wrapper', () => {
 
     const result = await wrapper.listPositions({ accountId: 'acct_123', limit: 25 });
 
-    expect(result._id).toBe('trace-id');
+    expect(result.traceId).toBe('trace-id');
+    expect(result.data).toEqual({ ok: true });
     expect(requests[0]).toEqual(
       expect.objectContaining({
         method: 'GET',
@@ -281,5 +282,38 @@ describe('V1 account-first wrapper', () => {
 
     expect(params).not.toContain('connectionId');
     expect(params).not.toContain('user_broker_connection_id');
+  });
+
+  it('normalizes legacy envelope fields into the public v1 response shape', async () => {
+    const client = {
+      request: jest.fn(async () => ({
+        data: {
+          _id: 'legacy-trace-id',
+          success: { data: { accountId: 'acct_123' } },
+          warning: [{ code: 'STALE_DATA', message: 'Account data is stale' }],
+          error: {
+            code: 'PROVIDER_ERROR',
+            message: 'Provider is temporarily unavailable',
+            details: { provider: 'alpaca' },
+          },
+        },
+      })),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.getAccount('acct_123');
+
+    expect(result).toEqual({
+      traceId: 'legacy-trace-id',
+      data: { accountId: 'acct_123' },
+      warnings: [{ code: 'STALE_DATA', message: 'Account data is stale' }],
+      errors: [
+        {
+          code: 'PROVIDER_ERROR',
+          message: 'Provider is temporarily unavailable',
+          details: { provider: 'alpaca' },
+        },
+      ],
+    });
   });
 });
