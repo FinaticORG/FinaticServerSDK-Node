@@ -12,6 +12,7 @@ export type {
   AccountPositionLotFillsParams,
   AccountScopedParams,
   CreateAccountOrderCommandParams,
+  DiscoveredAccountsParams,
   FinaticV1CallOptions,
   FinaticV1Error,
   FinaticV1ErrorCode,

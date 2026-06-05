@@ -56,6 +56,10 @@ export interface AccountPositionLotFillsParams {
   lotId: string;
 }
 
+export interface DiscoveredAccountsParams {
+  authAttemptId?: string;
+}
+
 export interface CreateAccountOrderCommandParams {
   accountId: string;
   body?: unknown;
@@ -197,13 +201,21 @@ export class V1Wrapper {
 
   listDiscoveredAccounts<T = unknown>(
     sessionId: string,
+    paramsOrOptions: DiscoveredAccountsParams | FinaticV1CallOptions = {},
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
+    let params: Record<string, QueryValue> = {};
+    let callOptions: FinaticV1CallOptions | undefined = options;
+    if ('authAttemptId' in paramsOrOptions) {
+      params = { authAttemptId: paramsOrOptions.authAttemptId };
+    } else {
+      callOptions = paramsOrOptions as FinaticV1CallOptions;
+    }
     return this.request<T>(
       'GET',
       `/api/v1/portal/${encodeURIComponent(sessionId)}/discovered-accounts`,
-      {},
-      options
+      { params },
+      callOptions
     );
   }
 
