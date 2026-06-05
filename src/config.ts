@@ -13,6 +13,9 @@
  */
 
 export interface SdkConfig {
+  /** Account-first v1 API environment sent as X-Finatic-Environment */
+  apiEnvironment: FinaticApiEnvironment;
+
   // ═══════════════════════════════════════════════════════════════════════
   // API Configuration
   // ═══════════════════════════════════════════════════════════════════════
@@ -140,11 +143,15 @@ export interface SdkConfig {
   }) => void;
 }
 
+export type FinaticApiEnvironment = 'live' | 'sandbox';
+
 /**
  * Default configuration values.
  * Override via environment variables or custom config.
  */
 export const defaultConfig: SdkConfig = {
+  apiEnvironment: process.env['FINATIC_API_ENVIRONMENT'] === 'sandbox' ? 'sandbox' : 'live',
+
   // API Configuration
   baseUrl: process.env['FINATIC_API_URL'] || 'https://api.finatic.dev',
   ...(process.env['FINATIC_API_KEY'] ? { apiKey: process.env['FINATIC_API_KEY'] } : {}),
