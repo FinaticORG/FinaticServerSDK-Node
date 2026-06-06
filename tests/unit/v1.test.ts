@@ -54,7 +54,71 @@ function createClient(): { client: AxiosInstance; requests: AxiosRequestConfig[]
   return { client, requests };
 }
 
+const V1_OPENAPI_OPERATION_METHODS = {
+  'GET /api/v1/account-grants': 'listAccountGrants',
+  'GET /api/v1/account-grants/{grantId}': 'getAccountGrant',
+  'PATCH /api/v1/account-grants/{grantId}': 'updateAccountGrant',
+  'POST /api/v1/account-grants/{grantId}/revoke': 'revokeAccountGrant',
+  'GET /api/v1/accounts': 'listAccounts',
+  'GET /api/v1/accounts/{accountId}': 'getAccount',
+  'GET /api/v1/accounts/{accountId}/balances': 'listAccountBalances',
+  'GET /api/v1/accounts/{accountId}/orders': 'listAccountOrders',
+  'POST /api/v1/accounts/{accountId}/orders': 'createAccountOrder',
+  'DELETE /api/v1/accounts/{accountId}/orders/{orderId}': 'cancelAccountOrder',
+  'GET /api/v1/accounts/{accountId}/orders/{orderId}': 'getAccountOrder',
+  'PATCH /api/v1/accounts/{accountId}/orders/{orderId}': 'modifyAccountOrder',
+  'GET /api/v1/accounts/{accountId}/orders/{orderId}/events': 'getAccountOrderEvents',
+  'GET /api/v1/accounts/{accountId}/orders/{orderId}/fills': 'getAccountOrderFills',
+  'GET /api/v1/accounts/{accountId}/position-lots': 'listAccountPositionLots',
+  'GET /api/v1/accounts/{accountId}/position-lots/{lotId}/fills': 'getAccountPositionLotFills',
+  'GET /api/v1/accounts/{accountId}/positions': 'listAccountPositions',
+  'GET /api/v1/accounts/{accountId}/transactions': 'listAccountTransactions',
+  'GET /api/v1/accounts/{accountId}/{resource}': 'listAccountResource',
+  'GET /api/v1/brokers/data/accounts': 'listFdxAccounts',
+  'GET /api/v1/brokers/data/balances': 'listFdxBalances',
+  'GET /api/v1/company/{company_id}': 'getCompany',
+  'GET /api/v1/consents': 'listConsents',
+  'POST /api/v1/consents': 'createConsent',
+  'GET /api/v1/consents/{consentId}': 'getConsent',
+  'POST /api/v1/consents/{consentId}/revoke': 'revokeConsent',
+  'GET /api/v1/portal/oauth/completion/{token}': 'getPortalOauthCompletion',
+  'POST /api/v1/portal/{sessionId}/account-grants': 'createPortalAccountGrant',
+  'POST /api/v1/portal/{sessionId}/auth-attempts': 'createPortalAuthAttempt',
+  'GET /api/v1/portal/{sessionId}/auth-attempts/{authAttemptId}': 'getPortalAuthAttempt',
+  'POST /api/v1/portal/{sessionId}/complete': 'completePortalSession',
+  'GET /api/v1/portal/{sessionId}/discovered-accounts': 'listDiscoveredAccounts',
+  'GET /api/v1/portal/{sessionId}/institutions': 'listPortalInstitutions',
+  'POST /api/v1/portal/{sessionId}/user-link': 'linkPortalUser',
+  'GET /api/v1/portal/{token}': 'getPortal',
+  'POST /api/v1/session/init': 'initLegacySession',
+  'POST /api/v1/session/link-user': 'linkSessionUser',
+  'POST /api/v1/session/mcp/link-user': 'linkMcpSessionUser',
+  'GET /api/v1/session/portal': 'getLegacyPortalUrl',
+  'POST /api/v1/session/start': 'startLegacySession',
+  'GET /api/v1/session/{session_id}/user': 'getLegacySessionUser',
+  'POST /api/v1/sessions': 'createSession',
+  'GET /api/v1/sessions/{sessionId}': 'getSession',
+  'POST /api/v1/sessions/{sessionId}/portal-links': 'createPortalLink',
+  'GET /api/v1/sessions/{sessionId}/sync-status': 'getSessionSyncStatus',
+  'GET /api/v1/sessions/{sessionId}/user': 'getSessionUser',
+  'GET /api/v1/webhooks/catalog': 'getWebhookCatalog',
+  'GET /api/v1/webhooks/payload-schema': 'getWebhookPayloadSchema',
+  'GET /api/v1/webhooks/subscriptions': 'listWebhookSubscriptions',
+  'POST /api/v1/webhooks/subscriptions': 'createWebhookSubscription',
+  'PATCH /api/v1/webhooks/subscriptions/{subscriptionId}': 'updateWebhookSubscription',
+  'POST /api/v1/webhooks/subscriptions/{subscriptionId}/revoke': 'revokeWebhookSubscription',
+} as const;
+
 describe('V1 account-first wrapper', () => {
+  it('pins public facade methods for SDK and portal OpenAPI operations', () => {
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), createClient().client);
+
+    expect(Object.keys(V1_OPENAPI_OPERATION_METHODS)).toHaveLength(52);
+    for (const methodName of Object.values(V1_OPENAPI_OPERATION_METHODS)) {
+      expect(typeof wrapper[methodName]).toBe('function');
+    }
+  });
+
   it('sends X-Finatic-Environment, server API key, and session headers', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
@@ -186,6 +250,87 @@ describe('V1 account-first wrapper', () => {
       expect.objectContaining({
         method: 'GET',
         url: '/api/v1/company/company_123',
+      })
+    );
+  });
+
+  it('covers legacy session compatibility and FDX alias routes', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.initLegacySession();
+    await wrapper.startLegacySession({ oneTimeToken: 'ott_123', userId: 'user_123' });
+    await wrapper.linkSessionUser({
+      sessionId: 'session_123',
+      userId: 'user_123',
+      email: 'user@example.com',
+      linkContextId: 'link_context_123',
+    });
+    await wrapper.linkMcpSessionUser({
+      userId: 'user_123',
+      linkContextId: 'mcp_link_context_123',
+    });
+    await wrapper.getLegacyPortalUrl();
+    await wrapper.getLegacySessionUser('session_123');
+    await wrapper.listFdxBalances({ account_id: 'account_123', limit: 25, offset: 5 });
+    await wrapper.listFdxAccounts({ broker_id: 'alpaca', include_metadata: true });
+    await wrapper.listAccountResource('orders', { accountId: 'account_123', limit: 10 });
+
+    expect(requests[0]).toEqual(
+      expect.objectContaining({ method: 'POST', url: '/api/v1/session/init' })
+    );
+    expect(requests[1]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/session/start',
+        data: { user_id: 'user_123' },
+        headers: expect.objectContaining({ 'One-Time-Token': 'ott_123' }),
+      })
+    );
+    expect(requests[2]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/session/link-user',
+        params: { session_id: 'session_123' },
+        data: {
+          user_id: 'user_123',
+          email: 'user@example.com',
+          link_context_id: 'link_context_123',
+        },
+      })
+    );
+    expect(requests[3]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/session/mcp/link-user',
+        data: { user_id: 'user_123', link_context_id: 'mcp_link_context_123' },
+      })
+    );
+    expect(requests[4]).toEqual(
+      expect.objectContaining({ method: 'GET', url: '/api/v1/session/portal' })
+    );
+    expect(requests[5]).toEqual(
+      expect.objectContaining({ method: 'GET', url: '/api/v1/session/session_123/user' })
+    );
+    expect(requests[6]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/brokers/data/balances',
+        params: { account_id: 'account_123', limit: 25, offset: 5 },
+      })
+    );
+    expect(requests[7]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/brokers/data/accounts',
+        params: { broker_id: 'alpaca', include_metadata: true },
+      })
+    );
+    expect(requests[8]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/accounts/account_123/orders',
+        params: { limit: 10 },
       })
     );
   });

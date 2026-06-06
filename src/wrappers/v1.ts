@@ -45,6 +45,23 @@ export interface AccountScopedParams {
   offset?: number;
 }
 
+export interface LegacySessionLinkParams {
+  sessionId?: string;
+  userId: string;
+  email?: string;
+  linkContextId?: string;
+}
+
+export interface LegacyMcpSessionLinkParams {
+  userId: string;
+  linkContextId: string;
+}
+
+export interface LegacySessionStartParams {
+  oneTimeToken: string;
+  userId?: string;
+}
+
 export interface AccountOrderParams {
   accountId: string;
   orderId: string;
@@ -274,6 +291,72 @@ export class V1Wrapper {
     );
   }
 
+  initLegacySession<T = unknown>(options?: FinaticV1CallOptions): Promise<FinaticV1Response<T>> {
+    return this.request<T>('POST', '/api/v1/session/init', {}, options);
+  }
+
+  startLegacySession<T = unknown>(
+    params: LegacySessionStartParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      '/api/v1/session/start',
+      {
+        data: params.userId ? { user_id: params.userId } : undefined,
+        headers: { 'One-Time-Token': params.oneTimeToken },
+      },
+      options
+    );
+  }
+
+  getLegacyPortalUrl<T = unknown>(options?: FinaticV1CallOptions): Promise<FinaticV1Response<T>> {
+    return this.request<T>('GET', '/api/v1/session/portal', {}, options);
+  }
+
+  getLegacySessionUser<T = unknown>(
+    sessionId: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/session/${encodeURIComponent(sessionId)}/user`,
+      {},
+      options
+    );
+  }
+
+  linkSessionUser<T = unknown>(
+    params: LegacySessionLinkParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      '/api/v1/session/link-user',
+      {
+        params: { session_id: params.sessionId },
+        data: {
+          user_id: params.userId,
+          ...(params.email ? { email: params.email } : {}),
+          ...(params.linkContextId ? { link_context_id: params.linkContextId } : {}),
+        },
+      },
+      options
+    );
+  }
+
+  linkMcpSessionUser<T = unknown>(
+    params: LegacyMcpSessionLinkParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      '/api/v1/session/mcp/link-user',
+      { data: { user_id: params.userId, link_context_id: params.linkContextId } },
+      options
+    );
+  }
+
   listAccounts<T = unknown>(
     params: { limit?: number; offset?: number; includeSyncStatus?: boolean } = {},
     options?: FinaticV1CallOptions
@@ -307,11 +390,25 @@ export class V1Wrapper {
     return this.request<T>('GET', `/api/v1/company/${encodeURIComponent(companyId)}`, {}, options);
   }
 
+  listAccountBalances<T = unknown>(
+    params: AccountScopedParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.listBalances<T>(params, options);
+  }
+
   listBalances<T = unknown>(
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.listAccountResource<T>('balances', params, options);
+  }
+
+  listAccountPositions<T = unknown>(
+    params: AccountScopedParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.listPositions<T>(params, options);
   }
 
   listPositions<T = unknown>(
@@ -321,11 +418,25 @@ export class V1Wrapper {
     return this.listAccountResource<T>('positions', params, options);
   }
 
+  listAccountTransactions<T = unknown>(
+    params: AccountScopedParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.listTransactions<T>(params, options);
+  }
+
   listTransactions<T = unknown>(
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.listAccountResource<T>('transactions', params, options);
+  }
+
+  listAccountOrders<T = unknown>(
+    params: AccountScopedParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.listOrders<T>(params, options);
   }
 
   listOrders<T = unknown>(
@@ -335,11 +446,46 @@ export class V1Wrapper {
     return this.listAccountResource<T>('orders', params, options);
   }
 
+  listAccountPositionLots<T = unknown>(
+    params: AccountScopedParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.listPositionLots<T>(params, options);
+  }
+
   listPositionLots<T = unknown>(
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.listAccountResource<T>('position-lots', params, options);
+  }
+
+  listAccountResource<T = unknown>(
+    resource: string,
+    params: AccountScopedParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    const query: Record<string, QueryValue> = { limit: params.limit, offset: params.offset };
+    return this.request<T>(
+      'GET',
+      `/api/v1/accounts/${encodeURIComponent(params.accountId)}/${encodeURIComponent(resource)}`,
+      { params: query },
+      options
+    );
+  }
+
+  listFdxAccounts<T = unknown>(
+    params: Record<string, QueryValue> = {},
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>('GET', '/api/v1/brokers/data/accounts', { params }, options);
+  }
+
+  listFdxBalances<T = unknown>(
+    params: Record<string, QueryValue> = {},
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>('GET', '/api/v1/brokers/data/balances', { params }, options);
   }
 
   getAccountOrder<T = unknown>(
@@ -536,20 +682,6 @@ export class V1Wrapper {
     );
   }
 
-  private listAccountResource<T>(
-    resource: string,
-    params: AccountScopedParams,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    const query: Record<string, QueryValue> = { limit: params.limit, offset: params.offset };
-    return this.request<T>(
-      'GET',
-      `/api/v1/accounts/${encodeURIComponent(params.accountId)}/${resource}`,
-      { params: query },
-      options
-    );
-  }
-
   private accountOrderResource<T>(
     params: AccountOrderParams,
     suffix: string,
@@ -568,7 +700,12 @@ export class V1Wrapper {
   private async request<T>(
     method: HttpMethod,
     url: string,
-    request: { data?: unknown; params?: Record<string, QueryValue>; idempotencyKey?: string },
+    request: {
+      data?: unknown;
+      params?: Record<string, QueryValue>;
+      headers?: Record<string, string>;
+      idempotencyKey?: string;
+    },
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     const headers: Record<string, string> = {
@@ -579,6 +716,7 @@ export class V1Wrapper {
       ...(this.companyId ? { 'x-company-id': this.companyId } : {}),
       ...(this.csrfToken ? { 'x-csrf-token': this.csrfToken } : {}),
       ...(request.idempotencyKey ? { 'Idempotency-Key': request.idempotencyKey } : {}),
+      ...(request.headers ?? {}),
     };
     const config: AxiosRequestConfig = {
       method,
