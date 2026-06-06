@@ -558,7 +558,7 @@ export class V1Wrapper {
       `/api/v1/accounts/${encodeURIComponent(params.accountId)}/orders/${encodeURIComponent(
         params.orderId
       )}`,
-      { data: params.body ?? {}, idempotencyKey: params.idempotencyKey },
+      { idempotencyKey: params.idempotencyKey },
       options
     );
   }

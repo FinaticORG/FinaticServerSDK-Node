@@ -420,6 +420,7 @@ describe('V1 account-first wrapper', () => {
         headers: expect.objectContaining({ 'Idempotency-Key': 'idem_789' }),
       })
     );
+    expect(requests[2]?.data).toBeUndefined();
   });
 
   it('keeps provider connection ids out of public v1 account params', () => {
