@@ -310,8 +310,19 @@ export class V1Wrapper {
     );
   }
 
-  getLegacyPortalUrl<T = unknown>(options?: FinaticV1CallOptions): Promise<FinaticV1Response<T>> {
-    return this.request<T>('GET', '/api/v1/session/portal', {}, options);
+  getLegacyPortalUrl<T = unknown>(
+    sessionIdOrOptions?: string | FinaticV1CallOptions,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    const sessionId =
+      typeof sessionIdOrOptions === 'string' ? sessionIdOrOptions : this.requireSessionId();
+    const callOptions = typeof sessionIdOrOptions === 'string' ? options : sessionIdOrOptions;
+    return this.request<T>(
+      'GET',
+      '/api/v1/session/portal',
+      { headers: { 'session-id': sessionId } },
+      callOptions
+    );
   }
 
   getLegacySessionUser<T = unknown>(
@@ -812,6 +823,13 @@ export class V1Wrapper {
       throw new Error('idempotencyKey is required for account order commands');
     }
     return value;
+  }
+
+  private requireSessionId(): string {
+    if (!this.sessionId) {
+      throw new Error('sessionId is required for legacy portal URL requests');
+    }
+    return this.sessionId;
   }
 
   private normalizeWarnings(value: unknown): FinaticV1Warning[] {

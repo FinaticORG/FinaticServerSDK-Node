@@ -257,6 +257,7 @@ describe('V1 account-first wrapper', () => {
   it('covers legacy session compatibility and FDX alias routes', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+    wrapper.setSessionContext('session_123', 'company_123', 'csrf_123');
 
     await wrapper.initLegacySession();
     await wrapper.startLegacySession({ oneTimeToken: 'ott_123', userId: 'user_123' });
@@ -307,7 +308,11 @@ describe('V1 account-first wrapper', () => {
       })
     );
     expect(requests[4]).toEqual(
-      expect.objectContaining({ method: 'GET', url: '/api/v1/session/portal' })
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/session/portal',
+        headers: expect.objectContaining({ 'session-id': 'session_123' }),
+      })
     );
     expect(requests[5]).toEqual(
       expect.objectContaining({ method: 'GET', url: '/api/v1/session/session_123/user' })
@@ -448,6 +453,15 @@ describe('V1 account-first wrapper', () => {
         idempotencyKey: '',
       })
     ).toThrow('idempotencyKey is required for account order commands');
+  });
+
+  it('requires a session id for legacy portal URL requests', () => {
+    const { client } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    expect(() => wrapper.getLegacyPortalUrl()).toThrow(
+      'sessionId is required for legacy portal URL requests'
+    );
   });
 
   it('keeps provider connection ids out of public v1 account params', () => {
