@@ -530,7 +530,10 @@ export class V1Wrapper {
     return this.request<T>(
       'POST',
       `/api/v1/accounts/${encodeURIComponent(params.accountId)}/orders`,
-      { data: params.body ?? {}, idempotencyKey: params.idempotencyKey },
+      {
+        data: params.body ?? {},
+        idempotencyKey: this.requireIdempotencyKey(params.idempotencyKey),
+      },
       options
     );
   }
@@ -544,7 +547,10 @@ export class V1Wrapper {
       `/api/v1/accounts/${encodeURIComponent(params.accountId)}/orders/${encodeURIComponent(
         params.orderId
       )}`,
-      { data: params.body ?? {}, idempotencyKey: params.idempotencyKey },
+      {
+        data: params.body ?? {},
+        idempotencyKey: this.requireIdempotencyKey(params.idempotencyKey),
+      },
       options
     );
   }
@@ -558,7 +564,7 @@ export class V1Wrapper {
       `/api/v1/accounts/${encodeURIComponent(params.accountId)}/orders/${encodeURIComponent(
         params.orderId
       )}`,
-      { idempotencyKey: params.idempotencyKey },
+      { idempotencyKey: this.requireIdempotencyKey(params.idempotencyKey) },
       options
     );
   }
@@ -799,6 +805,13 @@ export class V1Wrapper {
       warnings: [],
       errors: [this.normalizeError({ message: String(payload || `HTTP ${status}`) }, status)],
     };
+  }
+
+  private requireIdempotencyKey(value: string): string {
+    if (!value || value.trim().length === 0) {
+      throw new Error('idempotencyKey is required for account order commands');
+    }
+    return value;
   }
 
   private normalizeWarnings(value: unknown): FinaticV1Warning[] {

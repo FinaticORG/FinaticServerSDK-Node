@@ -423,6 +423,33 @@ describe('V1 account-first wrapper', () => {
     expect(requests[2]?.data).toBeUndefined();
   });
 
+  it('requires idempotency keys for account order commands', async () => {
+    const { client } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    expect(() =>
+      wrapper.createAccountOrder({
+        accountId: 'acct_123',
+        idempotencyKey: '',
+        body: { order: { symbol: 'AAPL' } },
+      })
+    ).toThrow('idempotencyKey is required for account order commands');
+    expect(() =>
+      wrapper.modifyAccountOrder({
+        accountId: 'acct_123',
+        orderId: 'order_123',
+        idempotencyKey: '   ',
+      })
+    ).toThrow('idempotencyKey is required for account order commands');
+    expect(() =>
+      wrapper.cancelAccountOrder({
+        accountId: 'acct_123',
+        orderId: 'order_123',
+        idempotencyKey: '',
+      })
+    ).toThrow('idempotencyKey is required for account order commands');
+  });
+
   it('keeps provider connection ids out of public v1 account params', () => {
     const params = ['accountId', 'limit', 'offset'];
 
