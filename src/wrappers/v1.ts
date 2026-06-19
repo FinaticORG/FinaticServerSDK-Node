@@ -74,6 +74,7 @@ export interface AccountPositionLotFillsParams {
 
 export interface DiscoveredAccountsParams {
   authAttemptId?: string;
+  includeSyncStatus?: boolean;
 }
 
 export interface CreateAccountOrderCommandParams {
@@ -222,8 +223,11 @@ export class V1Wrapper {
   ): Promise<FinaticV1Response<T>> {
     let params: Record<string, QueryValue> = {};
     let callOptions: FinaticV1CallOptions | undefined = options;
-    if ('authAttemptId' in paramsOrOptions) {
-      params = { authAttemptId: paramsOrOptions.authAttemptId };
+    if ('authAttemptId' in paramsOrOptions || 'includeSyncStatus' in paramsOrOptions) {
+      params = {
+        authAttemptId: paramsOrOptions.authAttemptId,
+        includeSyncStatus: paramsOrOptions.includeSyncStatus,
+      };
     } else {
       callOptions = paramsOrOptions as FinaticV1CallOptions;
     }

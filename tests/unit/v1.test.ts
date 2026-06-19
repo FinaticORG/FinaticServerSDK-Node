@@ -211,7 +211,10 @@ describe('V1 account-first wrapper', () => {
     await wrapper.getPortalOauthCompletion('oauth_token_123');
     await wrapper.linkPortalUser('session_123', { userId: 'user_123' });
     await wrapper.listPortalInstitutions('session_123');
-    await wrapper.listDiscoveredAccounts('session_123', { authAttemptId: 'auth_attempt_123' });
+    await wrapper.listDiscoveredAccounts('session_123', {
+      authAttemptId: 'auth_attempt_123',
+      includeSyncStatus: true,
+    });
     await wrapper.getCompany('company_123');
 
     expect(requests[0]).toEqual(
@@ -243,7 +246,7 @@ describe('V1 account-first wrapper', () => {
       expect.objectContaining({
         method: 'GET',
         url: '/api/v1/portal/session_123/discovered-accounts',
-        params: { authAttemptId: 'auth_attempt_123' },
+        params: { authAttemptId: 'auth_attempt_123', includeSyncStatus: true },
       })
     );
     expect(requests[5]).toEqual(
