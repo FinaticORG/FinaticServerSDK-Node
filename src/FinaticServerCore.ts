@@ -4,7 +4,7 @@
  * Hand-maintained façade over ``src/openapi/`` and wrappers.
  */
 
-import { Configuration } from './openapi/configuration';
+import { Configuration } from './openapi-legacy/configuration';
 import { SdkConfig, defaultConfig } from './config';
 import {
   appendThemeToURL,
@@ -14,7 +14,7 @@ import {
   appendStageToURL,
 } from './utils/url-utils';
 import { getLogger, type Logger } from './utils/logger';
-import type { SessionStartRequest } from './openapi/models/session-start-request';
+import type { SessionStartRequest } from './openapi-legacy/models/session-start-request';
 import type { GetCompanyParams } from './wrappers/company';
 import type {
   CancelOrderParams,
@@ -35,19 +35,19 @@ import type {
   ModifyOrderParams,
   PlaceOrderParams,
 } from './wrappers/brokers';
-import type { FDXBrokerOrder } from './openapi/models/fdxbroker-order';
-import type { FDXBrokerOrderEvent } from './openapi/models/fdxbroker-order-event';
-import type { FDXBrokerOrderFill } from './openapi/models/fdxbroker-order-fill';
-import type { FDXBrokerOrderGroup } from './openapi/models/fdxbroker-order-group';
-import type { FDXBrokerPosition } from './openapi/models/fdxbroker-position';
-import type { FDXBrokerPositionLot } from './openapi/models/fdxbroker-position-lot';
-import type { FDXBrokerPositionLotFill } from './openapi/models/fdxbroker-position-lot-fill';
-import type { FDXBrokerTransaction } from './openapi/models/fdxbroker-transaction';
-import type { LegacyBrokerAccount } from './openapi/models/legacy-broker-account';
-import type { LegacyBrokerBalance } from './openapi/models/legacy-broker-balance';
-import { BrokersApi } from './openapi/api/brokers-api';
-import { CompanyApi } from './openapi/api/company-api';
-import { SessionApi } from './openapi/api/session-api';
+import type { FDXBrokerOrder } from './openapi-legacy/models/fdxbroker-order';
+import type { FDXBrokerOrderEvent } from './openapi-legacy/models/fdxbroker-order-event';
+import type { FDXBrokerOrderFill } from './openapi-legacy/models/fdxbroker-order-fill';
+import type { FDXBrokerOrderGroup } from './openapi-legacy/models/fdxbroker-order-group';
+import type { FDXBrokerPosition } from './openapi-legacy/models/fdxbroker-position';
+import type { FDXBrokerPositionLot } from './openapi-legacy/models/fdxbroker-position-lot';
+import type { FDXBrokerPositionLotFill } from './openapi-legacy/models/fdxbroker-position-lot-fill';
+import type { FDXBrokerTransaction } from './openapi-legacy/models/fdxbroker-transaction';
+import type { LegacyBrokerAccount } from './openapi-legacy/models/legacy-broker-account';
+import type { LegacyBrokerBalance } from './openapi-legacy/models/legacy-broker-balance';
+import { BrokersApi } from './openapi-legacy/api/brokers-api';
+import { CompanyApi } from './openapi-legacy/api/company-api';
+import { SessionApi } from './openapi-legacy/api/session-api';
 import { BrokersWrapper } from './wrappers/brokers';
 import { CompanyWrapper } from './wrappers/company';
 import { SessionWrapper } from './wrappers/session';

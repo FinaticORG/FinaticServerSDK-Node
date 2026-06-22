@@ -74,9 +74,6 @@ const V1_OPENAPI_OPERATION_METHODS = {
   'GET /api/v1/accounts/{accountId}/positions': 'listAccountPositions',
   'GET /api/v1/accounts/{accountId}/transactions': 'listAccountTransactions',
   'GET /api/v1/accounts/{accountId}/{resource}': 'listAccountResource',
-  'GET /api/v1/brokers/data/accounts': 'listFdxAccounts',
-  'GET /api/v1/brokers/data/balances': 'listFdxBalances',
-  'GET /api/v1/company/{company_id}': 'getCompany',
   'GET /api/v1/consents': 'listConsents',
   'POST /api/v1/consents': 'createConsent',
   'GET /api/v1/consents/{consentId}': 'getConsent',
@@ -90,12 +87,6 @@ const V1_OPENAPI_OPERATION_METHODS = {
   'GET /api/v1/portal/{sessionId}/institutions': 'listPortalInstitutions',
   'POST /api/v1/portal/{sessionId}/user-link': 'linkPortalUser',
   'GET /api/v1/portal/{token}': 'getPortal',
-  'POST /api/v1/session/init': 'initLegacySession',
-  'POST /api/v1/session/link-user': 'linkSessionUser',
-  'POST /api/v1/session/mcp/link-user': 'linkMcpSessionUser',
-  'GET /api/v1/session/portal': 'getLegacyPortalUrl',
-  'POST /api/v1/session/start': 'startLegacySession',
-  'GET /api/v1/session/{session_id}/user': 'getLegacySessionUser',
   'POST /api/v1/sessions': 'createSession',
   'GET /api/v1/sessions/{sessionId}': 'getSession',
   'POST /api/v1/sessions/{sessionId}/portal-links': 'createPortalLink',
@@ -113,7 +104,7 @@ describe('V1 account-first wrapper', () => {
   it('pins public facade methods for SDK and portal OpenAPI operations', () => {
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), createClient().client);
 
-    expect(Object.keys(V1_OPENAPI_OPERATION_METHODS)).toHaveLength(52);
+    expect(Object.keys(V1_OPENAPI_OPERATION_METHODS)).toHaveLength(43);
     for (const methodName of Object.values(V1_OPENAPI_OPERATION_METHODS)) {
       expect(typeof wrapper[methodName]).toBe('function');
     }
