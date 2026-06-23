@@ -73,6 +73,9 @@ async function invokeWrapperMethods(wrapperCtor: WrapperCtor): Promise<number> {
       [
         'getAccounts',
         'getBalances',
+        'getOrders',
+        'getPositions',
+        'getTransactions',
         'listBrokerConnections',
         'listBrokerConnection',
         'disconnectCompanyFromBroker',
