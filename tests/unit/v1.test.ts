@@ -349,4 +349,96 @@ describe('V1 account-first wrapper', () => {
       ],
     });
   });
+
+  it('normalizes primitive response payloads into the public v1 response shape', async () => {
+    const client = {
+      request: jest.fn(async () => ({ data: 'plain-text-payload' })),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.getAccount('acct_123');
+
+    expect(result).toEqual({
+      traceId: null,
+      data: 'plain-text-payload',
+      warnings: [],
+      errors: [],
+    });
+  });
+
+  it('rethrows non-response axios failures', async () => {
+    const networkError = new Error('network unavailable');
+    const client = {
+      request: jest.fn(async () => {
+        const error = Object.assign(networkError, { isAxiosError: true });
+        throw error;
+      }),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await expect(wrapper.getAccount('acct_123')).rejects.toThrow('network unavailable');
+  });
+
+  it('normalizes non-object HTTP error payloads and legacy error codes', async () => {
+    const client = {
+      request: jest.fn(async () => {
+        throw {
+          isAxiosError: true,
+          response: {
+            status: 401,
+            headers: { get: (name: string) => (name === 'x-trace-id' ? 'trace-from-header' : null) },
+            data: {
+              errors: [{ code: 'AUTH_ERROR', message: 'invalid api key' }],
+            },
+          },
+        };
+      }),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.getAccount('acct_123');
+
+    expect(result).toEqual({
+      traceId: 'trace-from-header',
+      data: null,
+      warnings: [],
+      errors: [
+        {
+          category: 'AUTHENTICATION',
+          code: 'AUTHENTICATION',
+          message: 'invalid api key',
+          status: 401,
+        },
+      ],
+    });
+  });
+
+  it('maps provider and reauth messages into normalized error categories', async () => {
+    const client = {
+      request: jest.fn(async () => {
+        throw {
+          isAxiosError: true,
+          response: {
+            status: 502,
+            headers: { 'X-Request-ID': 'provider-trace' },
+            data: 'broker gateway timeout',
+          },
+        };
+      }),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.getAccount('acct_123');
+
+    expect(result.traceId).toBe('provider-trace');
+    expect(result.data).toBeNull();
+    expect(result.errors[0]).toEqual(
+      expect.objectContaining({
+        category: 'PROVIDER_ERROR',
+        code: 'PROVIDER_ERROR',
+        message: 'broker gateway timeout',
+        status: 502,
+      })
+    );
+  });
 });

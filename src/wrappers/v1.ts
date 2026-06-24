@@ -604,13 +604,6 @@ export class V1Wrapper {
     return value;
   }
 
-  private requireSessionId(): string {
-    if (!this.sessionId) {
-      throw new Error('sessionId is required for legacy portal URL requests');
-    }
-    return this.sessionId;
-  }
-
   private normalizeWarnings(value: unknown): FinaticV1Warning[] {
     if (!Array.isArray(value)) {
       return [];
