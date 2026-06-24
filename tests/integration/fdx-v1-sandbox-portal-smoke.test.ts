@@ -1,7 +1,8 @@
 /**
- * FDX v1 sandbox portal smoke — session → institutions → auth-attempt → grant.
+ * FDX v1 sandbox portal smoke — portal HTTP against local finaticAPI.
  *
- * Requires local finaticAPI + Supabase. Skipped unless FINATIC_INTEGRATION=1.
+ * Portal auth flows use direct HTTP (FinaticConnect surface). The server SDK is
+ * used only for session creation.
  */
 
 import { FinaticServer } from '../../src/FinaticServer';
@@ -15,6 +16,7 @@ import {
   DEFAULT_API_BASE_URL,
   DEVICE_HEADERS,
   integrationEnabled,
+  listPortalInstitutionsHttp,
 } from './helpers/fdx-sandbox';
 
 const describeIntegration = integrationEnabled() ? describe : describe.skip;
@@ -33,16 +35,18 @@ describeIntegration('FDX v1 sandbox portal (Node SDK)', () => {
     });
 
     try {
-      const { sessionId } = await createSandboxPortalSession(
+      const portalContext = await createSandboxPortalSession(
         finatic.v1,
         bootstrap.sandboxApiKey,
         linkEmail
       );
-      const institutionsResponse = await finatic.v1.listPortalInstitutions(sessionId, {
-        environment: 'sandbox',
-      });
-      expect(institutionsResponse.errors).toHaveLength(0);
-      const institutions = institutionsResponse.data as unknown;
+      const institutionsResponse = await listPortalInstitutionsHttp(
+        bootstrap.sandboxApiKey,
+        portalContext.sessionId,
+        portalContext.csrfToken
+      );
+      expect((institutionsResponse as { errors?: unknown[] }).errors ?? []).toHaveLength(0);
+      const institutions = (institutionsResponse as { data?: unknown }).data;
       expect(Array.isArray(institutions)).toBe(true);
       expect((institutions as unknown[]).length).toBeGreaterThanOrEqual(12);
     } finally {
@@ -61,15 +65,25 @@ describeIntegration('FDX v1 sandbox portal (Node SDK)', () => {
     });
 
     try {
-      const { sessionId } = await createSandboxPortalSession(
+      const portalContext = await createSandboxPortalSession(
         finatic.v1,
         bootstrap.sandboxApiKey,
         linkEmail
       );
-      const authAttempt = await createSandboxPortalAuthAttempt(finatic.v1, sessionId, 'fidelity');
+      const authAttempt = await createSandboxPortalAuthAttempt(
+        bootstrap.sandboxApiKey,
+        portalContext.sessionId,
+        portalContext.csrfToken,
+        'fidelity'
+      );
       expect(['discovered', 'accounts_discovered']).toContain(authAttempt['status']);
 
-      const grant = await createSandboxPortalAccountGrant(finatic.v1, sessionId, authAttempt);
+      const grant = await createSandboxPortalAccountGrant(
+        bootstrap.sandboxApiKey,
+        portalContext.sessionId,
+        portalContext.csrfToken,
+        authAttempt
+      );
       expect(grant['status']).toBe('active');
       expect(grant['id'] ?? grant['grantId']).toBeTruthy();
     } finally {
@@ -88,12 +102,17 @@ describeIntegration('FDX v1 sandbox portal (Node SDK)', () => {
     });
 
     try {
-      const { sessionId } = await createSandboxPortalSession(
+      const portalContext = await createSandboxPortalSession(
         finatic.v1,
         bootstrap.sandboxApiKey,
         linkEmail
       );
-      const authAttempt = await createSandboxPortalAuthAttempt(finatic.v1, sessionId, 'alpaca');
+      const authAttempt = await createSandboxPortalAuthAttempt(
+        bootstrap.sandboxApiKey,
+        portalContext.sessionId,
+        portalContext.csrfToken,
+        'alpaca'
+      );
       expect(['auth_required', 'redirect_required']).toContain(authAttempt['status']);
       expect(
         authAttempt['callbackState'] ??

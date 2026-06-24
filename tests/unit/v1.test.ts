@@ -78,15 +78,6 @@ const V1_OPENAPI_OPERATION_METHODS = {
   'POST /api/v1/consents': 'createConsent',
   'GET /api/v1/consents/{consentId}': 'getConsent',
   'POST /api/v1/consents/{consentId}/revoke': 'revokeConsent',
-  'GET /api/v1/portal/oauth/completion/{token}': 'getPortalOauthCompletion',
-  'POST /api/v1/portal/{sessionId}/account-grants': 'createPortalAccountGrant',
-  'POST /api/v1/portal/{sessionId}/auth-attempts': 'createPortalAuthAttempt',
-  'GET /api/v1/portal/{sessionId}/auth-attempts/{authAttemptId}': 'getPortalAuthAttempt',
-  'POST /api/v1/portal/{sessionId}/complete': 'completePortalSession',
-  'GET /api/v1/portal/{sessionId}/discovered-accounts': 'listDiscoveredAccounts',
-  'GET /api/v1/portal/{sessionId}/institutions': 'listPortalInstitutions',
-  'POST /api/v1/portal/{sessionId}/user-link': 'linkPortalUser',
-  'GET /api/v1/portal/{token}': 'getPortal',
   'POST /api/v1/sessions': 'createSession',
   'GET /api/v1/sessions/{sessionId}': 'getSession',
   'POST /api/v1/sessions/{sessionId}/portal-links': 'createPortalLink',
@@ -101,10 +92,10 @@ const V1_OPENAPI_OPERATION_METHODS = {
 } as const;
 
 describe('V1 account-first wrapper', () => {
-  it('pins public facade methods for SDK and portal OpenAPI operations', () => {
+  it('pins public facade methods for SDK OpenAPI operations', () => {
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), createClient().client);
 
-    expect(Object.keys(V1_OPENAPI_OPERATION_METHODS)).toHaveLength(43);
+    expect(Object.keys(V1_OPENAPI_OPERATION_METHODS)).toHaveLength(34);
     for (const methodName of Object.values(V1_OPENAPI_OPERATION_METHODS)) {
       expect(typeof wrapper[methodName]).toBe('function');
     }
@@ -135,20 +126,11 @@ describe('V1 account-first wrapper', () => {
     );
   });
 
-  it('uses current account-first session and grant routes', async () => {
+  it('uses current account-first session routes', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
 
     await wrapper.createPortalLink('session_123');
-    await wrapper.createPortalAuthAttempt('session_123', { brokerId: 'alpaca' });
-    await wrapper.getPortalAuthAttempt('session_123', 'auth_attempt_123');
-    await wrapper.createPortalAccountGrant('session_123', {
-      accountId: 'account_123',
-      authAttemptId: 'auth_attempt_123',
-      canRead: true,
-      canTrade: false,
-    });
-    await wrapper.completePortalSession('session_123');
     await wrapper.getSessionSyncStatus('session_123');
 
     expect(requests[0]).toEqual(
@@ -159,173 +141,20 @@ describe('V1 account-first wrapper', () => {
     );
     expect(requests[1]).toEqual(
       expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/portal/session_123/auth-attempts',
-        data: { brokerId: 'alpaca' },
-      })
-    );
-    expect(requests[2]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/portal/session_123/auth-attempts/auth_attempt_123',
-      })
-    );
-    expect(requests[3]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/portal/session_123/account-grants',
-        data: expect.objectContaining({
-          accountId: 'account_123',
-          authAttemptId: 'auth_attempt_123',
-        }),
-      })
-    );
-    expect(requests[4]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/portal/session_123/complete',
-      })
-    );
-    expect(requests[5]).toEqual(
-      expect.objectContaining({
         method: 'GET',
         url: '/api/v1/sessions/session_123/sync-status',
       })
     );
   });
 
-  it('covers portal read, user-link, institution, discovery, and company routes', async () => {
-    const { client, requests } = createClient();
-    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
-
-    await wrapper.getPortal('portal_token_123');
-    await wrapper.getPortalOauthCompletion('oauth_token_123');
-    await wrapper.linkPortalUser('session_123', { userId: 'user_123' });
-    await wrapper.listPortalInstitutions('session_123');
-    await wrapper.listDiscoveredAccounts('session_123', {
-      authAttemptId: 'auth_attempt_123',
-      includeSyncStatus: true,
-    });
-    await wrapper.getCompany('company_123');
-
-    expect(requests[0]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/portal/portal_token_123',
-      })
-    );
-    expect(requests[1]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/portal/oauth/completion/oauth_token_123',
-      })
-    );
-    expect(requests[2]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/portal/session_123/user-link',
-        data: { userId: 'user_123' },
-      })
-    );
-    expect(requests[3]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/portal/session_123/institutions',
-      })
-    );
-    expect(requests[4]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/portal/session_123/discovered-accounts',
-        params: { authAttemptId: 'auth_attempt_123', includeSyncStatus: true },
-      })
-    );
-    expect(requests[5]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/company/company_123',
-      })
-    );
-  });
-
-  it('covers legacy session compatibility and FDX alias routes', async () => {
+  it('covers account resource listing', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
     wrapper.setSessionContext('session_123', 'company_123', 'csrf_123');
 
-    await wrapper.initLegacySession();
-    await wrapper.startLegacySession({ oneTimeToken: 'ott_123', userId: 'user_123' });
-    await wrapper.linkSessionUser({
-      sessionId: 'session_123',
-      userId: 'user_123',
-      email: 'user@example.com',
-      linkContextId: 'link_context_123',
-    });
-    await wrapper.linkMcpSessionUser({
-      userId: 'user_123',
-      linkContextId: 'mcp_link_context_123',
-    });
-    await wrapper.getLegacyPortalUrl();
-    await wrapper.getLegacySessionUser('session_123');
-    await wrapper.listFdxBalances({ account_id: 'account_123', limit: 25, offset: 5 });
-    await wrapper.listFdxAccounts({ broker_id: 'alpaca', include_metadata: true });
     await wrapper.listAccountResource('orders', { accountId: 'account_123', limit: 10 });
 
     expect(requests[0]).toEqual(
-      expect.objectContaining({ method: 'POST', url: '/api/v1/session/init' })
-    );
-    expect(requests[1]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/session/start',
-        data: { user_id: 'user_123' },
-        headers: expect.objectContaining({ 'One-Time-Token': 'ott_123' }),
-      })
-    );
-    expect(requests[2]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/session/link-user',
-        params: { session_id: 'session_123' },
-        data: {
-          user_id: 'user_123',
-          email: 'user@example.com',
-          link_context_id: 'link_context_123',
-        },
-      })
-    );
-    expect(requests[3]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/session/mcp/link-user',
-        data: { user_id: 'user_123', link_context_id: 'mcp_link_context_123' },
-      })
-    );
-    expect(requests[4]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/session/portal',
-        headers: expect.objectContaining({ 'session-id': 'session_123' }),
-      })
-    );
-    expect(requests[5]).toEqual(
-      expect.objectContaining({ method: 'GET', url: '/api/v1/session/session_123/user' })
-    );
-    expect(requests[6]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/brokers/data/balances',
-        params: { account_id: 'account_123', limit: 25, offset: 5 },
-      })
-    );
-    expect(requests[7]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/brokers/data/accounts',
-        params: { broker_id: 'alpaca', include_metadata: true },
-      })
-    );
-    expect(requests[8]).toEqual(
       expect.objectContaining({
         method: 'GET',
         url: '/api/v1/accounts/account_123/orders',
@@ -447,15 +276,6 @@ describe('V1 account-first wrapper', () => {
         idempotencyKey: '',
       })
     ).toThrow('idempotencyKey is required for account order commands');
-  });
-
-  it('requires a session id for legacy portal URL requests', () => {
-    const { client } = createClient();
-    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
-
-    expect(() => wrapper.getLegacyPortalUrl()).toThrow(
-      'sessionId is required for legacy portal URL requests'
-    );
   });
 
   it('keeps provider connection ids out of public v1 account params', () => {

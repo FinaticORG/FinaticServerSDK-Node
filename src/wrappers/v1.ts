@@ -144,133 +144,6 @@ export class V1Wrapper {
     );
   }
 
-  getPortal<T = unknown>(
-    token: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>('GET', `/api/v1/portal/${encodeURIComponent(token)}`, {}, options);
-  }
-
-  getPortalOauthCompletion<T = unknown>(
-    token: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'GET',
-      `/api/v1/portal/oauth/completion/${encodeURIComponent(token)}`,
-      {},
-      options
-    );
-  }
-
-  linkPortalUser<T = unknown>(
-    sessionId: string,
-    body: { userId: string },
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/user-link`,
-      { data: body },
-      options
-    );
-  }
-
-  listPortalInstitutions<T = unknown>(
-    sessionId: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'GET',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/institutions`,
-      {},
-      options
-    );
-  }
-
-  createPortalAuthAttempt<T = unknown>(
-    sessionId: string,
-    body: { brokerId: string },
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/auth-attempts`,
-      { data: body },
-      options
-    );
-  }
-
-  getPortalAuthAttempt<T = unknown>(
-    sessionId: string,
-    authAttemptId: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'GET',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/auth-attempts/${encodeURIComponent(
-        authAttemptId
-      )}`,
-      {},
-      options
-    );
-  }
-
-  listDiscoveredAccounts<T = unknown>(
-    sessionId: string,
-    paramsOrOptions: DiscoveredAccountsParams | FinaticV1CallOptions = {},
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    let params: Record<string, QueryValue> = {};
-    let callOptions: FinaticV1CallOptions | undefined = options;
-    if ('authAttemptId' in paramsOrOptions || 'includeSyncStatus' in paramsOrOptions) {
-      params = {
-        authAttemptId: paramsOrOptions.authAttemptId,
-        includeSyncStatus: paramsOrOptions.includeSyncStatus,
-      };
-    } else {
-      callOptions = paramsOrOptions as FinaticV1CallOptions;
-    }
-    return this.request<T>(
-      'GET',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/discovered-accounts`,
-      { params },
-      callOptions
-    );
-  }
-
-  createPortalAccountGrant<T = unknown>(
-    sessionId: string,
-    body: {
-      accountId: string;
-      authAttemptId: string;
-      canRead?: boolean;
-      canTrade?: boolean;
-      dataClusters?: string[];
-      consentId?: string | null;
-    },
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/account-grants`,
-      { data: body },
-      options
-    );
-  }
-
-  completePortalSession<T = unknown>(
-    sessionId: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      `/api/v1/portal/${encodeURIComponent(sessionId)}/complete`,
-      {},
-      options
-    );
-  }
-
   getSessionUser<T = unknown>(
     sessionId: string,
     options?: FinaticV1CallOptions
@@ -291,83 +164,6 @@ export class V1Wrapper {
       'GET',
       `/api/v1/sessions/${encodeURIComponent(sessionId)}/sync-status`,
       {},
-      options
-    );
-  }
-
-  initLegacySession<T = unknown>(options?: FinaticV1CallOptions): Promise<FinaticV1Response<T>> {
-    return this.request<T>('POST', '/api/v1/session/init', {}, options);
-  }
-
-  startLegacySession<T = unknown>(
-    params: LegacySessionStartParams,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      '/api/v1/session/start',
-      {
-        data: params.userId ? { user_id: params.userId } : undefined,
-        headers: { 'One-Time-Token': params.oneTimeToken },
-      },
-      options
-    );
-  }
-
-  getLegacyPortalUrl<T = unknown>(
-    sessionIdOrOptions?: string | FinaticV1CallOptions,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    const sessionId =
-      typeof sessionIdOrOptions === 'string' ? sessionIdOrOptions : this.requireSessionId();
-    const callOptions = typeof sessionIdOrOptions === 'string' ? options : sessionIdOrOptions;
-    return this.request<T>(
-      'GET',
-      '/api/v1/session/portal',
-      { headers: { 'session-id': sessionId } },
-      callOptions
-    );
-  }
-
-  getLegacySessionUser<T = unknown>(
-    sessionId: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'GET',
-      `/api/v1/session/${encodeURIComponent(sessionId)}/user`,
-      {},
-      options
-    );
-  }
-
-  linkSessionUser<T = unknown>(
-    params: LegacySessionLinkParams,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      '/api/v1/session/link-user',
-      {
-        params: { session_id: params.sessionId },
-        data: {
-          user_id: params.userId,
-          ...(params.email ? { email: params.email } : {}),
-          ...(params.linkContextId ? { link_context_id: params.linkContextId } : {}),
-        },
-      },
-      options
-    );
-  }
-
-  linkMcpSessionUser<T = unknown>(
-    params: LegacyMcpSessionLinkParams,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>(
-      'POST',
-      '/api/v1/session/mcp/link-user',
-      { data: { user_id: params.userId, link_context_id: params.linkContextId } },
       options
     );
   }
@@ -396,13 +192,6 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.getAccount<T>(accountId, options);
-  }
-
-  getCompany<T = unknown>(
-    companyId: string,
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>('GET', `/api/v1/company/${encodeURIComponent(companyId)}`, {}, options);
   }
 
   listAccountBalances<T = unknown>(
@@ -487,20 +276,6 @@ export class V1Wrapper {
       { params: query },
       options
     );
-  }
-
-  listFdxAccounts<T = unknown>(
-    params: Record<string, QueryValue> = {},
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>('GET', '/api/v1/brokers/data/accounts', { params }, options);
-  }
-
-  listFdxBalances<T = unknown>(
-    params: Record<string, QueryValue> = {},
-    options?: FinaticV1CallOptions
-  ): Promise<FinaticV1Response<T>> {
-    return this.request<T>('GET', '/api/v1/brokers/data/balances', { params }, options);
   }
 
   getAccountOrder<T = unknown>(

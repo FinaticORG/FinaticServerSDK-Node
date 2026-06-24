@@ -177,6 +177,83 @@ export interface SandboxPortalSessionContext {
   userId: string;
 }
 
+export async function linkPortalUserHttp(
+  apiKey: string,
+  sessionId: string,
+  userId: string,
+  csrfToken: string,
+  baseUrl: string = DEFAULT_API_BASE_URL
+): Promise<Record<string, unknown>> {
+  const response = await axios.post(
+    `${baseUrl}/api/v1/portal/${sessionId}/user-link`,
+    { userId },
+    {
+      headers: {
+        'x-api-key': apiKey,
+        'X-Finatic-Environment': 'sandbox',
+        'X-Session-ID': sessionId,
+        'x-csrf-token': csrfToken,
+        ...DEVICE_HEADERS,
+      },
+      validateStatus: () => true,
+    }
+  );
+  if (response.status >= 400) {
+    throw new Error(`Portal user-link failed: ${JSON.stringify(response.data)}`);
+  }
+  return response.data as Record<string, unknown>;
+}
+
+export async function listPortalInstitutionsHttp(
+  apiKey: string,
+  sessionId: string,
+  csrfToken: string,
+  baseUrl: string = DEFAULT_API_BASE_URL
+): Promise<Record<string, unknown>> {
+  const response = await axios.get(`${baseUrl}/api/v1/portal/${sessionId}/institutions`, {
+    headers: {
+      'x-api-key': apiKey,
+      'X-Finatic-Environment': 'sandbox',
+      'X-Session-ID': sessionId,
+      'x-csrf-token': csrfToken,
+      ...DEVICE_HEADERS,
+    },
+    validateStatus: () => true,
+  });
+  if (response.status !== 200) {
+    throw new Error(`Failed to list portal institutions: ${JSON.stringify(response.data)}`);
+  }
+  return response.data as Record<string, unknown>;
+}
+
+async function portalJsonRequest(
+  method: 'POST' | 'GET',
+  apiKey: string,
+  sessionId: string,
+  pathSuffix: string,
+  csrfToken: string,
+  body?: Record<string, unknown>,
+  baseUrl: string = DEFAULT_API_BASE_URL
+): Promise<Record<string, unknown>> {
+  const response = await axios.request({
+    method,
+    url: `${baseUrl}/api/v1/portal/${sessionId}/${pathSuffix}`,
+    data: body,
+    headers: {
+      'x-api-key': apiKey,
+      'X-Finatic-Environment': 'sandbox',
+      'X-Session-ID': sessionId,
+      'x-csrf-token': csrfToken,
+      ...DEVICE_HEADERS,
+    },
+    validateStatus: () => true,
+  });
+  if (response.status >= 400) {
+    throw new Error(`Portal ${method} ${pathSuffix} failed: ${JSON.stringify(response.data)}`);
+  }
+  return response.data as Record<string, unknown>;
+}
+
 export async function createSandboxPortalSession(
   v1: V1Wrapper,
   apiKey: string,
@@ -194,9 +271,9 @@ export async function createSandboxPortalSession(
   v1.setSessionContext(sessionId, companyId, csrfToken);
 
   const userId = sandboxUserIdFromEmail(linkEmail);
-  const linkResponse = await v1.linkPortalUser(sessionId, { userId }, { environment: 'sandbox' });
-  if (linkResponse.errors.length > 0) {
-    throw new Error(linkResponse.errors.map((error) => error.message).join('; '));
+  const linkResponse = await linkPortalUserHttp(apiKey, sessionId, userId, csrfToken, baseUrl);
+  if ((linkResponse as { errors?: unknown[] }).errors?.length) {
+    throw new Error(JSON.stringify((linkResponse as { errors?: unknown[] }).errors));
   }
 
   return { sessionId, companyId, csrfToken, userId };
@@ -212,25 +289,37 @@ function firstPresent(record: Record<string, unknown>, ...keys: string[]): unkno
 }
 
 export async function createSandboxPortalAuthAttempt(
-  v1: V1Wrapper,
+  apiKey: string,
   sessionId: string,
-  providerId: string
+  csrfToken: string,
+  providerId: string,
+  baseUrl: string = DEFAULT_API_BASE_URL
 ): Promise<Record<string, unknown>> {
-  const response = await v1.createPortalAuthAttempt(
+  const response = await portalJsonRequest(
+    'POST',
+    apiKey,
     sessionId,
+    'auth-attempts',
+    csrfToken,
     { brokerId: providerId },
-    { environment: 'sandbox' }
+    baseUrl
   );
-  if (response.errors.length > 0) {
-    throw new Error(response.errors.map((error) => error.message).join('; '));
+  if ((response as { errors?: unknown[] }).errors?.length) {
+    throw new Error(JSON.stringify((response as { errors?: unknown[] }).errors));
   }
-  return (response.data ?? {}) as Record<string, unknown>;
+  const data = (response as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') {
+    throw new TypeError(`Unexpected auth attempt payload: ${JSON.stringify(response)}`);
+  }
+  return data as Record<string, unknown>;
 }
 
 export async function createSandboxPortalAccountGrant(
-  v1: V1Wrapper,
+  apiKey: string,
   sessionId: string,
-  authAttempt: Record<string, unknown>
+  csrfToken: string,
+  authAttempt: Record<string, unknown>,
+  baseUrl: string = DEFAULT_API_BASE_URL
 ): Promise<Record<string, unknown>> {
   const authAttemptId = String(firstPresent(authAttempt, 'id', 'authAttemptId') ?? '');
   const discoveredAccountIds =
@@ -241,18 +330,26 @@ export async function createSandboxPortalAccountGrant(
     throw new Error(`Auth attempt missing discovered accounts: ${JSON.stringify(authAttempt)}`);
   }
 
-  const grantResponse = await v1.createPortalAccountGrant(
+  const grantResponse = await portalJsonRequest(
+    'POST',
+    apiKey,
     sessionId,
+    'account-grants',
+    csrfToken,
     {
       accountId: String(discoveredAccountIds[0]),
       authAttemptId,
       canRead: true,
       canTrade: false,
     },
-    { environment: 'sandbox' }
+    baseUrl
   );
-  if (grantResponse.errors.length > 0) {
-    throw new Error(grantResponse.errors.map((error) => error.message).join('; '));
+  if ((grantResponse as { errors?: unknown[] }).errors?.length) {
+    throw new Error(JSON.stringify((grantResponse as { errors?: unknown[] }).errors));
   }
-  return (grantResponse.data ?? {}) as Record<string, unknown>;
+  const data = (grantResponse as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') {
+    throw new TypeError(`Unexpected grant payload: ${JSON.stringify(grantResponse)}`);
+  }
+  return data as Record<string, unknown>;
 }

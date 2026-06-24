@@ -35,7 +35,7 @@ describe('public surface @finatic/server-node', () => {
     expect(finatic.v1).toBeDefined();
     expect(typeof finatic.v1.listAccounts).toBe('function');
     expect(typeof finatic.v1.listPositions).toBe('function');
-    expect(typeof finatic.v1.createPortalAccountGrant).toBe('function');
+    expect(typeof finatic.v1.listAccountGrants).toBe('function');
   });
 
   it('exposes account-first v1 facade when initialized through static init', async () => {
