@@ -1,24 +1,10 @@
 /**
  * Finatic Server SDK Configuration
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * CENTRALIZED CONFIGURATION - Adjust all SDK settings here
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * This file contains all configurable options for the SDK.
- * Modify values here to customize SDK behavior.
- *
- * Generated - do not edit directly.
- * For configuration overrides, subclass or wrap ``SdkConfig`` in application code.
  */
 
 export interface SdkConfig {
   /** Account-first v1 API environment sent as X-Finatic-Environment */
   apiEnvironment: FinaticApiEnvironment;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // API Configuration
-  // ═══════════════════════════════════════════════════════════════════════
 
   /** Base URL for API requests */
   baseUrl: string;
@@ -32,36 +18,7 @@ export interface SdkConfig {
   /** Custom headers to include in all requests */
   headers: Record<string, string>;
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Retry Configuration
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /** Enable retry logic */
-  retryEnabled: boolean;
-
-  /** Maximum number of retry attempts */
-  retryCount: number;
-
-  /** Initial retry delay in milliseconds */
-  retryDelay: number;
-
-  /** Maximum retry delay in milliseconds */
-  retryMaxDelay: number;
-
-  /** Exponential backoff multiplier */
-  retryMultiplier: number;
-
-  /** HTTP status codes that trigger retry */
-  retryOnStatus: number[];
-
-  /** Enable retry on network errors */
-  retryOnNetworkError: boolean;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Logging Configuration
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /** Log level: 'debug' | 'info' | 'warn' | 'error' | 'silent' */
+  /** Log level */
   logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
   /** Enable structured JSON logging */
@@ -74,58 +31,11 @@ export interface SdkConfig {
   /** Log request IDs for tracing */
   logRequestId: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Validation Configuration
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /** Enable input validation */
+  /** Enable request/response validation */
   validationEnabled: boolean;
 
-  /** Throw errors on validation failure (vs. log warnings) */
+  /** Strict validation mode */
   validationStrict: boolean;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Caching Configuration
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /** Enable response caching */
-  cacheEnabled: boolean;
-
-  /** Default cache TTL in seconds */
-  cacheTtl: number;
-
-  /** Maximum cache size (number of entries) */
-  cacheMaxSize: number;
-
-  /** Cache keys to include in cache key generation */
-  cacheKeyInclude: string[];
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Rate Limiting Configuration
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /** Enable rate limit detection and handling */
-  rateLimitEnabled: boolean;
-
-  /** Automatically retry on 429 (rate limit) */
-  rateLimitAutoRetry: boolean;
-
-  /** Custom rate limit handler function */
-  rateLimitHandler?: (retryAfter: number) => Promise<void>;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Interceptor Configuration
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /** Enable request interceptors */
-  requestInterceptorsEnabled: boolean;
-
-  /** Enable response interceptors */
-  responseInterceptorsEnabled: boolean;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Session Management Configuration (Server SDK)
-  // ═══════════════════════════════════════════════════════════════════════
 
   /** Session context storage */
   sessionContextStorage: 'memory' | 'custom';
@@ -145,73 +55,30 @@ export interface SdkConfig {
 
 export type FinaticApiEnvironment = 'live' | 'sandbox';
 
-/**
- * Default configuration values.
- * Override via environment variables or custom config.
- */
 export const defaultConfig: SdkConfig = {
   apiEnvironment: process.env['FINATIC_API_ENVIRONMENT'] === 'sandbox' ? 'sandbox' : 'live',
-
-  // API Configuration
   baseUrl: process.env['FINATIC_API_URL'] || 'https://api.finatic.dev',
   ...(process.env['FINATIC_API_KEY'] ? { apiKey: process.env['FINATIC_API_KEY'] } : {}),
   timeout: parseInt(process.env['FINATIC_TIMEOUT'] || '30000', 10),
   headers: {},
-
-  // Retry Configuration
-  retryEnabled: process.env['FINATIC_RETRY_ENABLED'] !== 'false',
-  retryCount: parseInt(process.env['FINATIC_RETRY_COUNT'] || '3', 10),
-  retryDelay: parseInt(process.env['FINATIC_RETRY_DELAY'] || '1000', 10),
-  retryMaxDelay: parseInt(process.env['FINATIC_RETRY_MAX_DELAY'] || '10000', 10),
-  retryMultiplier: parseFloat(process.env['FINATIC_RETRY_MULTIPLIER'] || '2'),
-  retryOnStatus: [429, 500, 502, 503, 504],
-  retryOnNetworkError: process.env['FINATIC_RETRY_ON_NETWORK_ERROR'] !== 'false',
-
-  // Logging Configuration
   logLevel: (process.env['FINATIC_LOG_LEVEL'] || 'error') as SdkConfig['logLevel'],
   structuredLogging: process.env['FINATIC_STRUCTURED_LOGGING'] === 'true',
   logRequestBody: process.env['FINATIC_LOG_REQUEST_BODY'] === 'true',
   logResponseBody: process.env['FINATIC_LOG_RESPONSE_BODY'] === 'true',
   logRequestId: process.env['FINATIC_LOG_REQUEST_ID'] !== 'false',
-
-  // Validation Configuration
   validationEnabled: process.env['FINATIC_VALIDATION_ENABLED'] !== 'false',
   validationStrict: process.env['FINATIC_VALIDATION_STRICT'] === 'true',
-
-  // Caching Configuration
-  cacheEnabled: process.env['FINATIC_CACHE_ENABLED'] === 'true',
-  cacheTtl: parseInt(process.env['FINATIC_CACHE_TTL'] || '300', 10),
-  cacheMaxSize: parseInt(process.env['FINATIC_CACHE_MAX_SIZE'] || '1000', 10),
-  cacheKeyInclude: ['method', 'path', 'query', 'body'],
-
-  // Rate Limiting Configuration
-  rateLimitEnabled: process.env['FINATIC_RATE_LIMIT_ENABLED'] !== 'false',
-  rateLimitAutoRetry: process.env['FINATIC_RATE_LIMIT_AUTO_RETRY'] !== 'false',
-
-  // Interceptor Configuration
-  requestInterceptorsEnabled: process.env['FINATIC_REQUEST_INTERCEPTORS'] !== 'false',
-  responseInterceptorsEnabled: process.env['FINATIC_RESPONSE_INTERCEPTORS'] !== 'false',
-
-  // Server SDK Session Configuration
   sessionContextStorage: 'memory',
 };
 
-/**
- * Get configuration with environment variable overrides.
- */
 export function getConfig(overrides?: Partial<SdkConfig>): SdkConfig {
-  const config: SdkConfig = {
-    ...defaultConfig,
-  };
-
+  const config: SdkConfig = { ...defaultConfig };
   if (overrides) {
-    // Only assign defined values (not undefined)
     for (const [key, value] of Object.entries(overrides)) {
       if (value !== undefined) {
         (config as any)[key] = value;
       }
     }
   }
-
   return config;
 }

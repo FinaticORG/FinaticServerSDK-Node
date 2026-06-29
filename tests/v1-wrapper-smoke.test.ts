@@ -30,7 +30,7 @@ describe('V1Wrapper smoke coverage', () => {
     mockAxiosResponse();
   });
 
-  it('invokes SDK session, account, grant, consent, and webhook v1 routes', async () => {
+  it('invokes account, grant, and webhook v1 data routes', async () => {
     const v1 = new V1Wrapper('test-api-key', defaultConfig);
     v1.setSessionContext('session-id', 'company-id', 'csrf-token');
 
@@ -38,29 +38,18 @@ describe('V1Wrapper smoke coverage', () => {
     const orderParams = { accountId: 'account-id', orderId: 'order-id' };
 
     const calls: Array<Promise<unknown>> = [
-      v1.createSession({ deviceInfo: { platform: 'server' } }),
-      v1.getSession('session-id'),
-      v1.createPortalLink('session-id', { redirectUrl: 'https://example.com' }),
-      v1.getSessionUser('session-id'),
-      v1.getSessionSyncStatus('session-id'),
+      v1.getPortalUrl({ theme: 'dark' }),
+      v1.getSessionUser(),
       v1.listAccounts({ limit: 10, offset: 0 }),
       v1.getAccount('account-id'),
-      v1.getAccountSyncStatus('account-id'),
-      v1.listAccountBalances(accountParams),
       v1.listBalances(accountParams),
-      v1.listAccountPositions(accountParams),
       v1.listPositions(accountParams),
-      v1.listAccountTransactions(accountParams),
       v1.listTransactions(accountParams),
-      v1.listAccountOrders(accountParams),
       v1.listOrders(accountParams),
-      v1.listAccountPositionLots(accountParams),
-      v1.listPositionLots(accountParams),
       v1.listAccountResource('orders', accountParams),
       v1.getAccountOrder(orderParams),
       v1.getAccountOrderFills(orderParams),
       v1.getAccountOrderEvents(orderParams),
-      v1.getAccountPositionLotFills({ accountId: 'account-id', lotId: 'lot-id' }),
       v1.createAccountOrder({
         accountId: 'account-id',
         idempotencyKey: 'idem-1',
@@ -81,10 +70,6 @@ describe('V1Wrapper smoke coverage', () => {
       v1.getAccountGrant('grant-id'),
       v1.updateAccountGrant('grant-id', { canRead: true }),
       v1.revokeAccountGrant('grant-id'),
-      v1.listConsents(),
-      v1.createConsent({ scopes: ['accounts'] }),
-      v1.getConsent('consent-id'),
-      v1.revokeConsent('consent-id'),
       v1.getWebhookCatalog(),
       v1.getWebhookPayloadSchema(),
       v1.listWebhookSubscriptions(),
@@ -95,6 +80,6 @@ describe('V1Wrapper smoke coverage', () => {
 
     await Promise.allSettled(calls);
 
-    expect(mockRequest.mock.calls.length).toBeGreaterThan(25);
+    expect(mockRequest.mock.calls.length).toBeGreaterThan(15);
   });
 });

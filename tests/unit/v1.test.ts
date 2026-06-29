@@ -9,13 +9,6 @@ function createConfig(): SdkConfig {
     baseUrl: 'https://api.test',
     timeout: 30000,
     headers: {},
-    retryEnabled: true,
-    retryCount: 3,
-    retryDelay: 1000,
-    retryMaxDelay: 10000,
-    retryMultiplier: 2,
-    retryOnStatus: [429, 500, 502, 503, 504],
-    retryOnNetworkError: true,
     logLevel: 'error',
     structuredLogging: false,
     logRequestBody: false,
@@ -23,14 +16,6 @@ function createConfig(): SdkConfig {
     logRequestId: true,
     validationEnabled: true,
     validationStrict: false,
-    cacheEnabled: false,
-    cacheTtl: 300,
-    cacheMaxSize: 1000,
-    cacheKeyInclude: ['method', 'path', 'query', 'body'],
-    rateLimitEnabled: true,
-    rateLimitAutoRetry: true,
-    requestInterceptorsEnabled: true,
-    responseInterceptorsEnabled: true,
     sessionContextStorage: 'memory',
   };
 }
@@ -54,51 +39,41 @@ function createClient(): { client: AxiosInstance; requests: AxiosRequestConfig[]
   return { client, requests };
 }
 
-const V1_OPENAPI_OPERATION_METHODS = {
-  'GET /api/v1/account-grants': 'listAccountGrants',
-  'GET /api/v1/account-grants/{grantId}': 'getAccountGrant',
-  'PATCH /api/v1/account-grants/{grantId}': 'updateAccountGrant',
-  'POST /api/v1/account-grants/{grantId}/revoke': 'revokeAccountGrant',
-  'GET /api/v1/accounts': 'listAccounts',
-  'GET /api/v1/accounts/{accountId}': 'getAccount',
-  'GET /api/v1/accounts/{accountId}/balances': 'listAccountBalances',
-  'GET /api/v1/accounts/{accountId}/orders': 'listAccountOrders',
-  'POST /api/v1/accounts/{accountId}/orders': 'createAccountOrder',
-  'DELETE /api/v1/accounts/{accountId}/orders/{orderId}': 'cancelAccountOrder',
-  'GET /api/v1/accounts/{accountId}/orders/{orderId}': 'getAccountOrder',
-  'PATCH /api/v1/accounts/{accountId}/orders/{orderId}': 'modifyAccountOrder',
-  'GET /api/v1/accounts/{accountId}/orders/{orderId}/events': 'getAccountOrderEvents',
-  'GET /api/v1/accounts/{accountId}/orders/{orderId}/fills': 'getAccountOrderFills',
-  'GET /api/v1/accounts/{accountId}/position-lots': 'listAccountPositionLots',
-  'GET /api/v1/accounts/{accountId}/position-lots/{lotId}/fills': 'getAccountPositionLotFills',
-  'GET /api/v1/accounts/{accountId}/positions': 'listAccountPositions',
-  'GET /api/v1/accounts/{accountId}/transactions': 'listAccountTransactions',
-  'GET /api/v1/accounts/{accountId}/{resource}': 'listAccountResource',
-  'GET /api/v1/consents': 'listConsents',
-  'POST /api/v1/consents': 'createConsent',
-  'GET /api/v1/consents/{consentId}': 'getConsent',
-  'POST /api/v1/consents/{consentId}/revoke': 'revokeConsent',
-  'POST /api/v1/sessions': 'createSession',
-  'GET /api/v1/sessions/{sessionId}': 'getSession',
-  'POST /api/v1/sessions/{sessionId}/portal-links': 'createPortalLink',
-  'GET /api/v1/sessions/{sessionId}/sync-status': 'getSessionSyncStatus',
-  'GET /api/v1/sessions/{sessionId}/user': 'getSessionUser',
-  'GET /api/v1/webhooks/catalog': 'getWebhookCatalog',
-  'GET /api/v1/webhooks/payload-schema': 'getWebhookPayloadSchema',
-  'GET /api/v1/webhooks/subscriptions': 'listWebhookSubscriptions',
-  'POST /api/v1/webhooks/subscriptions': 'createWebhookSubscription',
-  'PATCH /api/v1/webhooks/subscriptions/{subscriptionId}': 'updateWebhookSubscription',
-  'POST /api/v1/webhooks/subscriptions/{subscriptionId}/revoke': 'revokeWebhookSubscription',
-} as const;
+const V1_DATA_METHODS = [
+  'listAccounts',
+  'getAccount',
+  'listBalances',
+  'listPositions',
+  'listTransactions',
+  'listOrders',
+  'listAccountResource',
+  'getAccountOrder',
+  'getAccountOrderFills',
+  'getAccountOrderEvents',
+  'createAccountOrder',
+  'modifyAccountOrder',
+  'cancelAccountOrder',
+  'listAccountGrants',
+  'getAccountGrant',
+  'updateAccountGrant',
+  'revokeAccountGrant',
+  'getWebhookCatalog',
+  'getWebhookPayloadSchema',
+  'listWebhookSubscriptions',
+  'createWebhookSubscription',
+  'updateWebhookSubscription',
+  'revokeWebhookSubscription',
+] as const;
 
 describe('V1 account-first wrapper', () => {
-  it('pins public facade methods for SDK OpenAPI operations', () => {
+  it('pins public data facade methods (session bootstrap is on FinaticServer only)', () => {
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), createClient().client);
 
-    expect(Object.keys(V1_OPENAPI_OPERATION_METHODS)).toHaveLength(34);
-    for (const methodName of Object.values(V1_OPENAPI_OPERATION_METHODS)) {
+    for (const methodName of V1_DATA_METHODS) {
       expect(typeof wrapper[methodName]).toBe('function');
     }
+    expect(typeof (wrapper as unknown as Record<string, unknown>)['createPortalLink']).toBe('undefined');
+    expect(typeof (wrapper as unknown as Record<string, unknown>)['createSession']).toBe('undefined');
   });
 
   it('sends X-Finatic-Environment, server API key, and session headers', async () => {
@@ -126,27 +101,6 @@ describe('V1 account-first wrapper', () => {
     );
   });
 
-  it('uses current account-first session routes', async () => {
-    const { client, requests } = createClient();
-    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
-
-    await wrapper.createPortalLink('session_123');
-    await wrapper.getSessionSyncStatus('session_123');
-
-    expect(requests[0]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/sessions/session_123/portal-links',
-      })
-    );
-    expect(requests[1]).toEqual(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/api/v1/sessions/session_123/sync-status',
-      })
-    );
-  });
-
   it('covers account resource listing', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
@@ -163,12 +117,11 @@ describe('V1 account-first wrapper', () => {
     );
   });
 
-  it('uses API v1 revoke routes for grants, consents, and webhook subscriptions', async () => {
+  it('uses API v1 revoke routes for grants and webhook subscriptions', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
 
     await wrapper.revokeAccountGrant('grant_123');
-    await wrapper.revokeConsent('consent_123');
     await wrapper.revokeWebhookSubscription('subscription_123');
 
     expect(requests[0]).toEqual(
@@ -178,12 +131,6 @@ describe('V1 account-first wrapper', () => {
       })
     );
     expect(requests[1]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/api/v1/consents/consent_123/revoke',
-      })
-    );
-    expect(requests[2]).toEqual(
       expect.objectContaining({
         method: 'POST',
         url: '/api/v1/webhooks/subscriptions/subscription_123/revoke',
@@ -399,7 +346,7 @@ describe('V1 account-first wrapper', () => {
     const result = await wrapper.getAccount('acct_123');
 
     expect(result).toEqual({
-      traceId: 'trace-from-header',
+      traceId: null,
       data: null,
       warnings: [],
       errors: [

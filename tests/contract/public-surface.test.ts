@@ -1,14 +1,7 @@
 /**
- * Contract tests for stable public exports (regen-safe).
- * See docs/sdk-public-api-inventory.md at repo root.
+ * Contract tests for stable public exports.
  */
-import {
-  BrokersWrapper,
-  CompanyWrapper,
-  FinaticServer,
-  SessionWrapper,
-  V1Wrapper,
-} from '../../src/index';
+import { FinaticServer, V1Wrapper } from '../../src/index';
 
 describe('public surface @finatic/server-node', () => {
   afterEach(() => {
@@ -22,31 +15,28 @@ describe('public surface @finatic/server-node', () => {
     expect(typeof FinaticServer.init).toBe('function');
   });
 
-  it('exports domain wrappers', () => {
-    expect(BrokersWrapper).toBeDefined();
-    expect(CompanyWrapper).toBeDefined();
-    expect(SessionWrapper).toBeDefined();
+  it('exports V1Wrapper for account-first data access', () => {
     expect(V1Wrapper).toBeDefined();
   });
 
-  it('exposes account-first v1 facade on the server client', () => {
+  it('exposes versioned v1 API including session and account data', () => {
     const finatic = new FinaticServer('fntc_test_key');
 
     expect(finatic.v1).toBeDefined();
+    expect(typeof finatic.v1.startSession).toBe('function');
+    expect(typeof finatic.v1.getPortalUrl).toBe('function');
     expect(typeof finatic.v1.listAccounts).toBe('function');
+    expect(typeof finatic.v1.listBalances).toBe('function');
     expect(typeof finatic.v1.listPositions).toBe('function');
     expect(typeof finatic.v1.listAccountGrants).toBe('function');
+    expect(typeof (finatic as unknown as Record<string, unknown>)['startSession']).toBe('undefined');
   });
 
-  it('exposes account-first v1 facade when initialized through static init', async () => {
-    jest
-      .spyOn(FinaticServer.prototype, 'startSession')
-      .mockResolvedValue({ session_id: 'session_123', company_id: 'company_123' });
-
-    const finatic = await FinaticServer.init('fntc_test_key');
-
-    expect(finatic).toBeInstanceOf(FinaticServer);
-    expect(finatic.v1).toBeDefined();
-    expect(typeof finatic.v1.listAccounts).toBe('function');
+  it('does not expose legacy broker connection methods on the root client', () => {
+    const finatic = new FinaticServer('fntc_test_key') as unknown as Record<string, unknown>;
+    expect(finatic['getBrokerConnections']).toBeUndefined();
+    expect(finatic['getAllOrders']).toBeUndefined();
+    expect(finatic['getSessionId']).toBeUndefined();
+    expect(finatic['isAuthed']).toBeUndefined();
   });
 });
