@@ -9,9 +9,9 @@ Use this package when your backend needs API-key authentication, session orchest
 | Version | API surface | Use when |
 |---------|-------------|----------|
 | **1.0.0+** | `/api/v1/*` via `finatic.v1` | New account-grant integrations |
-| **0.9.x** | `/api/beta/*` via legacy wrappers | Existing apps until migrated |
+| **0.9.x** | `/api/beta/*` via legacy wrappers | Existing apps pinned to the 0.9 line |
 
-Legacy beta clients live under `src/openapi-legacy/`; v1 OpenAPI output is under `src/openapi/`.
+The 1.0 line exposes the account-first v1 facade under `finatic.v1`; v1 OpenAPI output is under `src/openapi/`.
 
 ## Install
 
@@ -25,8 +25,9 @@ npm install @finatic/server-node
 import { FinaticServer } from '@finatic/server-node';
 
 const finatic = await FinaticServer.init(process.env.FINATIC_API_KEY!);
-const token = await finatic.getToken();
-const orders = await finatic.getAllOrders();
+const token = await finatic.v1.getToken();
+const accounts = await finatic.v1.listAccounts({ includeSyncStatus: true });
+const orders = await finatic.v1.listOrders({ accountId: 'acct_123' });
 ```
 
 ## Common Commands
@@ -42,9 +43,9 @@ const orders = await finatic.getAllOrders();
 ## Core Capabilities
 
 - API-key initialization and session lifecycle handling.
-- Portal URL generation for end-user broker authentication.
+- Account-first sessions, account grants, data, trading, and webhook helpers through `finatic.v1`.
 - One-time token issuance for client SDK handoff.
-- Typed data retrieval across orders, positions, accounts, and balances.
+- Typed account-scoped retrieval across orders, positions, transactions, accounts, and balances.
 - Standardized response and error envelopes.
 
 ## Documentation
