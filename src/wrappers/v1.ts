@@ -222,11 +222,10 @@ export class V1Wrapper {
     userId?: string
   ): Promise<{ session_id: string; company_id: string }> {
     const body = userId !== undefined ? { user_id: userId } : {};
-    const response = await this.request<Record<string, unknown>>(
-      'POST',
-      '/api/v1/session/start',
-      { data: body, headers: { 'One-Time-Token': oneTimeToken } }
-    );
+    const response = await this.request<Record<string, unknown>>('POST', '/api/v1/session/start', {
+      data: body,
+      headers: { 'One-Time-Token': oneTimeToken },
+    });
     if (response.errors.length > 0) {
       throw new Error(response.errors[0]?.message || 'Failed to start session');
     }
