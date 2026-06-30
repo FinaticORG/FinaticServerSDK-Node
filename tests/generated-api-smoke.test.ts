@@ -1,5 +1,3 @@
-import { BrokersApi } from '../src/openapi/api/brokers-api';
-import { CompanyApi } from '../src/openapi/api/company-api';
 import { SessionApi } from '../src/openapi/api/session-api';
 
 type ApiCtor = new (...args: any[]) => any;
@@ -105,14 +103,9 @@ async function invokeApiMethods(apiCtor: ApiCtor): Promise<number> {
 }
 
 describe('Generated API smoke coverage (Node SDK)', () => {
-  it('invokes many generated api methods', async () => {
-    const brokersInvoked = await invokeApiMethods(BrokersApi);
-    const companyInvoked = await invokeApiMethods(CompanyApi);
+  it('invokes the generated session api methods that ship in 1.0', async () => {
     const sessionInvoked = await invokeApiMethods(SessionApi);
 
-    expect(brokersInvoked).toBeGreaterThan(10);
-    expect(companyInvoked).toBeGreaterThan(0);
     expect(sessionInvoked).toBeGreaterThan(0);
   });
 });
-

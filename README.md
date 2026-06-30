@@ -9,9 +9,9 @@ Use this package when your backend needs API-key authentication, session orchest
 | Version | API surface | Use when |
 |---------|-------------|----------|
 | **1.0.0+** | `/api/v1/*` via `finatic.v1` | New account-grant integrations |
-| **0.9.x** | `/api/beta/*` via legacy wrappers | Existing apps pinned to the 0.9 line |
 
-The 1.0 line exposes the account-first v1 facade under `finatic.v1`; v1 OpenAPI output is under `src/openapi/`.
+The 1.0 line exposes the account-first v1 facade under `finatic.v1`. It does not ship generated
+beta broker/company clients, connection-first models, or inactive position-lot types.
 
 ## Install
 
