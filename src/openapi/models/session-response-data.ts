@@ -41,7 +41,7 @@ export interface SessionResponseData {
    */
   user_id?: string | null;
   /**
-   * True when a provisional user_id was supplied on start but was not applied (invalid UUID or no active broker connection for this company).
+   * True when a provisional user_id was supplied on start but was not applied (invalid UUID or no broker connection with company access for this company).
    */
   provided_user_id_rejected?: boolean;
   /**

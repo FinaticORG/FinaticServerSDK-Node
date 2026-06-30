@@ -12,6 +12,4 @@
  * Do not edit the class manually.
  */
 
-export * from './api/brokers-api';
-export * from './api/company-api';
 export * from './api/session-api';

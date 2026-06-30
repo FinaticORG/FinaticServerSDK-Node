@@ -1,7 +1,18 @@
 /**
- * Re-exports hand-maintained API wrappers.
+ * Re-exports the versioned v1 wrapper.
  */
 
-export { BrokersWrapper } from './brokers';
-export { CompanyWrapper } from './company';
-export { SessionWrapper } from './session';
+export { V1Wrapper } from './v1';
+export type {
+  AccountOrderCommandParams,
+  AccountOrderParams,
+  AccountScopedParams,
+  CreateAccountOrderCommandParams,
+  FinaticV1CallOptions,
+  FinaticV1Error,
+  FinaticV1ErrorCode,
+  FinaticV1Response,
+  FinaticV1Warning,
+  PortalUrlParams,
+  SessionStartResult,
+} from './v1';
