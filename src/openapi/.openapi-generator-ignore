@@ -29,6 +29,4 @@ api/brokers-api.ts
 api/company-api.ts
 models/*beta*
 models/*legacy*
-models/*fdxbroker*
-models/*broker-connection*
 models/*user-broker-connection*

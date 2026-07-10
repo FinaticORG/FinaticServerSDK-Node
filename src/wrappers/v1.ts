@@ -75,6 +75,12 @@ export interface AccountOrderCommandParams extends AccountOrderParams {
   idempotencyKey: string;
 }
 
+export interface AccountOrderSchemaParams {
+  accountId: string;
+  action: 'place' | 'modify' | 'cancel';
+  broker?: string;
+}
+
 type QueryValue = string | number | boolean | undefined;
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -408,6 +414,23 @@ export class V1Wrapper {
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.accountOrderResource<T>(params, '/events', options);
+  }
+
+  getAccountOrderSchema<T = unknown>(
+    params: AccountOrderSchemaParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'GET',
+      `/api/v1/accounts/${encodeURIComponent(params.accountId)}/order-schemas`,
+      {
+        params: {
+          action: params.action,
+          broker: params.broker,
+        },
+      },
+      options
+    );
   }
 
   createAccountOrder<T = unknown>(
