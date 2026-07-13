@@ -28,7 +28,6 @@ import {
   serializeDataIfNeeded,
   toPathString,
   createRequestFunction,
-  replaceWithSerializableTypeIfNeeded,
 } from '../common';
 // @ts-ignore
 import {
@@ -39,8 +38,6 @@ import {
   RequiredError,
   operationServerMap,
 } from '../base';
-// @ts-ignore
-import type { FinaticEnvironment } from '../models';
 // @ts-ignore
 import type { FinaticResponseReauthNotificationOptOutResult } from '../models';
 // @ts-ignore
@@ -56,18 +53,16 @@ export const PortalApiAxiosParamCreator = function (configuration?: Configuratio
      * Apply an email opt-out token through the API service boundary.
      * @summary Apply Reauth Notification Opt Out
      * @param {ReauthNotificationOptOutRequest} reauthNotificationOptOutRequest
-     * @param {FinaticEnvironment} [xFinaticEnvironment] Select the Finatic environment for account-first v1 calls. Defaults to the API-key environment when omitted.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    finaticV1PostPortalReauthNotificationOptOut: async (
+    applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost: async (
       reauthNotificationOptOutRequest: ReauthNotificationOptOutRequest,
-      xFinaticEnvironment?: FinaticEnvironment,
       options: RawAxiosRequestConfig = {}
     ): Promise<RequestArgs> => {
       // verify required parameter 'reauthNotificationOptOutRequest' is not null or undefined
       assertParamExists(
-        'finaticV1PostPortalReauthNotificationOptOut',
+        'applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost',
         'reauthNotificationOptOutRequest',
         reauthNotificationOptOutRequest
       );
@@ -84,14 +79,7 @@ export const PortalApiAxiosParamCreator = function (configuration?: Configuratio
       const localVarQueryParameter = {} as any;
 
       localVarHeaderParameter['Content-Type'] = 'application/json';
-      localVarHeaderParameter['Accept'] = 'application/json';
 
-      if (xFinaticEnvironment != null) {
-        localVarHeaderParameter['X-Finatic-Environment'] =
-          typeof xFinaticEnvironment === 'string'
-            ? xFinaticEnvironment
-            : JSON.stringify(xFinaticEnvironment, replaceWithSerializableTypeIfNeeded);
-      }
       setSearchParams(localVarUrlObj, localVarQueryParameter);
       let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
       localVarRequestOptions.headers = {
@@ -123,13 +111,11 @@ export const PortalApiFp = function (configuration?: Configuration) {
      * Apply an email opt-out token through the API service boundary.
      * @summary Apply Reauth Notification Opt Out
      * @param {ReauthNotificationOptOutRequest} reauthNotificationOptOutRequest
-     * @param {FinaticEnvironment} [xFinaticEnvironment] Select the Finatic environment for account-first v1 calls. Defaults to the API-key environment when omitted.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    async finaticV1PostPortalReauthNotificationOptOut(
+    async applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
       reauthNotificationOptOutRequest: ReauthNotificationOptOutRequest,
-      xFinaticEnvironment?: FinaticEnvironment,
       options?: RawAxiosRequestConfig
     ): Promise<
       (
@@ -138,16 +124,15 @@ export const PortalApiFp = function (configuration?: Configuration) {
       ) => AxiosPromise<FinaticResponseReauthNotificationOptOutResult>
     > {
       const localVarAxiosArgs =
-        await localVarAxiosParamCreator.finaticV1PostPortalReauthNotificationOptOut(
+        await localVarAxiosParamCreator.applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
           reauthNotificationOptOutRequest,
-          xFinaticEnvironment,
           options
         );
       const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
       const localVarOperationServerBasePath =
-        operationServerMap['PortalApi.finaticV1PostPortalReauthNotificationOptOut']?.[
-          localVarOperationServerIndex
-        ]?.url;
+        operationServerMap[
+          'PortalApi.applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost'
+        ]?.[localVarOperationServerIndex]?.url;
       return (axios, basePath) =>
         createRequestFunction(
           localVarAxiosArgs,
@@ -172,18 +157,17 @@ export const PortalApiFactory = function (
     /**
      * Apply an email opt-out token through the API service boundary.
      * @summary Apply Reauth Notification Opt Out
-     * @param {PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest} requestParameters Request parameters.
+     * @param {PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    finaticV1PostPortalReauthNotificationOptOut(
-      requestParameters: PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest,
+    applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
+      requestParameters: PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest,
       options?: RawAxiosRequestConfig
     ): AxiosPromise<FinaticResponseReauthNotificationOptOutResult> {
       return localVarFp
-        .finaticV1PostPortalReauthNotificationOptOut(
+        .applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
           requestParameters.reauthNotificationOptOutRequest,
-          requestParameters.xFinaticEnvironment,
           options
         )
         .then((request) => request(axios, basePath));
@@ -198,26 +182,21 @@ export interface PortalApiInterface {
   /**
    * Apply an email opt-out token through the API service boundary.
    * @summary Apply Reauth Notification Opt Out
-   * @param {PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest} requestParameters Request parameters.
+   * @param {PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest} requestParameters Request parameters.
    * @param {*} [options] Override http request option.
    * @throws {RequiredError}
    */
-  finaticV1PostPortalReauthNotificationOptOut(
-    requestParameters: PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest,
+  applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
+    requestParameters: PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest,
     options?: RawAxiosRequestConfig
   ): AxiosPromise<FinaticResponseReauthNotificationOptOutResult>;
 }
 
 /**
- * Request parameters for finaticV1PostPortalReauthNotificationOptOut operation in PortalApi.
+ * Request parameters for applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost operation in PortalApi.
  */
-export interface PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest {
+export interface PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest {
   readonly reauthNotificationOptOutRequest: ReauthNotificationOptOutRequest;
-
-  /**
-   * Select the Finatic environment for account-first v1 calls. Defaults to the API-key environment when omitted.
-   */
-  readonly xFinaticEnvironment?: FinaticEnvironment;
 }
 
 /**
@@ -227,18 +206,17 @@ export class PortalApi extends BaseAPI implements PortalApiInterface {
   /**
    * Apply an email opt-out token through the API service boundary.
    * @summary Apply Reauth Notification Opt Out
-   * @param {PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest} requestParameters Request parameters.
+   * @param {PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest} requestParameters Request parameters.
    * @param {*} [options] Override http request option.
    * @throws {RequiredError}
    */
-  public finaticV1PostPortalReauthNotificationOptOut(
-    requestParameters: PortalApiFinaticV1PostPortalReauthNotificationOptOutRequest,
+  public applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
+    requestParameters: PortalApiApplyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPostRequest,
     options?: RawAxiosRequestConfig
   ) {
     return PortalApiFp(this.configuration)
-      .finaticV1PostPortalReauthNotificationOptOut(
+      .applyReauthNotificationOptOutApiV1PortalReauthNotificationOptOutPost(
         requestParameters.reauthNotificationOptOutRequest,
-        requestParameters.xFinaticEnvironment,
         options
       )
       .then((request) => request(this.axios, this.basePath));

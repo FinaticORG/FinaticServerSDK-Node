@@ -12,9 +12,6 @@
  * Do not edit the class manually.
  */
 
-export * from './api/account-grants-api';
-export * from './api/accounts-api';
 export * from './api/owner-portal-api';
 export * from './api/portal-api';
-export * from './api/sessions-api';
-export * from './api/webhooks-api';
+export * from './api/session-api';

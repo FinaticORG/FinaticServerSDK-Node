@@ -17,6 +17,6 @@
  */
 export interface OwnerPortalRevokeAllCompaniesResult {
   connection_id: string;
-  message: string;
   revoked_company_count: number;
+  message: string;
 }

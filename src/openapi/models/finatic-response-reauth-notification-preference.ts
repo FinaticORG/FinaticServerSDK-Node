@@ -18,19 +18,10 @@ import type { SuccessPayloadReauthNotificationPreference } from './success-paylo
 
 export interface FinaticResponseReauthNotificationPreference {
   /**
-   * Optional error object with message, code, status, and details
-   */
-  error?: { [key: string]: any } | null;
-  /**
-   * Success payload containing data and optional meta. None when error is present.
-   */
-  success?: SuccessPayloadReauthNotificationPreference | null;
-  /**
    * Request trace identifier for tracking and debugging. Auto-generated if not provided.
    */
   trace_id?: string;
-  /**
-   * Optional array of warning objects
-   */
+  success?: SuccessPayloadReauthNotificationPreference | null;
+  error?: { [key: string]: any } | null;
   warning?: Array<{ [key: string]: any }> | null;
 }

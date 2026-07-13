@@ -16,6 +16,7 @@
  * Per-connection reauth email notification preference state.
  */
 export interface ReauthNotificationPreference {
+  user_broker_connection_id: string;
   /**
    * Effective email notification preference for reauth events.
    */
@@ -25,24 +26,11 @@ export interface ReauthNotificationPreference {
    */
   is_default: boolean;
   /**
-   * Most recent reauth notification delivery row timestamp.
-   */
-  last_delivery_at?: string | null;
-  /**
-   * Most recent delivery status recorded by Background.
-   */
-  last_delivery_status?: string | null;
-  /**
-   * Most recent reauth notification timestamp.
-   */
-  last_notified_at?: string | null;
-  /**
-   * Timestamp when email notification was opted out.
-   */
-  opted_out_at?: string | null;
-  /**
    * Source of the current preference value.
    */
   preference_source: string;
-  user_broker_connection_id: string;
+  opted_out_at?: string | null;
+  last_notified_at?: string | null;
+  last_delivery_status?: string | null;
+  last_delivery_at?: string | null;
 }

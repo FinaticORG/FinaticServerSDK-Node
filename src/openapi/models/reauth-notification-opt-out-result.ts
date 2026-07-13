@@ -17,23 +17,14 @@
  */
 export interface ReauthNotificationOptOutResult {
   /**
-   * Effective email notification state after opt-out.
-   */
-  email_enabled?: boolean | null;
-  /**
-   * Whether the stored preference was updated.
-   */
-  preference_updated?: boolean;
-  /**
-   * Sanitized non-secret failure or status reason.
-   */
-  reason?: string | null;
-  /**
    * One of success, expired, invalid, or error.
    */
   status: string;
   /**
-   * Connection updated when the token was valid.
+   * Whether the stored preference was updated.
    */
+  preference_updated?: boolean;
   user_broker_connection_id?: string | null;
+  email_enabled?: boolean | null;
+  reason?: string | null;
 }

@@ -17,11 +17,11 @@
  */
 export interface TokenResponseData {
   /**
-   * Token expiration time
-   */
-  expires_at: string;
-  /**
    * One-time use token
    */
   one_time_token: string;
+  /**
+   * Token expiration time
+   */
+  expires_at: string;
 }
