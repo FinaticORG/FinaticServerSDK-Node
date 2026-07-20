@@ -1,12 +1,15 @@
 version: 2
-
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: monthly
+      interval: weekly
     target-branch: develop
     open-pull-requests-limit: 5
+    reviewers:
+      - founders
+    assignees:
+      - founders
     commit-message:
       prefix: chore
       prefix-development: chore
@@ -15,27 +18,29 @@ updates:
       production-dependencies:
         dependency-type: production
         update-types:
-          - "minor"
-          - "patch"
+          - minor
+          - patch
       development-dependencies:
         dependency-type: development
         update-types:
-          - "minor"
-          - "patch"
+          - minor
+          - patch
     ignore:
-      # TypeScript majors need a deliberate upgrade, not an auto-PR.
       - dependency-name: typescript
         update-types:
-          - "version-update:semver-major"
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: monthly
+      interval: weekly
     target-branch: develop
+    reviewers:
+      - founders
+    assignees:
+      - founders
     commit-message:
       prefix: ci
-      prefix-development: ci
       include: scope
     groups:
       ci-dependencies:
