@@ -109,6 +109,10 @@
   "homepage": "https://github.com/FinaticORG/FinaticServerSDK-Node#readme",
   "packageManager": "npm@10.8.2",
   "overrides": {
-    "shell-quote": "1.10.0"
+    "shell-quote": "1.10.0",
+    "brace-expansion": ">=2.0.3",
+    "@isaacs/brace-expansion": ">=5.0.1",
+    "flatted": ">=3.4.0",
+    "picomatch": ">=2.3.2"
   }
 }
