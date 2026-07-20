@@ -61,7 +61,7 @@
     "node-cache": "^5.1.2",
     "p-retry": "^8.0.0",
     "pino": "^10.3.1",
-    "shell-quote": "^1.10.0",
+    "shell-quote": "1.10.0",
     "undici": "^8.8.0",
     "uuid": "^14.0.1",
     "zod": "^4.1.13"
@@ -107,5 +107,8 @@
     "url": "https://github.com/FinaticORG/FinaticServerSDK-Node/issues"
   },
   "homepage": "https://github.com/FinaticORG/FinaticServerSDK-Node#readme",
-  "packageManager": "npm@10.8.2"
+  "packageManager": "npm@10.8.2",
+  "overrides": {
+    "shell-quote": "1.10.0"
+  }
 }
