@@ -31,12 +31,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Trusted Publishing (OIDC) requires Node >= 22.14 and npm >= 11.5.1.
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
-          cache: "npm"
+          node-version: "22.14"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm supports OIDC trusted publishing
+        run: npm install -g npm@^11.5.1
 
       - name: Install dependencies
         run: npm ci
@@ -104,13 +107,11 @@ jobs:
           name: finatic-server-node-${{ steps.version.outputs.version }}
           path: finatic-server-node-*.tgz
 
-      # Publish before any git push. Branch protection blocks direct pushes to main,
-      # and a failed push must not leave npm unpublished.
+      # Publish via OIDC Trusted Publisher — no NPM_TOKEN.
+      # Branch protection blocks direct pushes to main, so version sync is a follow-up PR.
       - name: Publish to NPM
         if: steps.mode.outputs.dry_run != 'true'
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Open version bump pull request
         if: steps.mode.outputs.dry_run != 'true'
