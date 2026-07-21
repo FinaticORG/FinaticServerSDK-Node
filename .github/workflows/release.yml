@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
   id-token: write
 
 jobs:
@@ -104,18 +105,57 @@ jobs:
           name: finatic-server-node-${{ steps.version.outputs.version }}
           path: finatic-server-node-*.tgz
 
-      - name: Commit version bump and tag
-        if: steps.mode.outputs.dry_run != 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json CHANGELOG.md
-          git commit -m "chore(release): v${{ steps.version.outputs.version }}"
-          git tag "${{ steps.version.outputs.tag }}"
-          git push origin HEAD:main --follow-tags
-
+      # Publish before any git push. Branch protection blocks direct pushes to main,
+      # and a failed push must not leave npm unpublished.
       - name: Publish to NPM
         if: steps.mode.outputs.dry_run != 'true'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Open version bump pull request
+        if: steps.mode.outputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="chore/release-v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add package.json package-lock.json CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "No version/changelog changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(release): v${VERSION}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists locally."
+          else
+            git tag "$TAG"
+          fi
+          if ! git push -u origin "HEAD:${BRANCH}" --tags; then
+            echo "::warning::Could not push release branch/tag after npm publish of v${VERSION}."
+            exit 0
+          fi
+          if gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(release): v${VERSION}" \
+            --body "$(cat <<EOF
+          ## Summary
+          - Sync \`package.json\` / changelog after publishing \`@finatic/server-node@${VERSION}\` to npm.
+          - Direct pushes to \`main\` are blocked by branch protection; this PR carries the version bump.
+
+          ## Test plan
+          - [ ] Confirm npm shows \`@finatic/server-node@${VERSION}\`
+          - [ ] Merge this PR so \`main\` matches the published version
+          EOF
+          )"; then
+            echo "Opened version bump PR for v${VERSION}."
+          else
+            echo "::warning::npm publish of v${VERSION} succeeded, but could not open the version bump PR (org may block Actions from creating PRs)."
+          fi
