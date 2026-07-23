@@ -147,6 +147,21 @@ function sessionField(
   throw new Error(`Missing session field (${keys.join(', ')}) in ${JSON.stringify(sessionData)}`);
 }
 
+function normalizePortalEnvelope(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== 'object') {
+    throw new TypeError(`Unexpected portal response payload: ${JSON.stringify(payload)}`);
+  }
+  const record = payload as Record<string, unknown>;
+  const success = record['success'];
+  if (success && typeof success === 'object' && 'data' in success) {
+    return {
+      ...record,
+      data: (success as Record<string, unknown>)['data'],
+    };
+  }
+  return record;
+}
+
 export async function primePortalCsrfToken(
   apiKey: string,
   sessionId: string,
@@ -201,7 +216,7 @@ export async function linkPortalUserHttp(
   if (response.status >= 400) {
     throw new Error(`Portal user-link failed: ${JSON.stringify(response.data)}`);
   }
-  return response.data as Record<string, unknown>;
+  return normalizePortalEnvelope(response.data);
 }
 
 export async function listPortalInstitutionsHttp(
@@ -223,7 +238,7 @@ export async function listPortalInstitutionsHttp(
   if (response.status !== 200) {
     throw new Error(`Failed to list portal institutions: ${JSON.stringify(response.data)}`);
   }
-  return response.data as Record<string, unknown>;
+  return normalizePortalEnvelope(response.data);
 }
 
 async function portalJsonRequest(
@@ -251,7 +266,7 @@ async function portalJsonRequest(
   if (response.status >= 400) {
     throw new Error(`Portal ${method} ${pathSuffix} failed: ${JSON.stringify(response.data)}`);
   }
-  return response.data as Record<string, unknown>;
+  return normalizePortalEnvelope(response.data);
 }
 
 export async function createSandboxPortalSession(
