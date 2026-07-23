@@ -260,13 +260,13 @@ export async function createSandboxPortalSession(
   linkEmail: string,
   baseUrl: string = DEFAULT_API_BASE_URL
 ): Promise<SandboxPortalSessionContext> {
-  const sessionResponse = await v1.createSession({}, { environment: 'sandbox' });
-  if (sessionResponse.errors.length > 0) {
-    throw new Error(sessionResponse.errors.map((error) => error.message).join('; '));
+  const sessionResponse = await v1.startSession();
+  const sessionId = sessionResponse.session_id;
+  const companyId = sessionResponse.company_id;
+  if (!sessionId || !companyId) {
+    const error = 'error' in sessionResponse ? sessionResponse.error : null;
+    throw new Error(error ?? 'Failed to start sandbox session');
   }
-  const sessionData = (sessionResponse.data ?? {}) as Record<string, unknown>;
-  const sessionId = sessionField(sessionData, 'sessionId', 'session_id');
-  const companyId = sessionField(sessionData, 'companyId', 'company_id');
   const csrfToken = await primePortalCsrfToken(apiKey, sessionId, baseUrl);
   v1.setSessionContext(sessionId, companyId, csrfToken);
 
