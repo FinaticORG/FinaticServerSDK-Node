@@ -134,10 +134,7 @@ export async function assertApiReachable(baseUrl: string = DEFAULT_API_BASE_URL)
   }
 }
 
-function sessionField(
-  sessionData: Record<string, unknown>,
-  ...keys: string[]
-): string {
+function sessionField(sessionData: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
     const value = sessionData[key];
     if (value !== undefined && value !== null) {
@@ -161,7 +158,9 @@ export async function primePortalCsrfToken(
     validateStatus: () => true,
   });
   if (response.status !== 200) {
-    throw new Error(`Failed to prime portal CSRF: ${response.status} ${JSON.stringify(response.data)}`);
+    throw new Error(
+      `Failed to prime portal CSRF: ${response.status} ${JSON.stringify(response.data)}`
+    );
   }
   const csrfToken = response.headers['x-csrf-token'];
   if (!csrfToken || typeof csrfToken !== 'string') {
@@ -204,6 +203,24 @@ export async function linkPortalUserHttp(
   return response.data as Record<string, unknown>;
 }
 
+function normalizePortalResponse(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== 'object') {
+    throw new TypeError(`Unexpected portal response: ${JSON.stringify(payload)}`);
+  }
+
+  const response = payload as Record<string, unknown>;
+  if ('data' in response) {
+    return response;
+  }
+
+  const success = response['success'];
+  if (success && typeof success === 'object' && 'data' in success) {
+    return { ...response, data: (success as Record<string, unknown>)['data'] };
+  }
+
+  return response;
+}
+
 export async function listPortalInstitutionsHttp(
   apiKey: string,
   sessionId: string,
@@ -223,7 +240,7 @@ export async function listPortalInstitutionsHttp(
   if (response.status !== 200) {
     throw new Error(`Failed to list portal institutions: ${JSON.stringify(response.data)}`);
   }
-  return response.data as Record<string, unknown>;
+  return normalizePortalResponse(response.data);
 }
 
 async function portalJsonRequest(
@@ -251,7 +268,7 @@ async function portalJsonRequest(
   if (response.status >= 400) {
     throw new Error(`Portal ${method} ${pathSuffix} failed: ${JSON.stringify(response.data)}`);
   }
-  return response.data as Record<string, unknown>;
+  return normalizePortalResponse(response.data);
 }
 
 export async function createSandboxPortalSession(
@@ -260,13 +277,13 @@ export async function createSandboxPortalSession(
   linkEmail: string,
   baseUrl: string = DEFAULT_API_BASE_URL
 ): Promise<SandboxPortalSessionContext> {
-  const sessionResponse = await v1.createSession({}, { environment: 'sandbox' });
-  if (sessionResponse.errors.length > 0) {
-    throw new Error(sessionResponse.errors.map((error) => error.message).join('; '));
+  const sessionResponse = await v1.startSession();
+  const sessionId = sessionResponse.session_id;
+  const companyId = sessionResponse.company_id;
+  if (!sessionId || !companyId) {
+    const error = 'error' in sessionResponse ? sessionResponse.error : null;
+    throw new Error(error ?? 'Failed to start sandbox session');
   }
-  const sessionData = (sessionResponse.data ?? {}) as Record<string, unknown>;
-  const sessionId = sessionField(sessionData, 'sessionId', 'session_id');
-  const companyId = sessionField(sessionData, 'companyId', 'company_id');
   const csrfToken = await primePortalCsrfToken(apiKey, sessionId, baseUrl);
   v1.setSessionContext(sessionId, companyId, csrfToken);
 
