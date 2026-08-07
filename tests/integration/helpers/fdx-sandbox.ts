@@ -134,10 +134,7 @@ export async function assertApiReachable(baseUrl: string = DEFAULT_API_BASE_URL)
   }
 }
 
-function sessionField(
-  sessionData: Record<string, unknown>,
-  ...keys: string[]
-): string {
+function sessionField(sessionData: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
     const value = sessionData[key];
     if (value !== undefined && value !== null) {
@@ -147,19 +144,22 @@ function sessionField(
   throw new Error(`Missing session field (${keys.join(', ')}) in ${JSON.stringify(sessionData)}`);
 }
 
-function normalizePortalEnvelope(payload: unknown): Record<string, unknown> {
+function normalizePortalResponse(payload: unknown): Record<string, unknown> {
   if (!payload || typeof payload !== 'object') {
-    throw new TypeError(`Unexpected portal response payload: ${JSON.stringify(payload)}`);
+    throw new TypeError(`Unexpected portal response: ${JSON.stringify(payload)}`);
   }
-  const record = payload as Record<string, unknown>;
-  const success = record['success'];
+
+  const response = payload as Record<string, unknown>;
+  if ('data' in response) {
+    return response;
+  }
+
+  const success = response['success'];
   if (success && typeof success === 'object' && 'data' in success) {
-    return {
-      ...record,
-      data: (success as Record<string, unknown>)['data'],
-    };
+    return { ...response, data: (success as Record<string, unknown>)['data'] };
   }
-  return record;
+
+  return response;
 }
 
 export async function primePortalCsrfToken(
@@ -176,7 +176,9 @@ export async function primePortalCsrfToken(
     validateStatus: () => true,
   });
   if (response.status !== 200) {
-    throw new Error(`Failed to prime portal CSRF: ${response.status} ${JSON.stringify(response.data)}`);
+    throw new Error(
+      `Failed to prime portal CSRF: ${response.status} ${JSON.stringify(response.data)}`
+    );
   }
   const csrfToken = response.headers['x-csrf-token'];
   if (!csrfToken || typeof csrfToken !== 'string') {
@@ -216,7 +218,7 @@ export async function linkPortalUserHttp(
   if (response.status >= 400) {
     throw new Error(`Portal user-link failed: ${JSON.stringify(response.data)}`);
   }
-  return normalizePortalEnvelope(response.data);
+  return normalizePortalResponse(response.data);
 }
 
 export async function listPortalInstitutionsHttp(
@@ -238,7 +240,7 @@ export async function listPortalInstitutionsHttp(
   if (response.status !== 200) {
     throw new Error(`Failed to list portal institutions: ${JSON.stringify(response.data)}`);
   }
-  return normalizePortalEnvelope(response.data);
+  return normalizePortalResponse(response.data);
 }
 
 async function portalJsonRequest(
@@ -266,7 +268,7 @@ async function portalJsonRequest(
   if (response.status >= 400) {
     throw new Error(`Portal ${method} ${pathSuffix} failed: ${JSON.stringify(response.data)}`);
   }
-  return normalizePortalEnvelope(response.data);
+  return normalizePortalResponse(response.data);
 }
 
 export async function createSandboxPortalSession(

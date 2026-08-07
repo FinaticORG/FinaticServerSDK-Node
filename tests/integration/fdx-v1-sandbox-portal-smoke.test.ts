@@ -32,6 +32,7 @@ const EXPECTED_SANDBOX_PROVIDER_IDS = [
   'tasty_trade',
   'tradestation',
   'trading212',
+  'tradovate',
   'webull',
 ];
 
