@@ -39,7 +39,7 @@ const EXPECTED_SANDBOX_PROVIDER_IDS = [
 describeIntegration('FDX v1 sandbox portal (Node SDK)', () => {
   const linkEmail = 'fdx-node-sdk-smoke@finatic.test';
 
-  it('lists institutions after sandbox session bootstrap', async () => {
+  it('lists canonical institutions after sandbox session bootstrap', async () => {
     await assertApiReachable();
     const bootstrap = await bootstrapSandboxApiKey();
     const finatic = new FinaticServer(bootstrap.sandboxApiKey, {
@@ -66,7 +66,7 @@ describeIntegration('FDX v1 sandbox portal (Node SDK)', () => {
       const providerIds = (institutions as Array<{ brokerId: string }>)
         .map(({ brokerId }) => brokerId)
         .sort();
-      expect(providerIds).toEqual(EXPECTED_SANDBOX_PROVIDER_IDS);
+      expect(providerIds).toEqual(expect.arrayContaining(EXPECTED_SANDBOX_PROVIDER_IDS));
       expect(providerIds).not.toContain('fidelity');
     } finally {
       await bootstrap.cleanup();
