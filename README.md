@@ -13,7 +13,7 @@ npm install @finatic/server-node
 ```ts
 import { FinaticServer } from '@finatic/server-node';
 
-const finatic = new FinaticServer(process.env.FINATIC_API_KEY!, {
+const finatic = new FinaticServer(process.env['FINATIC_API_KEY']!, {
   apiEnvironment: 'sandbox',
 });
 
@@ -21,16 +21,34 @@ const finatic = new FinaticServer(process.env.FINATIC_API_KEY!, {
 const oneTimeToken = await finatic.v1.getToken();
 
 // Redirect flow: start a session first (getPortalUrl requires it).
-const session = await finatic.v1.startSession();
-if (!session.session_id) {
-  throw new Error(session.error ?? 'Session start failed');
+const redirectSession = await finatic.v1.startSession();
+if (!redirectSession.session_id) {
+  const message =
+    'error' in redirectSession && redirectSession.error
+      ? redirectSession.error
+      : 'Session start failed';
+  throw new Error(message);
 }
 const portalUrl = await finatic.v1.getPortalUrl({ mode: 'dark' });
 
 // After account.grant.created, start a session for that portal user, then read.
 const portalUserId = 'user-from-connect-onSuccess';
-const authed = await finatic.v1.startSession({ userId: portalUserId });
-const accounts = await finatic.v1.listAccounts({ includeSyncStatus: true });
+const authenticatedSession = await finatic.v1.startSession({ userId: portalUserId });
+if (!authenticatedSession.session_id) {
+  const message =
+    'error' in authenticatedSession && authenticatedSession.error
+      ? authenticatedSession.error
+      : 'Authenticated session start failed';
+  throw new Error(message);
+}
+
+interface AccountSummary {
+  accountId: string;
+}
+
+const accounts = await finatic.v1.listAccounts<AccountSummary[]>({
+  includeSyncStatus: true,
+});
 const accountId = accounts.data?.[0]?.accountId;
 if (!accountId) {
   throw new Error(accounts.errors[0]?.message ?? 'No granted accounts yet');
@@ -53,11 +71,11 @@ Wait for webhook `account.grant.created` before treating access as durable.
 
 ## Common commands
 
-| Task | Command |
-|------|---------|
-| Build | `npm run build` |
-| Test | `npm test` |
-| Lint | `npm run lint` |
+| Task       | Command              |
+| ---------- | -------------------- |
+| Build      | `npm run build`      |
+| Test       | `npm test`           |
+| Lint       | `npm run lint`       |
 | Type check | `npm run type:check` |
 
 ## Documentation
