@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "exactOptionalPropertyTypes": false,
+    "module": "ESNext",
+    "noEmit": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "@finatic/server-node": ["src/index.ts"]
+    },
+    "rootDir": "../.."
+  },
+  "include": ["../../src/**/*.ts", "./fixtures/readme-quick-start.ts"],
+  "exclude": []
+}
