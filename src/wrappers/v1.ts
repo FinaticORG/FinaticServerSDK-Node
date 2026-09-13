@@ -172,6 +172,15 @@ export class V1Wrapper {
     );
   }
 
+  /**
+   * Mint a 90-second one-time token for `FinaticConnect.init` in the browser.
+   * Does not start a session. For redirect, call `startSession()` then `getPortalUrl()`.
+   *
+   * @example
+   * ```typescript-server
+   * const token = await finatic.v1.getToken();
+   * ```
+   */
   async getToken(apiKeyOverride?: string): Promise<string> {
     const response = await this.initSession(apiKeyOverride);
     if (response.errors.length > 0) {
@@ -254,6 +263,16 @@ export class V1Wrapper {
     return { session_id: sessionId, company_id: companyId };
   }
 
+  /**
+   * Redirect URL for Finatic Connect. Does not open an iframe (Client `openPortal` does).
+   *
+   * @example
+   * ```typescript-server
+   * const session = await finatic.v1.startSession();
+   * if (!session.session_id) throw new Error('Session start failed');
+   * const portalUrl = await finatic.v1.getPortalUrl({ mode: 'dark' });
+   * ```
+   */
   async getPortalUrl(params?: PortalUrlParams): Promise<string> {
     if (!this.sessionId) {
       throw new Error('Session not initialized. Call v1.startSession() first.');
@@ -330,6 +349,17 @@ export class V1Wrapper {
     };
   }
 
+  /**
+   * List granted financial accounts. Use `accountId` from this list for scoped reads.
+   *
+   * @example
+   * ```typescript-server
+   * const result = await finatic.v1.listAccounts();
+   * if (result.data) {
+   *   console.log(result.data, result.traceId);
+   * }
+   * ```
+   */
   listAccounts<T = unknown>(
     params: { limit?: number; offset?: number; includeSyncStatus?: boolean } = {},
     options?: FinaticV1CallOptions
@@ -357,7 +387,14 @@ export class V1Wrapper {
     return this.listAccountResource<T>('balances', params, options);
   }
 
-  /** GET /api/v1/accounts/{accountId}/positions */
+  /**
+   * GET /api/v1/accounts/{accountId}/positions
+   *
+   * @example
+   * ```typescript-server
+   * const result = await finatic.v1.listPositions({ accountId: 'acct_123' });
+   * ```
+   */
   listPositions<T = unknown>(
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
