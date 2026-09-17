@@ -15,4 +15,5 @@ export type {
   FinaticV1Warning,
   PortalUrlParams,
   SessionStartResult,
+  SessionStartStatus,
 } from './v1';

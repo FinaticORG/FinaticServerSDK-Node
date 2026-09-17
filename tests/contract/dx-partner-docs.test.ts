@@ -51,12 +51,13 @@ describe('partner-facing README matches published v1', () => {
     const authenticatedStart = readme.indexOf(
       'const authenticatedSession = await finatic.v1.startSession'
     );
-    const authenticatedGuard = readme.indexOf('if (!authenticatedSession.session_id)');
+    const authenticatedGuard = readme.indexOf('if (!authenticatedSession.authenticated)');
     const accountRead = readme.indexOf('finatic.v1.listAccounts<AccountSummary[]>');
 
     expect(authenticatedStart).toBeGreaterThan(-1);
     expect(authenticatedGuard).toBeGreaterThan(authenticatedStart);
     expect(accountRead).toBeGreaterThan(authenticatedGuard);
+    expect(readme).toContain('`startSession().success` means the request completed');
   });
 
   it('does not document unpublished façade methods', () => {

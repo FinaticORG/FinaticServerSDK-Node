@@ -84,14 +84,19 @@ export interface AccountOrderSchemaParams {
 type QueryValue = string | number | boolean | undefined;
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
-export type SessionStartResult =
-  | {
-      success: boolean;
-      session_id: string | null;
-      company_id: string | null;
-      error: string | null;
-    }
-  | { session_id: string; company_id: string };
+export type SessionStartStatus = 'pending' | 'authenticating' | 'active' | 'completed' | 'expired';
+
+export interface SessionStartResult {
+  success: boolean;
+  session_id: string | null;
+  company_id: string | null;
+  error: string | null;
+  status: SessionStartStatus | null;
+  user_id: string | null;
+  provided_user_id_rejected: boolean;
+  portal_connection_management_pending: boolean;
+  authenticated: boolean;
+}
 
 export interface PortalUrlParams {
   theme?: string | { preset?: string; custom?: Record<string, unknown> };
@@ -117,6 +122,52 @@ function readSessionField(
     }
   }
   return '';
+}
+
+function readSessionBoolean(
+  data: Record<string, unknown> | null | undefined,
+  keys: string[]
+): boolean {
+  if (!data) {
+    return false;
+  }
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === 'boolean') {
+      return value;
+    }
+  }
+  return false;
+}
+
+function readSessionStatus(
+  data: Record<string, unknown> | null | undefined
+): SessionStartStatus | null {
+  const status = readSessionField(data, ['status']);
+  switch (status) {
+    case 'pending':
+    case 'authenticating':
+    case 'active':
+    case 'completed':
+    case 'expired':
+      return status;
+    default:
+      return null;
+  }
+}
+
+function failedSessionStart(error: string): SessionStartResult {
+  return {
+    success: false,
+    session_id: null,
+    company_id: null,
+    error,
+    status: null,
+    user_id: null,
+    provided_user_id_rejected: false,
+    portal_connection_management_pending: false,
+    authenticated: false,
+  };
 }
 
 export class V1Wrapper {
@@ -202,30 +253,14 @@ export class V1Wrapper {
 
     if (!oneTimeToken) {
       if (!this.apiKey) {
-        return {
-          success: false,
-          session_id: null,
-          company_id: null,
-          error: 'API key is required in the constructor.',
-        };
+        return failedSessionStart('API key is required in the constructor.');
       }
 
       try {
         const token = await this.getToken();
-        const started = await this.startSessionWithToken(token, paramUserId);
-        return {
-          success: true,
-          session_id: started.session_id,
-          company_id: started.company_id,
-          error: null,
-        };
+        return await this.startSessionWithToken(token, paramUserId);
       } catch (error) {
-        return {
-          success: false,
-          session_id: null,
-          company_id: null,
-          error: error instanceof Error ? error.message : String(error),
-        };
+        return failedSessionStart(error instanceof Error ? error.message : String(error));
       }
     }
 
@@ -235,7 +270,7 @@ export class V1Wrapper {
   private async startSessionWithToken(
     oneTimeToken: string,
     userId?: string
-  ): Promise<{ session_id: string; company_id: string }> {
+  ): Promise<SessionStartResult> {
     const body = userId !== undefined ? { user_id: userId } : {};
     const response = await this.request<Record<string, unknown>>('POST', '/api/v1/session/start', {
       data: body,
@@ -250,17 +285,38 @@ export class V1Wrapper {
     const companyId = readSessionField(sessionData, ['company_id', 'companyId']);
     const csrfToken = readSessionField(sessionData, ['csrf_token', 'csrfToken']);
     const responseUserId = readSessionField(sessionData, ['user_id', 'userId']);
+    const status = readSessionStatus(sessionData);
+    const providedUserIdRejected = readSessionBoolean(sessionData, [
+      'provided_user_id_rejected',
+      'providedUserIdRejected',
+    ]);
+    const portalConnectionManagementPending = readSessionBoolean(sessionData, [
+      'portal_connection_management_pending',
+      'portalConnectionManagementPending',
+    ]);
+    const authenticated = status === 'active' && responseUserId !== '';
 
     if (sessionId && companyId) {
       this.setSessionContext(sessionId, companyId, csrfToken);
     }
 
-    const finalUserId = responseUserId || userId;
-    if (finalUserId) {
-      this.userId = finalUserId;
+    if (responseUserId) {
+      this.userId = responseUserId;
+    } else {
+      delete this.userId;
     }
 
-    return { session_id: sessionId, company_id: companyId };
+    return {
+      success: true,
+      session_id: sessionId || null,
+      company_id: companyId || null,
+      error: null,
+      status,
+      user_id: responseUserId || null,
+      provided_user_id_rejected: providedUserIdRejected,
+      portal_connection_management_pending: portalConnectionManagementPending,
+      authenticated,
+    };
   }
 
   /**
