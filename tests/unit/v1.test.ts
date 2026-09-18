@@ -39,6 +39,34 @@ function createClient(): { client: AxiosInstance; requests: AxiosRequestConfig[]
   return { client, requests };
 }
 
+function createResponseClient(responses: Record<string, unknown>[]): {
+  client: AxiosInstance;
+  requests: AxiosRequestConfig[];
+} {
+  const requests: AxiosRequestConfig[] = [];
+  const client = {
+    request: jest.fn(async (config: AxiosRequestConfig) => {
+      requests.push(config);
+      const response = responses.shift();
+      if (!response) {
+        throw new Error('Unexpected request');
+      }
+      return { data: response };
+    }),
+  } as unknown as AxiosInstance;
+
+  return { client, requests };
+}
+
+function successEnvelope(data: Record<string, unknown>): Record<string, unknown> {
+  return {
+    traceId: 'trace-id',
+    data,
+    warnings: [],
+    errors: [],
+  };
+}
+
 const V1_DATA_METHODS = [
   'listAccounts',
   'getAccount',
@@ -72,8 +100,12 @@ describe('V1 account-first wrapper', () => {
     for (const methodName of V1_DATA_METHODS) {
       expect(typeof wrapper[methodName]).toBe('function');
     }
-    expect(typeof (wrapper as unknown as Record<string, unknown>)['createPortalLink']).toBe('undefined');
-    expect(typeof (wrapper as unknown as Record<string, unknown>)['createSession']).toBe('undefined');
+    expect(typeof (wrapper as unknown as Record<string, unknown>)['createPortalLink']).toBe(
+      'undefined'
+    );
+    expect(typeof (wrapper as unknown as Record<string, unknown>)['createSession']).toBe(
+      'undefined'
+    );
   });
 
   it('sends X-Finatic-Environment, server API key, and session headers', async () => {
@@ -333,7 +365,9 @@ describe('V1 account-first wrapper', () => {
           isAxiosError: true,
           response: {
             status: 401,
-            headers: { get: (name: string) => (name === 'x-trace-id' ? 'trace-from-header' : null) },
+            headers: {
+              get: (name: string) => (name === 'x-trace-id' ? 'trace-from-header' : null),
+            },
             data: {
               errors: [{ code: 'AUTH_ERROR', message: 'invalid api key' }],
             },
@@ -387,5 +421,229 @@ describe('V1 account-first wrapper', () => {
         status: 502,
       })
     );
+  });
+});
+
+describe('V1 session start results', () => {
+  it('returns and stores the server-authoritative identity for an active session', async () => {
+    const { client, requests } = createResponseClient([
+      successEnvelope({
+        session_id: 'session_123',
+        company_id: 'company_123',
+        csrf_token: 'csrf_123',
+        status: 'active',
+        user_id: 'server_user_123',
+        provided_user_id_rejected: false,
+        portal_connection_management_pending: false,
+      }),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.startSession({
+      oneTimeToken: 'token_123',
+      userId: 'caller_user_123',
+    });
+
+    expect(result).toEqual({
+      success: true,
+      session_id: 'session_123',
+      company_id: 'company_123',
+      error: null,
+      status: 'active',
+      user_id: 'server_user_123',
+      provided_user_id_rejected: false,
+      portal_connection_management_pending: false,
+      authenticated: true,
+    });
+    expect(wrapper.getUserId()).toBe('server_user_123');
+    expect(wrapper.isAuthed()).toBe(true);
+    expect(requests[0]).toEqual(
+      expect.objectContaining({
+        url: '/api/v1/session/start',
+        data: { user_id: 'caller_user_123' },
+        headers: expect.objectContaining({ 'One-Time-Token': 'token_123' }),
+      })
+    );
+  });
+
+  it.each(['valid-looking-user-id', 'not-a-uuid'])(
+    'fails closed when the server rejects caller identity %s',
+    async (callerUserId) => {
+      const { client, requests } = createResponseClient([
+        successEnvelope({
+          session_id: 'session_rejected',
+          company_id: 'company_123',
+          status: 'authenticating',
+          user_id: null,
+          provided_user_id_rejected: true,
+          portal_connection_management_pending: false,
+        }),
+      ]);
+      const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+      const result = await wrapper.startSession({
+        oneTimeToken: 'token_123',
+        userId: callerUserId,
+      });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: true,
+          status: 'authenticating',
+          user_id: null,
+          provided_user_id_rejected: true,
+          authenticated: false,
+        })
+      );
+      expect(wrapper.getUserId()).toBeUndefined();
+      expect(wrapper.isAuthed()).toBe(false);
+      expect(requests[0]?.data).toEqual({ user_id: callerUserId });
+    }
+  );
+
+  it('normalizes automatic-token starts to the same result shape without inventing identity', async () => {
+    const { client, requests } = createResponseClient([
+      successEnvelope({ one_time_token: 'minted_token' }),
+      successEnvelope({
+        session_id: 'session_portal',
+        company_id: 'company_123',
+        status: 'authenticating',
+        user_id: null,
+        provided_user_id_rejected: false,
+        portal_connection_management_pending: true,
+      }),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.startSession();
+
+    expect(result).toEqual({
+      success: true,
+      session_id: 'session_portal',
+      company_id: 'company_123',
+      error: null,
+      status: 'authenticating',
+      user_id: null,
+      provided_user_id_rejected: false,
+      portal_connection_management_pending: true,
+      authenticated: false,
+    });
+    expect(requests).toHaveLength(2);
+    expect(requests[0]).toEqual(expect.objectContaining({ url: '/api/v1/session/init' }));
+    expect(requests[1]).toEqual(
+      expect.objectContaining({
+        url: '/api/v1/session/start',
+        data: {},
+        headers: expect.objectContaining({ 'One-Time-Token': 'minted_token' }),
+      })
+    );
+  });
+
+  it('clears identity from an earlier authenticated session when a later start is userless', async () => {
+    const { client } = createResponseClient([
+      successEnvelope({
+        session_id: 'session_active',
+        company_id: 'company_123',
+        status: 'active',
+        user_id: 'server_user_123',
+      }),
+      successEnvelope({
+        session_id: 'session_rejected',
+        company_id: 'company_123',
+        status: 'authenticating',
+        user_id: null,
+        provided_user_id_rejected: true,
+      }),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.startSession({ oneTimeToken: 'token_1', userId: 'server_user_123' });
+    expect(wrapper.getUserId()).toBe('server_user_123');
+
+    const rejected = await wrapper.startSession({
+      oneTimeToken: 'token_2',
+      userId: 'rejected_user',
+    });
+
+    expect(rejected.authenticated).toBe(false);
+    expect(wrapper.getUserId()).toBeUndefined();
+    expect(wrapper.isAuthed()).toBe(false);
+  });
+
+  it('accepts only contract-valid status and boolean values', async () => {
+    const { client } = createResponseClient([
+      successEnvelope({
+        session_id: 'session_unknown',
+        company_id: 'company_123',
+        status: 'ACTIVE',
+        user_id: 'server_user_123',
+        provided_user_id_rejected: 'true',
+        portal_connection_management_pending: 1,
+      }),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.startSession({ oneTimeToken: 'token_123' });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: null,
+        provided_user_id_rejected: false,
+        portal_connection_management_pending: false,
+        authenticated: false,
+      })
+    );
+    expect(wrapper.getUserId()).toBeUndefined();
+    expect(wrapper.isAuthed()).toBe(false);
+  });
+
+  it.each(['pending', 'authenticating', 'completed', 'expired', 'unknown'])(
+    'does not retain a server identity for unauthenticated status %s',
+    async (status) => {
+      const { client } = createResponseClient([
+        successEnvelope({
+          session_id: `session_${status}`,
+          company_id: 'company_123',
+          status,
+          user_id: 'server_user_123',
+        }),
+      ]);
+      const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+      const result = await wrapper.startSession({ oneTimeToken: 'token_123' });
+
+      expect(result.authenticated).toBe(false);
+      expect(wrapper.getUserId()).toBeUndefined();
+      expect(wrapper.isAuthed()).toBe(false);
+    }
+  );
+
+  it('preserves supplied-token throws and returns safe fields for automatic-token failures', async () => {
+    const errorEnvelope = {
+      traceId: 'trace-id',
+      data: null,
+      warnings: [],
+      errors: [{ code: 'AUTHENTICATION', message: 'token rejected' }],
+    };
+    const direct = createResponseClient([errorEnvelope]);
+    const directWrapper = new V1Wrapper('fntc_test_key', createConfig(), direct.client);
+
+    await expect(directWrapper.startSession({ oneTimeToken: 'bad_token' })).rejects.toThrow(
+      'token rejected'
+    );
+
+    const automatic = createResponseClient([errorEnvelope]);
+    const automaticWrapper = new V1Wrapper('fntc_test_key', createConfig(), automatic.client);
+    await expect(automaticWrapper.startSession()).resolves.toEqual({
+      success: false,
+      session_id: null,
+      company_id: null,
+      error: 'token rejected',
+      status: null,
+      user_id: null,
+      provided_user_id_rejected: false,
+      portal_connection_management_pending: false,
+      authenticated: false,
+    });
   });
 });
