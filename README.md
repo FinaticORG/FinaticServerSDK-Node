@@ -34,11 +34,10 @@ const portalUrl = await finatic.v1.getPortalUrl({ mode: 'dark' });
 // After account.grant.created, start a session for that portal user, then read.
 const portalUserId = 'user-from-connect-onSuccess';
 const authenticatedSession = await finatic.v1.startSession({ userId: portalUserId });
-if (!authenticatedSession.session_id) {
-  const message =
-    'error' in authenticatedSession && authenticatedSession.error
-      ? authenticatedSession.error
-      : 'Authenticated session start failed';
+if (!authenticatedSession.authenticated) {
+  const message = authenticatedSession.error
+    ? authenticatedSession.error
+    : `Session is ${authenticatedSession.status ?? 'not active'}`;
   throw new Error(message);
 }
 
@@ -68,6 +67,10 @@ Server `v1` data methods return `{ traceId, data, warnings, errors }`. Check `er
 2. Or `v1.startSession()` then `v1.getPortalUrl(...)` → redirect. Treat the full URL as secret.
 
 Wait for webhook `account.grant.created` before treating access as durable.
+
+`startSession().success` means the request completed. Check `authenticated` before account or
+trading calls; `status`, `user_id`, `provided_user_id_rejected`, and
+`portal_connection_management_pending` explain non-active session states.
 
 ## Common commands
 

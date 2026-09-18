@@ -12,6 +12,7 @@
 
 ## Unreleased
 
+- Added server session status, authoritative user identity, rejection flags, and an `authenticated` result to `v1.startSession`; rejected or missing server identities no longer fall back to caller input or retain stale SDK identity.
 - Removed legacy beta generated broker/company API clients, connection-first models, and position-lot generated types from the 1.0 SDK source.
 
 ## 0.9.16

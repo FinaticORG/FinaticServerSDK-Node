@@ -21,11 +21,10 @@ const portalUrl = await finatic.v1.getPortalUrl({ mode: 'dark' });
 // After account.grant.created, start a session for that portal user, then read.
 const portalUserId = 'user-from-connect-onSuccess';
 const authenticatedSession = await finatic.v1.startSession({ userId: portalUserId });
-if (!authenticatedSession.session_id) {
-  const message =
-    'error' in authenticatedSession && authenticatedSession.error
-      ? authenticatedSession.error
-      : 'Authenticated session start failed';
+if (!authenticatedSession.authenticated) {
+  const message = authenticatedSession.error
+    ? authenticatedSession.error
+    : `Session is ${authenticatedSession.status ?? 'not active'}`;
   throw new Error(message);
 }
 
