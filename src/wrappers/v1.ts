@@ -300,7 +300,7 @@ export class V1Wrapper {
       this.setSessionContext(sessionId, companyId, csrfToken);
     }
 
-    if (responseUserId) {
+    if (authenticated) {
       this.userId = responseUserId;
     } else {
       delete this.userId;

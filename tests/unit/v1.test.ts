@@ -593,7 +593,30 @@ describe('V1 session start results', () => {
         authenticated: false,
       })
     );
+    expect(wrapper.getUserId()).toBeUndefined();
+    expect(wrapper.isAuthed()).toBe(false);
   });
+
+  it.each(['pending', 'authenticating', 'completed', 'expired', 'unknown'])(
+    'does not retain a server identity for unauthenticated status %s',
+    async (status) => {
+      const { client } = createResponseClient([
+        successEnvelope({
+          session_id: `session_${status}`,
+          company_id: 'company_123',
+          status,
+          user_id: 'server_user_123',
+        }),
+      ]);
+      const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+      const result = await wrapper.startSession({ oneTimeToken: 'token_123' });
+
+      expect(result.authenticated).toBe(false);
+      expect(wrapper.getUserId()).toBeUndefined();
+      expect(wrapper.isAuthed()).toBe(false);
+    }
+  );
 
   it('preserves supplied-token throws and returns safe fields for automatic-token failures', async () => {
     const errorEnvelope = {
