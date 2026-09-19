@@ -1,5 +1,10 @@
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 
+import {
+  FDXFutureInstrumentDetailsIdentityQualityEnum,
+  FDXInstrumentDescriptorVersionEnum,
+} from '../../src';
+import type { FDXInstrumentDescriptor } from '../../src';
 import { V1Wrapper } from '../../src/wrappers/v1';
 import type { SdkConfig } from '../../src/config';
 
@@ -58,7 +63,7 @@ function createResponseClient(responses: Record<string, unknown>[]): {
   return { client, requests };
 }
 
-function successEnvelope(data: Record<string, unknown>): Record<string, unknown> {
+function successEnvelope(data: unknown): Record<string, unknown> {
   return {
     traceId: 'trace-id',
     data,
@@ -94,6 +99,30 @@ const V1_DATA_METHODS = [
 ] as const;
 
 describe('V1 account-first wrapper', () => {
+  const exactInstrument: FDXInstrumentDescriptor = {
+    assetType: 'FUTURE',
+    displaySymbol: 'MGCZ6',
+    finaticInstrumentId: 'finatic:future:MGCZ6',
+    version: FDXInstrumentDescriptorVersionEnum._10,
+    future: {
+      contractCode: 'MGCZ6',
+      contractMonth: '2026-12',
+      identityQuality: FDXFutureInstrumentDetailsIdentityQualityEnum.Exact,
+      productRoot: 'MGC',
+    },
+  };
+
+  const rootOnlyInstrument: FDXInstrumentDescriptor = {
+    assetType: 'FUTURE',
+    displaySymbol: 'MGC',
+    finaticInstrumentId: 'finatic:future-root:MGC',
+    version: FDXInstrumentDescriptorVersionEnum._10,
+    future: {
+      identityQuality: FDXFutureInstrumentDetailsIdentityQualityEnum.RootOnly,
+      productRoot: 'MGC',
+    },
+  };
+
   it('pins public data facade methods (session bootstrap is on FinaticServer only)', () => {
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), createClient().client);
 
@@ -228,6 +257,112 @@ describe('V1 account-first wrapper', () => {
       })
     );
     expect(requests[2]?.data).toBeUndefined();
+  });
+
+  it('types exact and root-only descriptors on default order and position results', async () => {
+    const { client } = createResponseClient([
+      successEnvelope([
+        {
+          accountId: 'acct_123',
+          orderId: 'order_123',
+          status: 'OPEN',
+          legs: [{ legIndex: 0, instrument: exactInstrument }],
+        },
+      ]),
+      successEnvelope([
+        {
+          accountId: 'acct_123',
+          connectionId: 'connection_123',
+          assetType: 'FUTURE',
+          quantity: 1,
+          securityId: 'MGC',
+          securityIdType: 'SYMBOL',
+          instrument: rootOnlyInstrument,
+        },
+      ]),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const orders = await wrapper.listOrders({ accountId: 'acct_123' });
+    const positions = await wrapper.listPositions({ accountId: 'acct_123' });
+
+    const orderDescriptor = orders.data?.[0]?.legs?.[0]?.instrument;
+    const positionDescriptor = positions.data?.[0]?.instrument;
+    expect(orderDescriptor?.finaticInstrumentId).toBe('finatic:future:MGCZ6');
+    expect(orderDescriptor?.future?.identityQuality).toBe(
+      FDXFutureInstrumentDetailsIdentityQualityEnum.Exact
+    );
+    expect(positionDescriptor?.finaticInstrumentId).toBe('finatic:future-root:MGC');
+    expect(positionDescriptor?.future?.contractCode).toBeUndefined();
+  });
+
+  it('preserves ordered multi-leg event descriptors in both response envelope shapes', async () => {
+    const event = {
+      eventId: 'event_123',
+      eventTime: '2026-09-19T12:00:00Z',
+      eventType: 'FILL',
+      orderId: 'order_123',
+      affectedLegs: [0, 1],
+      affectedInstruments: [exactInstrument, rootOnlyInstrument],
+    };
+    const { client } = createResponseClient([
+      {
+        traceId: 'modern-trace',
+        data: [event],
+        warnings: [],
+        errors: [],
+      },
+      {
+        _id: 'legacy-trace',
+        success: { data: [event] },
+        warning: null,
+        error: null,
+      },
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const modern = await wrapper.getAccountOrderEvents({
+      accountId: 'acct_123',
+      orderId: 'order_123',
+    });
+    const legacy = await wrapper.getAccountOrderEvents({
+      accountId: 'acct_123',
+      orderId: 'order_123',
+    });
+
+    expect(modern.data?.[0]?.affectedLegs).toEqual([0, 1]);
+    expect(modern.data?.[0]?.affectedInstruments?.map((item) => item.displaySymbol)).toEqual([
+      'MGCZ6',
+      'MGC',
+    ]);
+    expect(legacy.data?.[0]?.affectedInstruments?.[0]).toEqual(exactInstrument);
+  });
+
+  it('serializes canonical and provider-native placement identifiers unchanged', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.createAccountOrder({
+      accountId: 'acct_123',
+      idempotencyKey: 'idem_123',
+      body: {
+        broker: 'tradestation',
+        order: {
+          finaticInstrumentId: 'finatic:future:MGCZ6',
+          instrumentId: 418,
+          symbol: 'MGCZ6',
+        },
+      },
+    });
+
+    expect(requests[0]?.data).toEqual({
+      broker: 'tradestation',
+      order: {
+        finaticInstrumentId: 'finatic:future:MGCZ6',
+        instrumentId: 418,
+        symbol: 'MGCZ6',
+      },
+    });
   });
 
   it('requires idempotency keys for account order commands', async () => {

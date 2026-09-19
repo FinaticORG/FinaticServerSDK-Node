@@ -59,7 +59,7 @@ describe('V1Wrapper smoke coverage', () => {
         accountId: 'account-id',
         orderId: 'order-id',
         idempotencyKey: 'idem-2',
-        body: { quantity: 2 },
+        body: { order: { quantity: 2 } },
       }),
       v1.cancelAccountOrder({
         accountId: 'account-id',
