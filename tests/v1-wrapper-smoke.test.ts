@@ -53,13 +53,13 @@ describe('V1Wrapper smoke coverage', () => {
       v1.createAccountOrder({
         accountId: 'account-id',
         idempotencyKey: 'idem-1',
-        body: { symbol: 'AAPL', side: 'buy', quantity: 1 },
+        body: { order: { symbol: 'AAPL', side: 'buy', quantity: 1 } },
       }),
       v1.modifyAccountOrder({
         accountId: 'account-id',
         orderId: 'order-id',
         idempotencyKey: 'idem-2',
-        body: { quantity: 2 },
+        body: { order: { quantity: 2 } },
       }),
       v1.cancelAccountOrder({
         accountId: 'account-id',

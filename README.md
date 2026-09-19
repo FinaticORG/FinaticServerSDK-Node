@@ -61,6 +61,32 @@ Server `v1` data methods return `{ traceId, data, warnings, errors }`. Check `er
 
 `FinaticServer.init(apiKey, userId?)` is a shortcut that calls `startSession`. Use the constructor + `getToken()` when you only need to hand a token to the browser.
 
+## Exact instrument descriptors
+
+Order legs, fills, events, and positions use generated descriptor types by default. Exact futures
+remain distinct from product-root-only identities, and the SDK does not infer missing contract,
+expiry, venue, provenance, or identity-quality fields.
+
+```ts
+const orders = await finatic.v1.listOrders({ accountId: 'acct_123' });
+const instrument = orders.data?.[0]?.legs?.[0]?.instrument;
+
+if (instrument?.future?.identityQuality === 'EXACT') {
+  console.log(instrument.future.contractCode); // e.g. MGCZ6
+}
+
+await finatic.v1.createAccountOrder({
+  accountId: 'acct_123',
+  idempotencyKey: crypto.randomUUID(),
+  body: {
+    order: {
+      finaticInstrumentId: 'finatic:future:MGCZ6',
+      instrumentId: 418, // provider-native identifiers remain additive
+    },
+  },
+});
+```
+
 ## Embed Connect
 
 1. `v1.getToken()` → pass the token to `FinaticConnect.init(token)` in the browser (token TTL is 90 seconds).

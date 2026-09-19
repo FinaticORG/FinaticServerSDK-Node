@@ -2,6 +2,20 @@
  * Contract tests for stable public exports.
  */
 import { FinaticServer, V1Wrapper } from '../../src/index';
+import {
+  FDXFutureInstrumentDetailsIdentityQualityEnum,
+  FDXInstrumentDescriptorVersionEnum,
+} from '../../src/index';
+import type {
+  AccountOrderCommandRequest,
+  FDXBrokerOrder,
+  FDXBrokerOrderEvent,
+  FDXBrokerOrderFill,
+  FDXBrokerPosition,
+  FDXBrokerPositionLot,
+  FDXBrokerPositionLotFill,
+  FDXInstrumentDescriptor,
+} from '../../src/index';
 
 describe('public surface @finatic/server-node', () => {
   afterEach(() => {
@@ -29,7 +43,9 @@ describe('public surface @finatic/server-node', () => {
     expect(typeof finatic.v1.listBalances).toBe('function');
     expect(typeof finatic.v1.listPositions).toBe('function');
     expect(typeof finatic.v1.listAccountGrants).toBe('function');
-    expect(typeof (finatic as unknown as Record<string, unknown>)['startSession']).toBe('undefined');
+    expect(typeof (finatic as unknown as Record<string, unknown>)['startSession']).toBe(
+      'undefined'
+    );
   });
 
   it('does not expose legacy broker connection methods on the root client', () => {
@@ -38,5 +54,32 @@ describe('public surface @finatic/server-node', () => {
     expect(finatic['getAllOrders']).toBeUndefined();
     expect(finatic['getSessionId']).toBeUndefined();
     expect(finatic['isAuthed']).toBeUndefined();
+  });
+
+  it('exports the stable exact-instrument contract without beta clients', () => {
+    const descriptor: FDXInstrumentDescriptor = {
+      assetType: 'FUTURE',
+      displaySymbol: 'MGCZ6',
+      finaticInstrumentId: 'finatic:future:MGCZ6',
+      version: FDXInstrumentDescriptorVersionEnum._10,
+      future: {
+        contractCode: 'MGCZ6',
+        identityQuality: FDXFutureInstrumentDetailsIdentityQualityEnum.Exact,
+        productRoot: 'MGC',
+      },
+    };
+    const typeSurface: [
+      AccountOrderCommandRequest?,
+      FDXBrokerOrder?,
+      FDXBrokerOrderEvent?,
+      FDXBrokerOrderFill?,
+      FDXBrokerPosition?,
+      FDXBrokerPositionLot?,
+      FDXBrokerPositionLotFill?,
+    ] = [];
+
+    expect(descriptor.future?.contractCode).toBe('MGCZ6');
+    expect(typeSurface).toEqual([]);
+    expect((FinaticServer as unknown as Record<string, unknown>)['BrokersApi']).toBeUndefined();
   });
 });

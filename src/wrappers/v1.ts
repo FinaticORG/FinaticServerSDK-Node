@@ -8,6 +8,12 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
 import type { SdkConfig, FinaticApiEnvironment } from '../config';
+import type { AccountOrderCommandRequest } from '../openapi/models/account-order-command-request';
+import type { FDXBrokerOrder } from '../openapi/models/fdxbroker-order';
+import type { FDXBrokerOrderCommandResult } from '../openapi/models/fdxbroker-order-command-result';
+import type { FDXBrokerOrderEvent } from '../openapi/models/fdxbroker-order-event';
+import type { FDXBrokerOrderFill } from '../openapi/models/fdxbroker-order-fill';
+import type { FDXBrokerPosition } from '../openapi/models/fdxbroker-position';
 import {
   appendAssetTypesToURL,
   appendBrokerFilterToURL,
@@ -66,12 +72,12 @@ export interface AccountOrderParams {
 
 export interface CreateAccountOrderCommandParams {
   accountId: string;
-  body?: unknown;
+  body?: AccountOrderCommandRequest;
   idempotencyKey: string;
 }
 
 export interface AccountOrderCommandParams extends AccountOrderParams {
-  body?: unknown;
+  body?: AccountOrderCommandRequest;
   idempotencyKey: string;
 }
 
@@ -451,7 +457,7 @@ export class V1Wrapper {
    * const result = await finatic.v1.listPositions({ accountId: 'acct_123' });
    * ```
    */
-  listPositions<T = unknown>(
+  listPositions<T = FDXBrokerPosition[]>(
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
@@ -467,7 +473,7 @@ export class V1Wrapper {
   }
 
   /** GET /api/v1/accounts/{accountId}/orders */
-  listOrders<T = unknown>(
+  listOrders<T = FDXBrokerOrder[]>(
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
@@ -488,21 +494,21 @@ export class V1Wrapper {
     );
   }
 
-  getAccountOrder<T = unknown>(
+  getAccountOrder<T = FDXBrokerOrder>(
     params: AccountOrderParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.accountOrderResource<T>(params, '', options);
   }
 
-  getAccountOrderFills<T = unknown>(
+  getAccountOrderFills<T = FDXBrokerOrderFill[]>(
     params: AccountOrderParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
     return this.accountOrderResource<T>(params, '/fills', options);
   }
 
-  getAccountOrderEvents<T = unknown>(
+  getAccountOrderEvents<T = FDXBrokerOrderEvent[]>(
     params: AccountOrderParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
@@ -526,7 +532,7 @@ export class V1Wrapper {
     );
   }
 
-  createAccountOrder<T = unknown>(
+  createAccountOrder<T = FDXBrokerOrderCommandResult>(
     params: CreateAccountOrderCommandParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
@@ -541,7 +547,7 @@ export class V1Wrapper {
     );
   }
 
-  modifyAccountOrder<T = unknown>(
+  modifyAccountOrder<T = FDXBrokerOrderCommandResult>(
     params: AccountOrderCommandParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
@@ -558,7 +564,7 @@ export class V1Wrapper {
     );
   }
 
-  cancelAccountOrder<T = unknown>(
+  cancelAccountOrder<T = FDXBrokerOrderCommandResult>(
     params: AccountOrderCommandParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
