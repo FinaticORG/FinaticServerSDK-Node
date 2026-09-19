@@ -22,7 +22,7 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "clean": "rimraf dist",
     "prepublishOnly": "npm run clean && NODE_OPTIONS=--max-old-space-size=8192 npm run build",
-    "build:types": "tsc --project tsconfig.build.json --emitDeclarationOnly --declaration || (echo 'Type errors in generated files (non-blocking)' && exit 0)",
+    "build:types": "tsc --project tsconfig.build.json --emitDeclarationOnly --declaration",
     "test:imports": "npm run build && node test-imports.cjs && node test-imports.mjs",
     "type:check": "tsc --noEmit",
     "syntax:check": "eslint src/**/*.ts --max-warnings 0 --no-warn-ignored",

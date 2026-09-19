@@ -19,6 +19,11 @@ import { RequiredError } from './base';
 
 export const DUMMY_BASE_URL = 'https://example.com';
 
+export type RequestFunction = <T = unknown, R extends AxiosResponse<T> = AxiosResponse<T>>(
+  axios?: AxiosInstance,
+  basePath?: string
+) => Promise<R>;
+
 /**
  *
  * @throws {RequiredError}
@@ -136,8 +141,8 @@ export const createRequestFunction = function (
   globalAxios: AxiosInstance,
   BASE_PATH: string,
   configuration?: Configuration
-) {
-  return <T = unknown, R = AxiosResponse<T>>(
+): RequestFunction {
+  return <T = unknown, R extends AxiosResponse<T> = AxiosResponse<T>>(
     axios: AxiosInstance = globalAxios,
     basePath: string = BASE_PATH
   ) => {
@@ -145,6 +150,6 @@ export const createRequestFunction = function (
       ...axiosArgs.options,
       url: (axios.defaults.baseURL ? '' : (configuration?.basePath ?? basePath)) + axiosArgs.url,
     };
-    return axios.request<T, R>(axiosRequestArgs);
+    return axios.request<T, R>(axiosRequestArgs) as Promise<R>;
   };
 };
