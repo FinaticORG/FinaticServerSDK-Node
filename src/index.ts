@@ -3,7 +3,7 @@
  *
  * Hand-authored exports compose ``src/openapi/`` (OpenAPI Generator output) with wrappers and utilities.
  *
- * Regenerate: ``make openapi-generate`` from the Finatic workspace root.
+ * Regenerate: ``make openapi-generate`` from the Finatic workspace root, then run ``npm run quality:check`` here.
  */
 
 // Re-export SDK wrappers and utilities
