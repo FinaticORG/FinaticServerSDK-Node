@@ -7,7 +7,9 @@ import {
   FDXInstrumentDescriptorVersionEnum,
 } from '../../src/index';
 import type {
+  AccountOrderCommandBody,
   AccountOrderCommandRequest,
+  FDXOrderLeg,
   FDXBrokerOrder,
   FDXBrokerOrderEvent,
   FDXBrokerOrderFill,
@@ -81,5 +83,36 @@ describe('public surface @finatic/server-node', () => {
     expect(descriptor.future?.contractCode).toBe('MGCZ6');
     expect(typeSurface).toEqual([]);
     expect((FinaticServer as unknown as Record<string, unknown>)['BrokersApi']).toBeUndefined();
+  });
+
+  it('keeps legacy flat commands while rejecting invalid exact-instrument declarations', () => {
+    const legacyBody: AccountOrderCommandBody = {
+      symbol: 'AAPL',
+      side: 'buy',
+      quantity: 1,
+    };
+    const typedBody: AccountOrderCommandBody = {
+      order: {
+        finaticInstrumentId: 'finatic:future:MGCZ6',
+        instrumentId: 418,
+        positionIntent: 'BUY_TO_OPEN',
+      },
+    };
+    const validPositionIntent: NonNullable<FDXOrderLeg['positionIntent']> = 'SELL_TO_CLOSE';
+
+    const invalidInstrumentId: AccountOrderCommandBody = {
+      order: {
+        // @ts-expect-error provider-native instrument ids are strings or numbers
+        instrumentId: true,
+      },
+    };
+    // @ts-expect-error position intent is limited to the published lifecycle union
+    const invalidPositionIntent: NonNullable<FDXOrderLeg['positionIntent']> = 'OPEN';
+
+    expect(legacyBody).toMatchObject({ symbol: 'AAPL' });
+    expect(typedBody).toMatchObject({ order: { instrumentId: 418 } });
+    expect(validPositionIntent).toBe('SELL_TO_CLOSE');
+    expect(invalidInstrumentId).toBeDefined();
+    expect(invalidPositionIntent).toBe('OPEN');
   });
 });

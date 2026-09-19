@@ -8,12 +8,12 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
 import type { SdkConfig, FinaticApiEnvironment } from '../config';
-import type { AccountOrderCommandRequest } from '../openapi/models/account-order-command-request';
-import type { FDXBrokerOrder } from '../openapi/models/fdxbroker-order';
-import type { FDXBrokerOrderCommandResult } from '../openapi/models/fdxbroker-order-command-result';
+import type { FDXBrokerOrder as GeneratedFDXBrokerOrder } from '../openapi/models/fdxbroker-order';
+import type { FDXBrokerOrderCommandResult as GeneratedFDXBrokerOrderCommandResult } from '../openapi/models/fdxbroker-order-command-result';
 import type { FDXBrokerOrderEvent } from '../openapi/models/fdxbroker-order-event';
 import type { FDXBrokerOrderFill } from '../openapi/models/fdxbroker-order-fill';
 import type { FDXBrokerPosition } from '../openapi/models/fdxbroker-position';
+import type { FDXOrderLeg as GeneratedFDXOrderLeg } from '../openapi/models/fdxorder-leg';
 import {
   appendAssetTypesToURL,
   appendBrokerFilterToURL,
@@ -70,14 +70,56 @@ export interface AccountOrderParams {
   orderId: string;
 }
 
+/** Order lifecycle direction published by the v1 account-order contract. */
+export type FDXOrderPositionIntent =
+  'BUY_TO_OPEN' | 'BUY_TO_CLOSE' | 'SELL_TO_OPEN' | 'SELL_TO_CLOSE';
+
+/**
+ * Stable account-order payload facade.
+ *
+ * The generator currently emits empty interfaces for OpenAPI primitive unions,
+ * so this hand-written boundary preserves provider extension fields while
+ * enforcing the published identifier and position-intent types.
+ */
+export interface AccountOrderPayload {
+  [key: string]: unknown;
+  finaticInstrumentId?: string | null;
+  instrumentId?: string | number | null;
+  positionIntent?: FDXOrderPositionIntent | null;
+}
+
+export interface AccountOrderCommandRequest {
+  broker?: string | null;
+  order: AccountOrderPayload;
+  paperTradeConfirmed?: boolean;
+}
+
+/** Existing SDK callers may still send the provider's legacy flat order body. */
+export type LegacyAccountOrderCommandBody = Record<string, unknown> & { order?: never };
+
+export type AccountOrderCommandBody = AccountOrderCommandRequest | LegacyAccountOrderCommandBody;
+
+/** Stable generated-order facade with the published position-intent union restored. */
+export type FDXOrderLeg = Omit<GeneratedFDXOrderLeg, 'positionIntent'> & {
+  positionIntent?: FDXOrderPositionIntent | null;
+};
+
+export type FDXBrokerOrder = Omit<GeneratedFDXBrokerOrder, 'legs'> & {
+  legs?: FDXOrderLeg[];
+};
+
+export type FDXBrokerOrderCommandResult = Omit<GeneratedFDXBrokerOrderCommandResult, 'order'> & {
+  order: FDXBrokerOrder;
+};
+
 export interface CreateAccountOrderCommandParams {
   accountId: string;
-  body?: AccountOrderCommandRequest;
+  body?: AccountOrderCommandBody;
   idempotencyKey: string;
 }
 
 export interface AccountOrderCommandParams extends AccountOrderParams {
-  body?: AccountOrderCommandRequest;
+  body?: AccountOrderCommandBody;
   idempotencyKey: string;
 }
 
