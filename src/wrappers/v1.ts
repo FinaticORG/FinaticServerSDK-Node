@@ -129,6 +129,22 @@ export interface AccountOrderSchemaParams {
   broker?: string;
 }
 
+export interface BrokerConnectionOffboardingParams {
+  userId: string;
+  accountId: string;
+  idempotencyKey: string;
+}
+
+export interface BrokerConnectionOffboardingResult {
+  operationId: string;
+  userId: string;
+  accountId: string;
+  state: 'accepted' | 'completed';
+  action: 'company_grants_revoked' | 'connection_deletion_started';
+  revokedGrantCount: number;
+  idempotentReplay: boolean;
+}
+
 type QueryValue = string | number | boolean | undefined;
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -657,6 +673,21 @@ export class V1Wrapper {
       'POST',
       `/api/v1/account-grants/${encodeURIComponent(grantId)}/revoke`,
       {},
+      options
+    );
+  }
+
+  offboardBrokerConnection<T = BrokerConnectionOffboardingResult>(
+    params: BrokerConnectionOffboardingParams,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<T>> {
+    return this.request<T>(
+      'POST',
+      `/api/v1/users/${encodeURIComponent(params.userId)}/broker-connections/offboarding`,
+      {
+        data: { accountId: params.accountId },
+        idempotencyKey: this.requireIdempotencyKey(params.idempotencyKey),
+      },
       options
     );
   }

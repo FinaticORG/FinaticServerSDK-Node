@@ -199,6 +199,27 @@ describe('V1 account-first wrapper', () => {
     );
   });
 
+  it('offboards one account-selected broker connection without a connection ID', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await wrapper.offboardBrokerConnection({
+      userId: 'user_123',
+      accountId: 'account_123',
+      idempotencyKey: 'idem_123',
+    });
+
+    expect(requests[0]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/api/v1/users/user_123/broker-connections/offboarding',
+        data: { accountId: 'account_123' },
+        headers: expect.objectContaining({ 'Idempotency-Key': 'idem_123' }),
+      })
+    );
+    expect(JSON.stringify(requests[0])).not.toContain('connectionId');
+  });
+
   it('covers webhook subscription update route', async () => {
     const { client, requests } = createClient();
     const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
