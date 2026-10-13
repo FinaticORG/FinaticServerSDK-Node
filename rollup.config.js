@@ -4,7 +4,6 @@ import commonjs from '@rollup/plugin-commonjs';
 
 const external = [
   'axios',
-  'undici',
   'uuid',
   'pino',
   'zod',
@@ -61,4 +60,3 @@ export default [
     ],
   },
 ];
-
