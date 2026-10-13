@@ -18,13 +18,17 @@ const readJson = <T>(relativePath: string): T => {
 };
 
 describe('production dependency compatibility', () => {
-  it('keeps the Node 18 support contract free of the incompatible unused undici package', () => {
+  it('keeps source-unused incompatible dependencies out of the production package', () => {
     const manifest = readJson<PackageManifest>('package.json');
     const lockfile = readJson<PackageLock>('package-lock.json');
+    const removedDependencies = ['p-retry', 'undici'];
 
     expect(manifest.engines?.node).toBe('>=18.0.0');
-    expect(manifest.dependencies).not.toHaveProperty('undici');
-    expect(lockfile.packages?.['']?.dependencies).not.toHaveProperty('undici');
-    expect(lockfile.packages).not.toHaveProperty('node_modules/undici');
+
+    for (const dependency of removedDependencies) {
+      expect(manifest.dependencies).not.toHaveProperty(dependency);
+      expect(lockfile.packages?.['']?.dependencies).not.toHaveProperty(dependency);
+      expect(lockfile.packages).not.toHaveProperty(`node_modules/${dependency}`);
+    }
   });
 });
