@@ -7,7 +7,6 @@ const external = [
   'uuid',
   'pino',
   'zod',
-  // p-retry removed - will be bundled (ESM-only package)
   'node-cache',
 ];
 

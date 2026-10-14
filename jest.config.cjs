@@ -23,9 +23,7 @@ module.exports = {
       },
     ],
   },
-  transformIgnorePatterns: [
-    "/node_modules/(?!(p-retry|is-network-error|uuid)/)",
-  ],
+  transformIgnorePatterns: ["/node_modules/(?!(uuid)/)"],
   collectCoverageFrom: [
     "src/wrappers/v1.ts",
     "src/FinaticServerCore.ts",
