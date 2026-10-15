@@ -57,6 +57,19 @@ const orders = await finatic.v1.listOrders({ accountId });
 
 Server `v1` data methods return `{ traceId, data, warnings, errors }`. Check `errors` before using `data`.
 
+### Error handling
+
+Each normalized v1 error exposes two identifiers:
+
+- `category` is one of the stable generic categories, such as `CONFLICT`, `VALIDATION`, or
+  `RATE_LIMITED`. Branch on this field for broad handling and retry policy.
+- `code` preserves the specific API-provided string, such as `IDEMPOTENCY_KEY_REUSED`. Codes are
+  open-ended so SDK consumers can handle current and future API errors without losing identity.
+
+When an API response has no usable `code`, the SDK falls back to the derived `category`. Existing
+`FinaticV1ErrorCode` imports remain valid as the public type for the open string code, while
+`FinaticV1ErrorCategory` represents the closed generic taxonomy.
+
 `fntc_sandbox_` keys use Finatic synthetic data. Broker paper/sim accounts stay `live`.
 
 `FinaticServer.init(apiKey, userId?)` is a shortcut that calls `startSession`. Use the constructor + `getToken()` when you only need to hand a token to the browser.
