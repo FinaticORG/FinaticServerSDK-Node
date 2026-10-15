@@ -12,7 +12,12 @@ export * from './utils';
 export * from './config';
 
 export { FinaticServer } from './FinaticServer';
-export type { FinaticV1Response, FinaticV1Error, FinaticV1ErrorCode } from './wrappers/v1';
+export type {
+  FinaticV1Response,
+  FinaticV1Error,
+  FinaticV1ErrorCategory,
+  FinaticV1ErrorCode,
+} from './wrappers/v1';
 
 export type { FDXBrokerOrderEvent } from './openapi/models/fdxbroker-order-event';
 export type { FDXBrokerOrderFill } from './openapi/models/fdxbroker-order-fill';

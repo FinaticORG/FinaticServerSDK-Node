@@ -23,7 +23,8 @@ import {
 } from '../utils/url-utils';
 import { generateRequestId } from '../utils/request-id';
 
-export type FinaticV1ErrorCode =
+/** Stable, generic error category for category-based handling. */
+export type FinaticV1ErrorCategory =
   | 'AUTHENTICATION'
   | 'AUTHORIZATION'
   | 'VALIDATION'
@@ -34,8 +35,11 @@ export type FinaticV1ErrorCode =
   | 'NOT_FOUND'
   | 'INTERNAL';
 
+/** Specific API error code. This string is intentionally open-ended. */
+export type FinaticV1ErrorCode = string;
+
 export interface FinaticV1Error {
-  category?: string;
+  category: FinaticV1ErrorCategory;
   code: FinaticV1ErrorCode;
   message: string;
   status?: number;
@@ -894,13 +898,13 @@ export class V1Wrapper {
   }
 
   private normalizeError(error: Record<string, unknown>, status?: number): FinaticV1Error {
-    const code = this.normalizeErrorCode(error['code'], status, error);
+    const category = this.normalizeErrorCategory(error['category'], error['code'], status, error);
+    const code =
+      typeof error['code'] === 'string' && error['code'].trim().length > 0
+        ? error['code']
+        : category;
     return {
-      ...(typeof error['category'] === 'string'
-        ? { category: error['category'] }
-        : status !== undefined
-          ? { category: code }
-          : {}),
+      category,
       code,
       message: typeof error['message'] === 'string' ? error['message'] : code,
       ...(status !== undefined ? { status } : {}),
@@ -910,36 +914,34 @@ export class V1Wrapper {
     };
   }
 
-  private normalizeErrorCode(
+  private normalizeErrorCategory(
     value: unknown,
+    code: unknown,
     status?: number,
     error?: Record<string, unknown>
-  ): FinaticV1ErrorCode {
-    const rawCode = typeof value === 'string' ? value : undefined;
-    if (
-      rawCode === 'AUTHENTICATION' ||
-      rawCode === 'AUTHORIZATION' ||
-      rawCode === 'VALIDATION' ||
-      rawCode === 'RATE_LIMITED' ||
-      rawCode === 'REAUTH_REQUIRED' ||
-      rawCode === 'PROVIDER_ERROR' ||
-      rawCode === 'CONFLICT' ||
-      rawCode === 'NOT_FOUND' ||
-      rawCode === 'INTERNAL'
-    ) {
+  ): FinaticV1ErrorCategory {
+    if (this.isErrorCategory(value)) {
+      return value;
+    }
+
+    const rawCode = typeof code === 'string' ? code : undefined;
+    if (this.isErrorCategory(rawCode)) {
       return rawCode;
     }
-    if (rawCode === 'AUTH_ERROR') {
-      return 'AUTHENTICATION';
-    }
-    if (rawCode === 'ACCESS_DENIED') {
-      return 'AUTHORIZATION';
-    }
-    if (rawCode === 'VALIDATION_ERROR') {
-      return 'VALIDATION';
-    }
-    if (rawCode === 'SESSION_NOT_FOUND' || rawCode === 'ACCOUNT_NOT_FOUND') {
-      return 'NOT_FOUND';
+    if (
+      rawCode === 'AUTH_ERROR' ||
+      rawCode === 'ACCESS_DENIED' ||
+      rawCode === 'VALIDATION_ERROR' ||
+      rawCode === 'SESSION_NOT_FOUND' ||
+      rawCode === 'ACCOUNT_NOT_FOUND'
+    ) {
+      return {
+        AUTH_ERROR: 'AUTHENTICATION',
+        ACCESS_DENIED: 'AUTHORIZATION',
+        VALIDATION_ERROR: 'VALIDATION',
+        SESSION_NOT_FOUND: 'NOT_FOUND',
+        ACCOUNT_NOT_FOUND: 'NOT_FOUND',
+      }[rawCode] as FinaticV1ErrorCategory;
     }
     const message = typeof error?.['message'] === 'string' ? error['message'].toLowerCase() : '';
     if (message.includes('reauth') || message.includes('re-authoriz')) {
@@ -967,6 +969,20 @@ export class V1Wrapper {
       return 'RATE_LIMITED';
     }
     return 'INTERNAL';
+  }
+
+  private isErrorCategory(value: unknown): value is FinaticV1ErrorCategory {
+    return (
+      value === 'AUTHENTICATION' ||
+      value === 'AUTHORIZATION' ||
+      value === 'VALIDATION' ||
+      value === 'RATE_LIMITED' ||
+      value === 'REAUTH_REQUIRED' ||
+      value === 'PROVIDER_ERROR' ||
+      value === 'CONFLICT' ||
+      value === 'NOT_FOUND' ||
+      value === 'INTERNAL'
+    );
   }
 
   private traceId(payload: Record<string, unknown> | null, headers: unknown): string | null {
