@@ -4,11 +4,9 @@ import commonjs from '@rollup/plugin-commonjs';
 
 const external = [
   'axios',
-  'undici',
   'uuid',
   'pino',
   'zod',
-  // p-retry removed - will be bundled (ESM-only package)
   'node-cache',
 ];
 
@@ -61,4 +59,3 @@ export default [
     ],
   },
 ];
-
