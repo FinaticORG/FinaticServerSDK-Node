@@ -17,6 +17,8 @@ import type {
   FDXBrokerPositionLot,
   FDXBrokerPositionLotFill,
   FDXInstrumentDescriptor,
+  FinaticV1ErrorCategory,
+  FinaticV1ErrorCode,
 } from '../../src/index';
 
 describe('public surface @finatic/server-node', () => {
@@ -33,6 +35,17 @@ describe('public surface @finatic/server-node', () => {
 
   it('exports V1Wrapper for account-first data access', () => {
     expect(V1Wrapper).toBeDefined();
+  });
+
+  it('keeps specific error codes open while categories remain closed', () => {
+    const specificCode: FinaticV1ErrorCode = 'IDEMPOTENCY_KEY_REUSED';
+    const category: FinaticV1ErrorCategory = 'CONFLICT';
+    // @ts-expect-error categories are restricted to the stable generic taxonomy
+    const invalidCategory: FinaticV1ErrorCategory = 'IDEMPOTENCY_KEY_REUSED';
+
+    expect(specificCode).toBe('IDEMPOTENCY_KEY_REUSED');
+    expect(category).toBe('CONFLICT');
+    expect(invalidCategory).toBe('IDEMPOTENCY_KEY_REUSED');
   });
 
   it('exposes versioned v1 API including session and account data', () => {

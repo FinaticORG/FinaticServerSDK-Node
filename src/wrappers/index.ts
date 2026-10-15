@@ -17,6 +17,7 @@ export type {
   FDXOrderPositionIntent,
   FinaticV1CallOptions,
   FinaticV1Error,
+  FinaticV1ErrorCategory,
   FinaticV1ErrorCode,
   FinaticV1Response,
   FinaticV1Warning,

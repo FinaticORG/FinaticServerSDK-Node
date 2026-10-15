@@ -1,0 +1,51 @@
+[
+  {
+    "name": "specific idempotency conflict",
+    "status": 409,
+    "error": {
+      "code": "IDEMPOTENCY_KEY_REUSED",
+      "message": "The idempotency key was already used",
+      "details": { "idempotencyKey": "synthetic-key" }
+    },
+    "expected": {
+      "category": "CONFLICT",
+      "code": "IDEMPOTENCY_KEY_REUSED"
+    }
+  },
+  {
+    "name": "unknown future retryable code with supplied category",
+    "status": 503,
+    "error": {
+      "category": "PROVIDER_ERROR",
+      "code": "UPSTREAM_MAINTENANCE_WINDOW",
+      "message": "The synthetic provider is temporarily unavailable"
+    },
+    "expected": {
+      "category": "PROVIDER_ERROR",
+      "code": "UPSTREAM_MAINTENANCE_WINDOW"
+    }
+  },
+  {
+    "name": "missing code nonretryable fallback",
+    "status": 422,
+    "error": {
+      "message": "The synthetic request is invalid"
+    },
+    "expected": {
+      "category": "VALIDATION",
+      "code": "VALIDATION"
+    }
+  },
+  {
+    "name": "unknown future rate limit code",
+    "status": 429,
+    "error": {
+      "code": "BROKER_BURST_LIMIT_REACHED",
+      "message": "The synthetic request rate limit was reached"
+    },
+    "expected": {
+      "category": "RATE_LIMITED",
+      "code": "BROKER_BURST_LIMIT_REACHED"
+    }
+  }
+]

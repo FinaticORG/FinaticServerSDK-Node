@@ -1,5 +1,6 @@
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 
+import errorNormalizationFixtures from '../fixtures/v1-error-normalization.json';
 import {
   FDXFutureInstrumentDetailsIdentityQualityEnum,
   FDXInstrumentDescriptorVersionEnum,
@@ -7,6 +8,23 @@ import {
 import type { FDXInstrumentDescriptor } from '../../src';
 import { V1Wrapper } from '../../src/wrappers/v1';
 import type { SdkConfig } from '../../src/config';
+
+interface ErrorNormalizationFixture {
+  name: string;
+  status: number;
+  error: {
+    category?: string;
+    code?: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+  expected: {
+    category: string;
+    code: string;
+  };
+}
+
+const ERROR_NORMALIZATION_FIXTURES = errorNormalizationFixtures as ErrorNormalizationFixture[];
 
 function createConfig(): SdkConfig {
   return {
@@ -445,6 +463,7 @@ describe('V1 account-first wrapper', () => {
       warnings: [{ code: 'STALE_DATA', message: 'Account data is stale' }],
       errors: [
         {
+          category: 'PROVIDER_ERROR',
           code: 'PROVIDER_ERROR',
           message: 'Provider is temporarily unavailable',
           details: { provider: 'alpaca' },
@@ -484,6 +503,43 @@ describe('V1 account-first wrapper', () => {
       ],
     });
   });
+
+  it.each(ERROR_NORMALIZATION_FIXTURES)(
+    'preserves API error identity for $name',
+    async ({ name, status, error, expected }) => {
+      const traceId = `trace-${name.replace(/ /g, '-')}`;
+      const client = {
+        request: jest.fn(async () => {
+          throw {
+            isAxiosError: true,
+            response: {
+              status,
+              headers: { 'x-request-id': traceId },
+              data: { errors: [error] },
+            },
+          };
+        }),
+      } as unknown as AxiosInstance;
+      const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+      const result = await wrapper.getAccount('acct_123');
+
+      expect(result).toEqual({
+        traceId,
+        data: null,
+        warnings: [],
+        errors: [
+          {
+            category: expected.category,
+            code: expected.code,
+            message: error.message,
+            status,
+            ...(error.details ? { details: error.details } : {}),
+          },
+        ],
+      });
+    }
+  );
 
   it('normalizes primitive response payloads into the public v1 response shape', async () => {
     const client = {
@@ -542,7 +598,7 @@ describe('V1 account-first wrapper', () => {
       errors: [
         {
           category: 'AUTHENTICATION',
-          code: 'AUTHENTICATION',
+          code: 'AUTH_ERROR',
           message: 'invalid api key',
           status: 401,
         },
