@@ -14,6 +14,8 @@ import type { FDXBrokerOrderEvent } from '../openapi/models/fdxbroker-order-even
 import type { FDXBrokerOrderFill } from '../openapi/models/fdxbroker-order-fill';
 import type { FDXBrokerPosition } from '../openapi/models/fdxbroker-position';
 import type { FDXOrderLeg as GeneratedFDXOrderLeg } from '../openapi/models/fdxorder-leg';
+import type { SessionSyncAccountStatus as GeneratedSessionSyncAccountStatus } from '../openapi/models/session-sync-account-status';
+import type { SessionSyncStatusResponse as GeneratedSessionSyncStatusResponse } from '../openapi/models/session-sync-status-response';
 import {
   appendAssetTypesToURL,
   appendBrokerFilterToURL,
@@ -62,6 +64,18 @@ export interface FinaticV1Response<T = unknown> {
 export interface FinaticV1CallOptions {
   environment?: FinaticApiEnvironment;
 }
+
+/** Public session-account sync state with the generator's empty timestamp model corrected. */
+export type SessionSyncAccountStatus = Omit<GeneratedSessionSyncAccountStatus, 'lastSyncedAt'> & {
+  [key: string]: unknown;
+  lastSyncedAt?: string | null;
+};
+
+/** Forward-compatible public payload returned by getSessionSyncStatus(). */
+export type SessionSyncStatusResponse = Omit<GeneratedSessionSyncStatusResponse, 'accounts'> & {
+  [key: string]: unknown;
+  accounts: SessionSyncAccountStatus[];
+};
 
 export interface AccountScopedParams {
   accountId: string;
@@ -446,6 +460,30 @@ export class V1Wrapper {
     }
 
     return portalUrl;
+  }
+
+  /**
+   * Read selected-account sync readiness for an explicit or stored session.
+   *
+   * This endpoint is intentionally available before an authenticated account is resolved.
+   */
+  getSessionSyncStatus(
+    sessionId?: string,
+    options?: FinaticV1CallOptions
+  ): Promise<FinaticV1Response<SessionSyncStatusResponse>> {
+    const resolvedSessionId = sessionId ?? this.sessionId;
+    if (!resolvedSessionId) {
+      throw new Error(
+        'Session ID is required. Pass sessionId or initialize session context first.'
+      );
+    }
+
+    return this.request<SessionSyncStatusResponse>(
+      'GET',
+      `/api/v1/sessions/${encodeURIComponent(resolvedSessionId)}/sync-status`,
+      {},
+      options
+    );
   }
 
   async getSessionUser(): Promise<{ user_id: string; company_id: string }> {
