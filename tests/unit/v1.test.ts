@@ -5,7 +5,7 @@ import {
   FDXFutureInstrumentDetailsIdentityQualityEnum,
   FDXInstrumentDescriptorVersionEnum,
 } from '../../src';
-import type { FDXInstrumentDescriptor } from '../../src';
+import type { FDXInstrumentDescriptor, SessionSyncStatusResponse } from '../../src';
 import { V1Wrapper } from '../../src/wrappers/v1';
 import type { SdkConfig } from '../../src/config';
 
@@ -91,6 +91,7 @@ function successEnvelope(data: unknown): Record<string, unknown> {
 }
 
 const V1_DATA_METHODS = [
+  'getSessionSyncStatus',
   'listAccounts',
   'getAccount',
   'listBalances',
@@ -178,6 +179,81 @@ describe('V1 account-first wrapper', () => {
         }),
       })
     );
+  });
+
+  it('polls sync status before authentication with explicit escaping and environment override', async () => {
+    const { client, requests } = createResponseClient([
+      successEnvelope({
+        sessionId: 'session/explicit ?',
+        companyId: 'company_123',
+        status: 'waiting_for_provider',
+        accounts: [
+          {
+            accountId: null,
+            brokerId: null,
+            syncStatus: 'provider_specific_future_state',
+            lastSyncedAt: null,
+            syncError: null,
+            providerHealth: 'degraded_custom',
+          },
+        ],
+      }),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    expect(wrapper.isAuthed()).toBe(false);
+    const result = await wrapper.getSessionSyncStatus('session/explicit ?', {
+      environment: 'live',
+    });
+
+    const typed: SessionSyncStatusResponse | null = result.data;
+    expect(typed?.status).toBe('waiting_for_provider');
+    expect(typed?.accounts[0]).toEqual(
+      expect.objectContaining({
+        accountId: null,
+        brokerId: null,
+        lastSyncedAt: null,
+        syncError: null,
+        syncStatus: 'provider_specific_future_state',
+        providerHealth: 'degraded_custom',
+      })
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        traceId: 'trace-id',
+        warnings: [],
+        errors: [],
+      })
+    );
+    expect(wrapper.isAuthed()).toBe(false);
+    expect(requests[0]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/api/v1/sessions/session%2Fexplicit%20%3F/sync-status',
+        headers: expect.objectContaining({
+          'x-api-key': 'fntc_test_key',
+          'X-Finatic-Environment': 'live',
+        }),
+      })
+    );
+  });
+
+  it('uses the stored session ID when no explicit ID is supplied', async () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+    wrapper.setSessionContext('stored/session', 'company_123', 'csrf_123');
+
+    await wrapper.getSessionSyncStatus();
+
+    expect(requests[0]?.url).toBe('/api/v1/sessions/stored%2Fsession/sync-status');
+  });
+
+  it('fails locally when no explicit or stored session ID exists', () => {
+    const { client, requests } = createClient();
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    expect(() => wrapper.getSessionSyncStatus()).toThrow('Session ID is required');
+    expect(requests).toHaveLength(0);
   });
 
   it('covers account resource listing', async () => {
