@@ -25,4 +25,6 @@ export type {
   PortalUrlParams,
   SessionStartResult,
   SessionStartStatus,
+  SessionSyncAccountStatus,
+  SessionSyncStatusResponse,
 } from './v1';
