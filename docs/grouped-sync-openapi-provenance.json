@@ -1,7 +1,7 @@
 {
   "sourceRepository": "https://github.com/FinaticORG/FinaticAPI",
   "sourcePullRequest": 972,
-  "sourceCommit": "5798968718f60f2fee4ce1d1bf96fa83550fe93e",
+  "sourceCommit": "f314d21c12fe903a67b56bb4fb973c3f6ceca189",
   "artifactPath": "artifacts/openapi/finaticapi-v1.json",
   "artifactSha256": "3e214865c34bfdf7735561fe8a4d0989feeba664901f59b7525614e601d11470",
   "method": "Scoped manual curation: literal const/enum unions, exact required/nullable fields; no full regeneration or ignore-policy changes. Existing subscription enums gain only the two grouped names. Runtime decoder is handwritten and restricted to grouped summaries.",

@@ -167,6 +167,7 @@ describe('account-first grouped sync webhooks', () => {
     expect(Object.values(UpdateEvent)).toEqual(
       provenance.schemas.FDXWebhookSubscriptionUpdate.properties.eventTypes.anyOf[0]?.items?.enum
     );
+    expect(provenance.sourceCommit).toBe('f314d21c12fe903a67b56bb4fb973c3f6ceca189');
     expect(provenance.artifactSha256).toBe(
       '3e214865c34bfdf7735561fe8a4d0989feeba664901f59b7525614e601d11470'
     );
