@@ -28,3 +28,15 @@ export type { FDXFutureInstrumentDetails } from './openapi/models/fdxfuture-inst
 export { FDXFutureInstrumentDetailsIdentityQualityEnum } from './openapi/models/fdxfuture-instrument-details';
 export type { FDXInstrumentDescriptor } from './openapi/models/fdxinstrument-descriptor';
 export { FDXInstrumentDescriptorVersionEnum } from './openapi/models/fdxinstrument-descriptor';
+
+export * from './openapi/models/fdxsync-summary-change-counts';
+export * from './openapi/models/fdxorders-sync-summary-change-counts';
+export * from './openapi/models/fdxsync-summary-result';
+export * from './openapi/models/fdxsync-summary-data';
+export * from './openapi/models/fdxwebhook-payload-resource';
+export * from './openapi/models/fdxwebhook-payload';
+export * from './openapi/models/fdxwebhook-subscription-create';
+export * from './openapi/models/fdxwebhook-subscription-update';
+export * from './openapi/models/fdxwebhook-subscription';
+export * from './openapi/models/fdxwebhook-event-definition';
+export * from './webhooks';

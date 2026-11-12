@@ -33,6 +33,8 @@ export enum FDXWebhookSubscriptionUpdateEventTypesEnum {
   AccountBalanceUpdated = 'account.balance.updated',
   AccountPositionUpdated = 'account.position.updated',
   AccountTransactionCreated = 'account.transaction.created',
+  AccountOrdersUpdated = 'account.orders.updated',
+  AccountTransactionsUpdated = 'account.transactions.updated',
   OrderCreated = 'order.created',
   OrderUpdated = 'order.updated',
   OrderFilled = 'order.filled',
