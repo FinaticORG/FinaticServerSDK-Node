@@ -1,0 +1,483 @@
+{
+  "sourceRepository": "https://github.com/FinaticORG/FinaticAPI",
+  "sourcePullRequest": 972,
+  "sourceCommit": "5798968718f60f2fee4ce1d1bf96fa83550fe93e",
+  "artifactPath": "artifacts/openapi/finaticapi-v1.json",
+  "artifactSha256": "3e214865c34bfdf7735561fe8a4d0989feeba664901f59b7525614e601d11470",
+  "method": "Scoped manual curation: literal const/enum unions, exact required/nullable fields; no full regeneration or ignore-policy changes. Existing subscription enums gain only the two grouped names. Runtime decoder is handwritten and restricted to grouped summaries.",
+  "schemas": {
+    "FDXSyncSummaryChangeCounts": {
+      "additionalProperties": false,
+      "description": "Non-negative resource changes committed by one sync batch.",
+      "properties": {
+        "created": {
+          "minimum": 0,
+          "title": "Created",
+          "type": "integer"
+        },
+        "deleted": {
+          "minimum": 0,
+          "title": "Deleted",
+          "type": "integer"
+        },
+        "unchanged": {
+          "minimum": 0,
+          "title": "Unchanged",
+          "type": "integer"
+        },
+        "updated": {
+          "minimum": 0,
+          "title": "Updated",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "created",
+        "updated",
+        "deleted",
+        "unchanged"
+      ],
+      "title": "FDXSyncSummaryChangeCounts",
+      "type": "object"
+    },
+    "FDXOrdersSyncSummaryChangeCounts": {
+      "additionalProperties": false,
+      "description": "Order changes with fills folded into the grouped order event.",
+      "properties": {
+        "created": {
+          "minimum": 0,
+          "title": "Created",
+          "type": "integer"
+        },
+        "deleted": {
+          "minimum": 0,
+          "title": "Deleted",
+          "type": "integer"
+        },
+        "fillsCreated": {
+          "minimum": 0,
+          "title": "Fillscreated",
+          "type": "integer"
+        },
+        "unchanged": {
+          "minimum": 0,
+          "title": "Unchanged",
+          "type": "integer"
+        },
+        "updated": {
+          "minimum": 0,
+          "title": "Updated",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "created",
+        "updated",
+        "deleted",
+        "unchanged",
+        "fillsCreated"
+      ],
+      "title": "FDXOrdersSyncSummaryChangeCounts",
+      "type": "object"
+    },
+    "FDXSyncSummaryResult": {
+      "additionalProperties": false,
+      "description": "Immutable result-set locator for a completed grouped sync.",
+      "properties": {
+        "cursor": {
+          "minLength": 1,
+          "title": "Cursor",
+          "type": "string"
+        },
+        "resourceUrl": {
+          "minLength": 1,
+          "title": "Resourceurl",
+          "type": "string"
+        }
+      },
+      "required": [
+        "resourceUrl",
+        "cursor"
+      ],
+      "title": "FDXSyncSummaryResult",
+      "type": "object"
+    },
+    "FDXSyncSummaryData": {
+      "additionalProperties": false,
+      "description": "Typed data contract for account resource grouped-sync events.",
+      "properties": {
+        "batchId": {
+          "format": "uuid",
+          "title": "Batchid",
+          "type": "string"
+        },
+        "changeCounts": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/FDXOrdersSyncSummaryChangeCounts"
+            },
+            {
+              "$ref": "#/components/schemas/FDXSyncSummaryChangeCounts"
+            }
+          ],
+          "title": "Changecounts"
+        },
+        "completedAt": {
+          "format": "date-time",
+          "title": "Completedat",
+          "type": "string"
+        },
+        "contractVersion": {
+          "const": "account.resource.sync-summary.v1",
+          "default": "account.resource.sync-summary.v1",
+          "title": "Contractversion",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "initialSync",
+            "poll"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/components/schemas/FDXSyncSummaryResult"
+        }
+      },
+      "required": [
+        "batchId",
+        "origin",
+        "completedAt",
+        "changeCounts",
+        "result"
+      ],
+      "title": "FDXSyncSummaryData",
+      "type": "object"
+    },
+    "FDXWebhookPayloadResource": {
+      "additionalProperties": false,
+      "description": "Resource pointer included in outbound webhook payloads.",
+      "properties": {
+        "accountId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accountid"
+        },
+        "grantId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grantid"
+        },
+        "resourceId": {
+          "title": "Resourceid",
+          "type": "string"
+        },
+        "resourceType": {
+          "title": "Resourcetype",
+          "type": "string"
+        }
+      },
+      "required": [
+        "resourceType",
+        "resourceId"
+      ],
+      "title": "FDXWebhookPayloadResource",
+      "type": "object"
+    },
+    "FDXWebhookPayload": {
+      "additionalProperties": false,
+      "description": "Documented customer-facing webhook payload envelope.",
+      "examples": [
+        {
+          "accountId": "account_123",
+          "companyAccountId": "company_123",
+          "createdAt": "2026-10-12T08:45:00Z",
+          "data": {
+            "status": "filled"
+          },
+          "environment": "live",
+          "eventId": "evt_123",
+          "eventType": "order.filled",
+          "grantId": "grant_123",
+          "resource": {
+            "accountId": "account_123",
+            "grantId": "grant_123",
+            "resourceId": "order_123",
+            "resourceType": "order"
+          },
+          "schemaVersion": "v1"
+        }
+      ],
+      "properties": {
+        "accountId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accountid"
+        },
+        "companyAccountId": {
+          "title": "Companyaccountid",
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "date-time",
+          "title": "Createdat",
+          "type": "string"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "$ref": "#/components/schemas/FDXSyncSummaryData"
+            }
+          ],
+          "title": "Data"
+        },
+        "environment": {
+          "enum": [
+            "live",
+            "sandbox"
+          ],
+          "title": "Environment",
+          "type": "string"
+        },
+        "eventId": {
+          "title": "Eventid",
+          "type": "string"
+        },
+        "eventType": {
+          "enum": [
+            "account.grant.created",
+            "account.grant.updated",
+            "account.grant.revoked",
+            "account.sync.started",
+            "account.sync.succeeded",
+            "account.sync.failed",
+            "account.balance.updated",
+            "account.position.updated",
+            "account.transaction.created",
+            "account.orders.updated",
+            "account.transactions.updated",
+            "order.created",
+            "order.updated",
+            "order.filled",
+            "order.cancelled",
+            "order.rejected",
+            "connection.reauth.required"
+          ],
+          "title": "Eventtype",
+          "type": "string"
+        },
+        "grantId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grantid"
+        },
+        "resource": {
+          "$ref": "#/components/schemas/FDXWebhookPayloadResource"
+        },
+        "schemaVersion": {
+          "const": "v1",
+          "default": "v1",
+          "title": "Schemaversion",
+          "type": "string"
+        }
+      },
+      "required": [
+        "eventId",
+        "eventType",
+        "createdAt",
+        "environment",
+        "companyAccountId",
+        "resource"
+      ],
+      "title": "FDXWebhookPayload",
+      "type": "object"
+    },
+    "FDXWebhookSubscriptionCreate": {
+      "description": "Create a webhook subscription for customer event delivery.",
+      "properties": {
+        "_id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Description"
+        },
+        "environment": {
+          "default": "live",
+          "enum": [
+            "live",
+            "sandbox"
+          ],
+          "title": "Environment",
+          "type": "string"
+        },
+        "eventTypes": {
+          "items": {
+            "enum": [
+              "account.grant.created",
+              "account.grant.updated",
+              "account.grant.revoked",
+              "account.sync.started",
+              "account.sync.succeeded",
+              "account.sync.failed",
+              "account.balance.updated",
+              "account.position.updated",
+              "account.transaction.created",
+              "account.orders.updated",
+              "account.transactions.updated",
+              "order.created",
+              "order.updated",
+              "order.filled",
+              "order.cancelled",
+              "order.rejected",
+              "connection.reauth.required"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Eventtypes",
+          "type": "array"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "eventTypes"
+      ],
+      "title": "FDXWebhookSubscriptionCreate",
+      "type": "object"
+    },
+    "FDXWebhookSubscriptionUpdate": {
+      "description": "Mutable webhook subscription fields.",
+      "properties": {
+        "_id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Description"
+        },
+        "eventTypes": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "account.grant.created",
+                  "account.grant.updated",
+                  "account.grant.revoked",
+                  "account.sync.started",
+                  "account.sync.succeeded",
+                  "account.sync.failed",
+                  "account.balance.updated",
+                  "account.position.updated",
+                  "account.transaction.created",
+                  "account.orders.updated",
+                  "account.transactions.updated",
+                  "order.created",
+                  "order.updated",
+                  "order.filled",
+                  "order.cancelled",
+                  "order.rejected",
+                  "connection.reauth.required"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eventtypes"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "active",
+                "disabled",
+                "revoked"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Status"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Url"
+        }
+      },
+      "title": "FDXWebhookSubscriptionUpdate",
+      "type": "object"
+    }
+  }
+}
