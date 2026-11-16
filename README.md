@@ -133,3 +133,39 @@ This README is the Node SDK contract. Fetch the rest before writing a full integ
 - OpenAPI: [https://finatic.dev/openapi.json](https://finatic.dev/openapi.json)
 - Agent index: [https://finatic.dev/llms.txt](https://finatic.dev/llms.txt)
 - Agent notes: [https://finatic.dev/AGENTS.md](https://finatic.dev/AGENTS.md)
+
+## Grouped sync webhooks
+
+Subscribe to account-level order and transaction summaries with the public enums:
+
+```ts
+import {
+  decodeGroupedSyncWebhook,
+  FDXWebhookSubscriptionCreateEventTypesEnum as WebhookEvent,
+  type FDXWebhookSubscriptionCreate,
+} from '@finatic/server-node';
+
+const subscription: FDXWebhookSubscriptionCreate = {
+  url: 'https://example.com/webhooks',
+  eventTypes: [WebhookEvent.AccountOrdersUpdated, WebhookEvent.AccountTransactionsUpdated],
+};
+await finatic.v1.createWebhookSubscription(subscription);
+
+// After verifying the delivery signature, pass the JSON string or parsed unknown body.
+const event = decodeGroupedSyncWebhook(verifiedBody);
+console.log(event.data.contractVersion); // account.resource.sync-summary.v1
+console.log(event.data.batchId, event.data.origin, event.data.completedAt);
+console.log(event.data.result.resourceUrl, event.data.result.cursor);
+if (event.eventType === 'account.orders.updated') {
+  console.log(event.data.changeCounts.fillsCreated);
+}
+```
+
+The decoder throws for malformed or non-grouped events; it does not authenticate deliveries,
+fetch result URLs, or decode legacy per-resource events. Counts are non-negative integers.
+OpenAPI defaults are applied when version fields are omitted. The raw `FDXWebhookPayload`,
+`FDXSyncSummaryData`, result/count types, and create/update subscription types are also exported.
+Existing FDX v1 methods and event names remain unchanged.
+
+Contract provenance and the curated source schemas are committed in
+[`docs/grouped-sync-openapi-provenance.json`](docs/grouped-sync-openapi-provenance.json).
