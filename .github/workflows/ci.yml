@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
     branches: [main, develop, staging, fdx-account-consent-v1]
+  # Release-lane evidence: the promotion helper requires completed check runs
+  # on the exact combined develop/staging head. This job only lints, tests and
+  # builds; it never deploys, releases, or publishes (release.yml stays manual).
+  push:
+    branches: [develop, staging]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
