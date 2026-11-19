@@ -43,3 +43,10 @@ export * from './success-payload-token-response-data';
 export * from './token-response-data';
 export * from './validation-error';
 export * from './validation-error-loc-inner';
+
+export * from './fdxsync-summary-change-counts';
+export * from './fdxorders-sync-summary-change-counts';
+export * from './fdxsync-summary-result';
+export * from './fdxsync-summary-data';
+export * from './fdxwebhook-payload-resource';
+export * from './fdxwebhook-payload';
