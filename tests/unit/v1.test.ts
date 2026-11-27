@@ -99,6 +99,7 @@ const V1_DATA_METHODS = [
   'listTransactions',
   'listOrders',
   'listAccountResource',
+  'iterateAccountResource',
   'getAccountOrder',
   'getAccountOrderFills',
   'getAccountOrderEvents',
@@ -722,6 +723,108 @@ describe('V1 account-first wrapper', () => {
         status: 502,
       })
     );
+  });
+});
+
+describe('V1 account list keyset pagination', () => {
+  function page(rows: unknown[], hasMore: boolean, next: string | null): Record<string, unknown> {
+    return {
+      trace_id: 'trace-id',
+      success: {
+        data: rows,
+        meta: { has_more: hasMore, next_page_token: next, offset: 0, limit: 2 },
+      },
+    };
+  }
+
+  it('sends pageToken and exposes meta.next_page_token', async () => {
+    const { client, requests } = createResponseClient([page([{ id: 'a' }], true, 'tok-1')]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.listOrders({
+      accountId: 'acct_123',
+      limit: 2,
+      pageToken: 'tok-0',
+    });
+
+    expect(requests[0]?.url).toBe('/api/v1/accounts/acct_123/orders');
+    expect(requests[0]?.params).toEqual({ limit: 2, pageToken: 'tok-0' });
+    expect(result.meta?.next_page_token).toBe('tok-1');
+    expect(result.meta?.has_more).toBe(true);
+  });
+
+  it('omits meta when the response has none', async () => {
+    const { client } = createResponseClient([successEnvelope([])]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.listBalances({ accountId: 'acct_123' });
+
+    expect('meta' in result).toBe(false);
+  });
+
+  it('iterates every page until has_more is false', async () => {
+    const { client, requests } = createResponseClient([
+      page([{ id: 'a' }, { id: 'b' }], true, 'tok-1'),
+      page([{ id: 'c' }, { id: 'd' }], true, 'tok-2'),
+      page([{ id: 'e' }], false, null),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const ids: string[] = [];
+    for await (const row of wrapper.iterateAccountResource<{ id: string }>('transactions', {
+      accountId: 'acct_123',
+      limit: 2,
+    })) {
+      ids.push(row.id);
+    }
+
+    expect(ids).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(requests.map((request) => request.params)).toEqual([
+      { limit: 2 },
+      { limit: 2, pageToken: 'tok-1' },
+      { limit: 2, pageToken: 'tok-2' },
+    ]);
+  });
+
+  it('stops when the next token repeats the previous one', async () => {
+    const { client, requests } = createResponseClient([
+      page([{ id: 'a' }], true, 'tok-1'),
+      page([{ id: 'b' }], true, 'tok-1'),
+      page([{ id: 'never' }], false, null),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const ids: string[] = [];
+    for await (const row of wrapper.iterateAccountResource<{ id: string }>('orders', {
+      accountId: 'acct_123',
+      limit: 2,
+    })) {
+      ids.push(row.id);
+    }
+
+    expect(ids).toEqual(['a', 'b']);
+    expect(requests).toHaveLength(2);
+  });
+
+  it('throws when a page returns an API error', async () => {
+    const { client } = createResponseClient([
+      {
+        trace_id: 'trace-id',
+        error: { code: 'INVALID_PAGE_TOKEN', message: 'bad token', status: 400 },
+      },
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    await expect(
+      (async () => {
+        for await (const row of wrapper.iterateAccountResource('orders', {
+          accountId: 'acct_123',
+          pageToken: 'forged',
+        })) {
+          void row;
+        }
+      })()
+    ).rejects.toThrow('INVALID_PAGE_TOKEN');
   });
 });
 

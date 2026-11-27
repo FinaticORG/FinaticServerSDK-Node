@@ -54,9 +54,23 @@ export interface FinaticV1Warning {
   details?: Record<string, unknown> | null;
 }
 
+/** Pagination metadata returned by account list endpoints. */
+export interface FinaticV1PageMeta {
+  has_more?: boolean;
+  /** Pass as `pageToken` to fetch the next page; null on the last page. */
+  next_page_token?: string | null;
+  /** Offset mode only; omitted when a `pageToken` was used. */
+  next_offset?: number | null;
+  offset?: number;
+  limit?: number;
+  [key: string]: unknown;
+}
+
 export interface FinaticV1Response<T = unknown> {
   traceId: string | null;
   data: T | null;
+  /** Present on paginated list responses. */
+  meta?: FinaticV1PageMeta;
   warnings: FinaticV1Warning[];
   errors: FinaticV1Error[];
 }
@@ -80,7 +94,10 @@ export type SessionSyncStatusResponse = Omit<GeneratedSessionSyncStatusResponse,
 export interface AccountScopedParams {
   accountId: string;
   limit?: number;
+  /** Legacy offset pagination. Prefer `pageToken`; cannot be combined with it. */
   offset?: number;
+  /** Keyset cursor: the previous response's `meta.next_page_token`. */
+  pageToken?: string;
 }
 
 export interface AccountOrderParams {
@@ -585,13 +602,63 @@ export class V1Wrapper {
     params: AccountScopedParams,
     options?: FinaticV1CallOptions
   ): Promise<FinaticV1Response<T>> {
-    const query: Record<string, QueryValue> = { limit: params.limit, offset: params.offset };
+    const query: Record<string, QueryValue> = {
+      limit: params.limit,
+      offset: params.offset,
+      pageToken: params.pageToken,
+    };
     return this.request<T>(
       'GET',
       `/api/v1/accounts/${encodeURIComponent(params.accountId)}/${encodeURIComponent(resource)}`,
       { params: query },
       options
     );
+  }
+
+  /**
+   * Iterate every row of an account list resource using keyset pagination.
+   * Throws if any page returns an API error.
+   *
+   * @example
+   * ```typescript-server
+   * for await (const order of finatic.v1.iterateAccountResource('orders', { accountId })) {
+   *   console.log(order);
+   * }
+   * ```
+   */
+  async *iterateAccountResource<Row = unknown>(
+    resource: string,
+    params: Omit<AccountScopedParams, 'offset' | 'pageToken'> & { pageToken?: string },
+    options?: FinaticV1CallOptions
+  ): AsyncGenerator<Row, void, undefined> {
+    let pageToken = params.pageToken;
+    for (;;) {
+      const page = await this.listAccountResource<Row[]>(
+        resource,
+        {
+          accountId: params.accountId,
+          ...(params.limit !== undefined ? { limit: params.limit } : {}),
+          ...(pageToken !== undefined ? { pageToken } : {}),
+        },
+        options
+      );
+      const failure = page.errors[0];
+      if (failure) {
+        throw new Error(`Listing ${resource} failed: ${failure.code}: ${failure.message}`);
+      }
+      for (const row of page.data ?? []) {
+        yield row;
+      }
+      const next = page.meta?.next_page_token;
+      if (!page.meta?.has_more || typeof next !== 'string' || next.length === 0) {
+        return;
+      }
+      if (next === pageToken) {
+        // A repeated token would loop forever; stop instead.
+        return;
+      }
+      pageToken = next;
+    }
   }
 
   getAccountOrder<T = FDXBrokerOrder>(
@@ -848,6 +915,7 @@ export class V1Wrapper {
         return {
           traceId: typeof record['traceId'] === 'string' ? record['traceId'] : null,
           data: (record['data'] as T | undefined) ?? null,
+          ...this.pageMeta(record['meta']),
           warnings: this.normalizeWarnings(record['warnings']),
           errors: this.normalizeErrors(record['errors']),
         };
@@ -861,6 +929,11 @@ export class V1Wrapper {
       return {
         traceId: typeof record['trace_id'] === 'string' ? record['trace_id'] : null,
         data: (successData as T | undefined) ?? null,
+        ...this.pageMeta(
+          success && typeof success === 'object'
+            ? (success as Record<string, unknown>)['meta']
+            : undefined
+        ),
         warnings: this.normalizeWarnings(record['warnings'] ?? record['warning']),
         errors: this.normalizeErrors(record['errors'] ?? record['error']),
       };
@@ -1037,6 +1110,12 @@ export class V1Wrapper {
       }
     }
     return null;
+  }
+
+  private pageMeta(meta: unknown): { meta?: FinaticV1PageMeta } {
+    return meta && typeof meta === 'object' && !Array.isArray(meta)
+      ? { meta: meta as FinaticV1PageMeta }
+      : {};
   }
 
   private cleanParams(params?: Record<string, QueryValue>): Record<string, QueryValue> | undefined {
