@@ -428,7 +428,7 @@ describe('V1 account-first wrapper', () => {
         errors: [],
       },
       {
-        _id: 'legacy-trace',
+        trace_id: 'legacy-trace',
         success: { data: [event] },
         warning: null,
         error: null,
@@ -518,7 +518,7 @@ describe('V1 account-first wrapper', () => {
     const client = {
       request: jest.fn(async () => ({
         data: {
-          _id: 'legacy-trace-id',
+          trace_id: 'legacy-trace-id',
           success: { data: { accountId: 'acct_123' } },
           warning: [{ code: 'STALE_DATA', message: 'Account data is stale' }],
           error: {
@@ -546,6 +546,19 @@ describe('V1 account-first wrapper', () => {
         },
       ],
     });
+  });
+
+  it('reads traceId from the wire trace_id and ignores a legacy _id', async () => {
+    const client = {
+      request: jest.fn(async () => ({
+        data: { _id: 'internal-tag', success: { data: { accountId: 'acct_123' } } },
+      })),
+    } as unknown as AxiosInstance;
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const result = await wrapper.getAccount('acct_123');
+
+    expect(result.traceId).toBeNull();
   });
 
   it('normalizes axios HTTP errors into the public v1 error envelope', async () => {

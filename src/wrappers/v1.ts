@@ -859,7 +859,7 @@ export class V1Wrapper {
           ? (success as Record<string, unknown>)['data']
           : undefined;
       return {
-        traceId: typeof record['_id'] === 'string' ? record['_id'] : null,
+        traceId: typeof record['trace_id'] === 'string' ? record['trace_id'] : null,
         data: (successData as T | undefined) ?? null,
         warnings: this.normalizeWarnings(record['warnings'] ?? record['warning']),
         errors: this.normalizeErrors(record['errors'] ?? record['error']),
