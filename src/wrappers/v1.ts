@@ -653,6 +653,10 @@ export class V1Wrapper {
       if (!page.meta?.has_more || typeof next !== 'string' || next.length === 0) {
         return;
       }
+      if (next === pageToken) {
+        // A repeated token would loop forever; stop instead.
+        return;
+      }
       pageToken = next;
     }
   }

@@ -786,6 +786,26 @@ describe('V1 account list keyset pagination', () => {
     ]);
   });
 
+  it('stops when the next token repeats the previous one', async () => {
+    const { client, requests } = createResponseClient([
+      page([{ id: 'a' }], true, 'tok-1'),
+      page([{ id: 'b' }], true, 'tok-1'),
+      page([{ id: 'never' }], false, null),
+    ]);
+    const wrapper = new V1Wrapper('fntc_test_key', createConfig(), client);
+
+    const ids: string[] = [];
+    for await (const row of wrapper.iterateAccountResource<{ id: string }>('orders', {
+      accountId: 'acct_123',
+      limit: 2,
+    })) {
+      ids.push(row.id);
+    }
+
+    expect(ids).toEqual(['a', 'b']);
+    expect(requests).toHaveLength(2);
+  });
+
   it('throws when a page returns an API error', async () => {
     const { client } = createResponseClient([
       {
